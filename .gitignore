@@ -1,0 +1,53 @@
+
+##############################
+## Gradle
+##############################
+bin/
+build/
+**/build/
+!src/**/build/
+.gradle
+.gradletasknamecache
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+##############################
+## IntelliJ
+##############################
+out/
+.idea/
+.idea_modules/
+*.iml
+*.ipr
+*.iws
+
+##############################
+## Eclipse
+##############################
+.settings/
+bin/
+tmp/
+.metadata
+.classpath
+.project
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.loadpath
+.factorypath
+
+##############################
+## Log4J2
+##############################
+target/rolling-logs/
+target/rolling-logs-archive/
+log4j-*.log
+log4j-*.log.gz
+
+##############################
+## Mac
+##############################
+.DS_Store

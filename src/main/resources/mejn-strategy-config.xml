@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-model href="mejn-strategy-config.xsd"?>
+<config>
+	<strategies>
+		<strategy>
+			<name>RandomStrategy</name>
+			<class>com.rttnghs.mejn.strategy.RandomStrategy</class>
+			<parameters />
+		</strategy>
+		<strategy>
+			<name>FarStrategy</name>
+			<class>com.rttnghs.mejn.strategy.FarStrategy</class>
+			<parameters />
+		</strategy>
+		<strategy>
+			<name>NearStrategy</name>
+			<class>com.rttnghs.mejn.strategy.NearStrategy</class>
+			<parameters />
+		</strategy>
+		<strategy>
+			<name>RankingStrategy</name>
+			<class>com.rttnghs.mejn.strategy.ranking.SomeRankingStrategy</class>
+			<parameters>-90,20,80,-5,10,0</parameters>
+		</strategy>
+		<strategy>
+			<name>OtherRankingStrategy</name>
+			<class>com.rttnghs.mejn.strategy.ranking.SomeRankingStrategy</class>
+			<parameters>0,0,0,0,0,0</parameters>
+		</strategy>
+	</strategies>
+	<!-- Strategies listed in the brackets attribute list refer to the strategy names defined above. -->
+	<brackets strategies="RandomStrategy,FarStrategy,NearStrategy,RankingStrategy,OtherRankingStrategy">
+		<!-- The length of the strategies attribute list must match the length of the brackets.-->
+		<!-- Brackets are 0-based indexes from the list of strategies in brackets.-->
+		<bracket>1,0,2,0</bracket>
+		<bracket>3,0,4,0</bracket>
+		<bracket>1,0,3,0</bracket>
+		<bracket>2,0,4,0</bracket>
+		<bracket>1,2,3,4</bracket>	
+	</brackets>
+</config>

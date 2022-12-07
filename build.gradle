@@ -1,0 +1,99 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
+ // See also https://docs.gradle.org/current/userguide/getting_started.html
+ plugins {
+    // Apply the java-library plugin for API and implementation separation.
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+}
+
+group = 'com.rttnghs'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+dependencies {
+    // Use JUnit Jupiter for testing.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+
+
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
+    // Used for configuration loading
+    implementation 'org.apache.commons:commons-configuration2:2.7'
+    // Used by configuration builders
+    implementation 'commons-beanutils:commons-beanutils:1.9.4'
+
+    // This dependency is exported to consumers, that is to say found on their compile classpath.
+    // api 'org.apache.commons:commons-math3:3.6.1'
+
+    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+    implementation 'com.google.guava:guava:30.1.1-jre'
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+    
+    // Always run tests, even when nothing changed.
+    dependsOn 'cleanTest'
+
+    // Show test results.
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+task runGame(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath
+
+  mainClass = 'com.rttnghs.mejn.Game'
+
+  // arguments to pass to the application
+  args 'appArg1'
+}
+
+task runTournament(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath
+
+  mainClass = 'com.rttnghs.mejn.Tournament'
+
+  // arguments to pass to the application
+  args 'appArg1'
+  
+}
+
+task runConfig(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath
+
+  mainClass = 'com.rttnghs.mejn.configuration.Configu'
+
+  // arguments to pass to the application
+  args 'appArg1'
+  
+}
+
+
+
