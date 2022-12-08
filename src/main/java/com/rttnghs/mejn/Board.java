@@ -28,6 +28,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.rttnghs.mejn.configuration.Config;
 
+/**
+ * The board is in charge of keeping track of the board state. It also provides
+ * a list of potential moves, and can apply a move. Further, the board
+ * determines who next players is.
+ */
 public class Board {
 
 	private static final Logger logger = LogManager.getLogger(Board.class);
@@ -155,6 +160,10 @@ public class Board {
 	}
 
 	/**
+	 * If a move results into another player being struck off the board, then that
+	 * would essentially result in a second move. This method gets such second move,
+	 * if the provided move does indeed strike another player's pawn.
+	 * 
 	 * @param move given a move, determine if another player is at the to spot. If
 	 *             so, return a move to send them back to the beginning.
 	 * @return move to send a potential player who's at the input move to spot back
@@ -226,7 +235,6 @@ public class Board {
 		return state;
 	}
 
-
 	/**
 	 * @return what the die currently shows.
 	 */
@@ -234,7 +242,6 @@ public class Board {
 		return currentDieValue;
 	}
 
-	
 	/**
 	 * @return which player is the current player
 	 */

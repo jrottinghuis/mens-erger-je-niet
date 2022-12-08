@@ -26,6 +26,9 @@ import org.apache.logging.log4j.Logger;
 
 import com.rttnghs.mejn.configuration.Config;
 
+/**
+ * Used to apply the rules, determine if moves are allowed etc.
+ */
 public class RuleEvaluator {
 
 	public static boolean isSelfStrikeAllowed = Config.configuration.getBoolean("isSelfStrikeAllowed");

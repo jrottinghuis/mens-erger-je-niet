@@ -22,6 +22,10 @@ import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Location on the board, determined by layer and the spot (number indicating
+ * which spot).
+ */
 public record Position(Layer layer, int spot) implements Comparable<Position> {
 
 	private static final Logger logger = LogManager.getLogger(Position.class);

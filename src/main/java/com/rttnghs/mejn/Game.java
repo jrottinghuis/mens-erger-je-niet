@@ -32,6 +32,9 @@ import com.rttnghs.mejn.strategy.BaseStrategyFactory;
 import com.rttnghs.mejn.strategy.RandomStrategy;
 import com.rttnghs.mejn.strategy.StrategyFactory;
 
+/**
+ * Used to play a single round of the game.
+ */
 public class Game {
 
 	private static final Logger logger = LogManager.getLogger(Game.class);
@@ -67,7 +70,7 @@ public class Game {
 	 * Play the entire game until all players are done and return the results in the
 	 * order of finishing.
 	 * 
-	 * @return
+	 * @return EventCounter of player's strategy name to finish position.
 	 */
 	public EventCounter<String, Integer> play() {
 		logger.debug("Starting game.");
@@ -145,9 +148,6 @@ public class Game {
 	/**
 	 * Play a single game.
 	 * 
-	 * @param args
-	 */
-	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
