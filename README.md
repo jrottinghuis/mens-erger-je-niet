@@ -68,6 +68,12 @@ Again, following the same logic for different players, we can see that yellow st
   
  In this last diagram, each color's begin position is shown, but not the illegal positions. Now that we have introduced two mutually exclusive layers for begin B and event E, we can also introduce a layer for the home positions, H. From E39, a blue pawn will take one step into H0, two steps into H1, three steps into H2, and four steps into H3. Just like we can think of the begin layer below the event layer, we can think of the home layer above the event layer.
  
+<img
+  src="src/main/resources/images/MensErgerJeNietHomeLayer.png"
+  alt="Mens erger je niet home layer."
+  title="Home layers"
+  style="display: inline-block; margin: 0 auto; max-width: 1200px">
+ 
  Putting this all together we get the following complete board:
  
 <img
