@@ -19,9 +19,6 @@ package com.rttnghs.mejn.statistics;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * Used to assign a value to zero, first, second, third, fourth etc player

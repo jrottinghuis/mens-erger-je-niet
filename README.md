@@ -1,3 +1,4 @@
+
 #Mens erger je niet!
 
 This is an implementation of the Dutch board game called [Mens erger je niet!](https://nl.wikipedia.org/wiki/Mens_erger_je_niet!) based on the German game [Mensch ärgere Dich nicht](https://en.wikipedia.org/wiki/Mensch_ärgere_Dich_nicht). This in turn is derived from the Indian game [Pachisi](https://en.wikipedia.org/wiki/Pachisi). English speakers know this game as [Ludo](https://en.wikipedia.org/wiki/Ludo) while other countries have similar flavors.
@@ -24,6 +25,7 @@ Two players play one another from opposite corners. The reverse side of the phys
   style="display: inline-block; margin: 0 auto; max-width: 300px"/>
 
 ## Rules
+
 Each player starts with four pawns in their respective corner, marked with B ("Begin"). Either youngest players starts, or regular 6-faced fair dice rolls determine who starts. Players take turns in a clock-wise fashion. The purpose of the game is to get all four pawns to the finish, or home, which are the four circles marked with their respective color in the center of the board after completing a loop around the board.
 For each turn a player rolls the die. If the player rolls a six, they get to move a pawn from their beginning position to their first position on the board, marked with an "A" (for "Anfang", German word for "start"?). They get to roll the die again, and move forward for the number of positions that the die shows. Then the next player takes a turn.
 
@@ -32,9 +34,11 @@ When a player rolls a six and none of their pawns are already on the board, they
 If another player is already in the position that your pawn would land in, you strike their pawn and send that pawn back to it's beginning position "B". Once a pawn is on one of the final home positions, they are safe from strikes. The home position are marked with lower letters "a", and in some versions, "b", "c", and "d" respectively. On the four player board above only the first home position is marked, and on the image of the six-player board, none are marked. In short, you start at "B", then go to "A" then finish at "a", makes sense? If a player has their pawn right in front of the home ("a") position and would theoretically land on another pawn that is already in a home position, that is not considered a legal move and they have to choose another pawn to move, or forfeit that turn. Whether a player can strike their own pawn anywhere on the regular board or not should be agreed upon ahead of time. If this is allowed, there are cases when this is the only turn, and one pawn would move back to the beginning position.
 
 ## Implementation
+
 When playing a physical board game, the location of the pawns on the board and hence the state of the game are clearly visible. For an implementation, we need an unambiguous way to refer to each position. In addition, it is convenient to choose an implementation that is easy to reason about.
 
 ### Numbers, modulo and layers
+
 In order to reference an exact location on the board, let's take the perspective of the blue player in the bottom left hand corner. Given that there are ten spots for each player, and four players on this board, there are forty total spots, marked from 0 to 39.
 
 <img
@@ -74,21 +78,80 @@ Again, following the same logic for different players, we can see that yellow st
  
  ### Classes
  
- * Layer. {BEGIN, EVENT, HOME}
- * Position. Tuple of Layer and spot (number on the board).
- * Move. Tuple of from- and to- positions.
- * Die. Used to roll random numbers up to a certain number of faces.
- * Board. Keeps track of game state, next player, and determines list of legal moves.
- * History. Used to keep track of list of moves. Accessible in forward or reverse order.
- * BoardState A board state is essentially a list of positions for each player.
- * Player. Arranges interaction between board and a strategy. Uses the strategy to choose one of the provided possible moves. Positions of BoardState and list of allowed moves to choose from are shifted such that each strategy thinks they are playing from the bottom left position, starting at E0. This way there are not four equivalent, and functionally identical versions of each board state depending on whether a strategy is player 1, 2, 3, or 4.
- * RuleEvaluator. Used to apply the rules, determine if moves are allowed etc.
+ * __Layer__ : {BEGIN, EVENT, HOME}
+ * __Position__ : Tuple of Layer and spot (number on the board).
+ * __Move__ : Tuple of from- and to- positions.
+ * __Die__ : Used to roll random numbers up to a certain number of faces.
+ * __Board__ : Keeps track of game state, next player, and determines list of legal moves.
+ * __History__ : Used to keep track of list of events, for example moves or scores. Accessible in forward or reverse order.
+ * __BoardState__ :  A board state is essentially a list of positions for each player.
+ * __Player__ :  Arranges interaction between board and a strategy. Uses the strategy to choose one of the provided possible moves. Positions of BoardState and list of allowed moves to choose from are shifted such that each strategy thinks they are playing from the bottom left position, starting at E0. This way there are not four equivalent, and functionally identical versions of each board state depending on whether a strategy is player 1, 2, 3, or 4.
+ * __Score__ : Used to assign an integer value to zero, first, second, third, fourth etc player finish positions.
+ * __RuleEvaluator__ :  Used to apply the rules, determine if moves are allowed etc.
+ * __Tournament__ : Used to play multiple games and keep track of score.
 
-
-* EventCounter map of actor to event.
-
+ * __EventCounter__ :  map of actor to event. For example, strategy name to finish position.
+ * __Strategy__ : This is the thing to implement that determines what a player does during a game.
  
- 
+
+ ## Strategies
+
+In order to implement your own strategy, you need to implement the `Strategy` interface. Alternatively, you can extend the `BaseStrategy` implementation which takes care of choosing a move if only one (or even none) are allowed. This you have to bother to implement only the `multiChoose` method in which case you know for sure that there is actually something to choose (more than one option).
+If your method implements some mechanism to rank the list of moves by an integer value, you can opt to extend the `RankingStrategy`.
+
  
  ## Configuration
  
+A user can provide a `mejn-user.properties` file on the classpath, or use the following default properties:
+
+    #
+    # Board Settings
+    #
+    # Note that: dotsPerPlayer > dieFaces >= pawnsPerPlayer > 0
+    dieFaces = 6
+    pawnsPerPlayer = 4
+    dotsPerPlayer = 10
+ 
+    # Rules Settings
+    #
+    # Is a player allowed to strike themselves off the regular playing board
+    #  (other than from start or into home which is never allowed)
+    # isSelfStrikeAllowed is one of {true,false}
+    isSelfStrikeAllowed = false
+
+    #
+    # Tournament settings
+    #
+    games = 10000
+
+For a regular six player game, set the following properties:  `playerCount = 6` and `dotsPerPlayer = 8`
+Strategies for a tournament are a little more structured. See `src/main/resources/mejn-strategy-config.xml` and it's corresponding schema. Strategies can be configured by name, providing the fully qualified classname of the implementation, and a set of parameters passed.
+
+
+ ## Build
+
+ The project uses gradle for building, testing, and running. For example:
+ 
+     /mens-erger-je-niet% gradle test
+ 
+You can run a single game through:
+
+     /mens-erger-je-niet% gradle runGame
+     
+and a tournament through:
+
+     /mens-erger-je-niet% gradle runTournament
+     
+To import the project into Eclipse, use:
+
+     /mens-erger-je-niet% gradle eclipse
+
+For IntelliJ fans use:
+
+     /mens-erger-je-niet% gradle intelliJ
+ 
+ ## License
+ 
+                              Apache License
+                        Version 2.0, January 2004
+                     http://www.apache.org/licenses/
