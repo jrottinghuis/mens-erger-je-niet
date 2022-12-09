@@ -66,7 +66,7 @@ Again, following the same logic for different players, we can see that yellow st
   title="Begin and event layers"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
   
- In this last diagram, each color's begin position is shown, but not the illegal positions. Now that we have introduced two mutually exclusive layers for begin B and event E, we can also introduce a layer for the home positions, H. From E39, a blue pawn will take one step into H0, two steps into H1, three steps into H2, and four steps into H3. Just like we can think of the begin layer below the event layer, we can think of the home layer above the event layer.
+ In this last diagram, each color's begin position is shown, but not the illegal positions. Now that we have introduced two mutually exclusive layers for begin B and event E, we can also introduce a layer for the home positions, H. From E39, a blue pawn will take one step into H0, two steps into H1, three steps into H2, and four steps into H3. 
  
 <img
   src="src/main/resources/images/MensErgerJeNietHomeLayer.png"
@@ -74,6 +74,7 @@ Again, following the same logic for different players, we can see that yellow st
   title="Home layers"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
  
+ Just like we can think of the begin layer below the event layer, we can think of the home layer above the event layer. Each player has their home positions in their respective locations. Whereas for the begin position, only the first one was valid, for the home position, four separate positions are valid, and only one pawn can occupy each.
  Putting this all together we get the following complete board:
  
 <img
