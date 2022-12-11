@@ -16,8 +16,8 @@
  */
 package com.rttnghs.mejn.strategy.ranking;
 
-import static com.rttnghs.mejn.Layer.HOME;
 import static com.rttnghs.mejn.Layer.EVENT;
+import static com.rttnghs.mejn.Layer.HOME;
 
 import java.util.Collection;
 import java.util.function.Supplier;
