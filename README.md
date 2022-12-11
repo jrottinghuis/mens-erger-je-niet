@@ -78,8 +78,8 @@ Again, following the same logic for different players, we can see that yellow st
   title="Home layers"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
 
- Just like we can think of the begin layer below the event layer, we can think of the home layer above the event layer. Each player has their home positions in their respective locations. Whereas for the begin position, only the first one was valid, for the home position, four separate positions are valid, and only one pawn can occupy each.
- Putting this all together we get the following complete board:
+Just like we can think of the begin layer below the event layer, we can think of the home layer above the event layer. Each player has their home positions in their respective locations. Whereas for the begin position, only the first one was valid, for the home position, four separate positions are valid, and only one pawn can occupy each.
+Putting this all together we get the following complete board:
 
 <img
   src="src/main/resources/images/MensErgerJeNietGameBoard.png"
@@ -169,11 +169,17 @@ Log4j is used for logging. The default configuration [src/main/resources/log4j2.
 
  ## Contributing
 
- Contributions are welcome. Please open an issue if you see a problem, or better yet, create a fork and generate a pull request.
- In order to avoid massive formatting changes, please see [Code Formatting](https://www.jetbrains.com/help/idea/migrating-from-eclipse-to-intellij-idea.html#CodeFormatting) if IntelliJ is your IDE of choice.
+Contributions are welcome. Please open an issue if you see a problem, or better yet, create a fork and generate a pull request.
+In order to avoid massive formatting changes, please see [Code Formatting](https://www.jetbrains.com/help/idea/migrating-from-eclipse-to-intellij-idea.html#CodeFormatting) if IntelliJ is your IDE of choice.
 
- I would love to see other strategies implemented. There is currently no limit in time or computational resources that a strategy can take to make a decision. There are currently also no rules (yet) as to whether strategies are allowed to collaborate to gang up on other strategies.
+I would love to see other strategies implemented. There is currently no limit in time or computational resources that a strategy can take to make a decision. There are currently also no rules (yet) as to whether strategies are allowed to collaborate to gang up on other strategies.
 Using reflection, or introspection to observe or manipulate other players' strategies will be considered cheating.
+
+ ## Future work
+
+1. Add implementation for Differential Evolution to train ranking strategies
+2. Add implementation for Neural network and training of neural networks
+3. Add UI to allow interactive player or players against configured strategies
 
  ## License
 
