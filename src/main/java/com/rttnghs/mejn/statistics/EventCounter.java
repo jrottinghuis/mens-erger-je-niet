@@ -24,6 +24,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
+ * Used to keep track of count of events happening for actors.
  *
  * @param <A> The type of actor generating the events. Type A must have hashCode
  *            and equals properly defined.
