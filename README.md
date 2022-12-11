@@ -109,6 +109,7 @@ Again, following the same logic for different players, we can see that yellow st
 
 In order to implement your own strategy, you need to implement the `Strategy` interface. Alternatively, you can extend the `BaseStrategy` implementation which takes care of choosing a move if only one (or even none) are allowed. This you have to bother to implement only the `multiChoose` method in which case you know for sure that there is actually something to choose (more than one option).
 If your method implements some mechanism to rank the list of moves by an integer value, you can opt to extend the `RankingStrategy`.
+A few example strategies that can be used as a benchmark have been included. According to Genugten & Das [[2]](#2) `FarStrategy` and `NearStrategy` (always move the pawn furthers along, or nearest the start) are simple strategies often used. They claim that `RandomStrategy`, which as you might expect makes a random selection out of the list of potential moves, is not often chosen because it is considered to be a "silly" strategy. It turns out that `FarStrategy` and `RandomStrategy` are actually reasonable benchmarks. `NearStrategy` performs particularly poorly when the game is configured to allow self-strikes.
 
 
  ## Configuration
@@ -183,10 +184,17 @@ Using reflection, or introspection to observe or manipulate other players' strat
  ## References
  
  * <a id="1">[1] Sebastian Sitarz (2013).
- 
+
    The medal points’ incenter for rankings in sport
- 
+
    Applied Mathematics Letters Volume 26, Issue 4, April 2013, Pages 408-412
 
    [https://doi.org/10.1016/j.aml.2012.10.014](https://doi.org/10.1016/j.aml.2012.10.014)
- 
+
+ * <a id="2">[2] Ben van der Genugten & Marcel Das (2020).
+
+   Strategie bij het bordspel Mens-erger- je-niet
+
+   STAtOR Jaargang 20, nummer 2, juni 2019 pages 4-9
+
+   https://www.vvsor.nl/wp-content/uploads/2018/01/STAtOR-2019-2-1-40-spreads-LR.pdf
