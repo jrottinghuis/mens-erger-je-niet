@@ -17,8 +17,8 @@
 package com.rttnghs.mejn;
 
 import static com.rttnghs.mejn.Layer.BEGIN;
-import static com.rttnghs.mejn.Layer.HOME;
 import static com.rttnghs.mejn.Layer.EVENT;
+import static com.rttnghs.mejn.Layer.HOME;
 import static com.rttnghs.mejn.TestBoardState.getMove;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

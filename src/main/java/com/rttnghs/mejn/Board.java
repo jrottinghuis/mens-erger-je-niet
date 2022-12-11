@@ -17,8 +17,8 @@
 package com.rttnghs.mejn;
 
 import static com.rttnghs.mejn.Layer.BEGIN;
-import static com.rttnghs.mejn.Layer.HOME;
 import static com.rttnghs.mejn.Layer.EVENT;
+import static com.rttnghs.mejn.Layer.HOME;
 
 import java.util.ArrayList;
 import java.util.List;
