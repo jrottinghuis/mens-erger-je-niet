@@ -97,11 +97,11 @@ Again, following the same logic for different players, we can see that yellow st
  * __History__ : Used to keep track of list of events, for example moves or scores. Accessible in forward or reverse order.
  * __BoardState__ :  A board state is essentially a list of positions for each player.
  * __Player__ :  Arranges interaction between board and a strategy. Uses the strategy to choose one of the provided possible moves. Positions of BoardState and list of allowed moves to choose from are shifted such that each strategy thinks they are playing from the bottom left position, starting at E0. This way there are not four equivalent, and functionally identical versions of each board state depending on whether a strategy is player 1, 2, 3, or 4.
- * __Score__ : Used to assign an integer value to zero, first, second, third, fourth etc player finish positions using the scoring system proposed by Sitarz [[1]](#1)
+ * __Score__ : Used to assign an integer value to zero, first, second, third, fourth etc player finish place using the scoring system proposed by Sitarz [[1]](#1).
  * __RuleEvaluator__ :  Used to apply the rules, determine if moves are allowed etc.
  * __Tournament__ : Used to play multiple games and keep track of score.
 
- * __EventCounter__ :  map of actor to event. For example, strategy name to finish position.
+ * __EventCounter__ :  map of actor to event. For example, strategy name to finish place.
  * __Strategy__ : This is the thing to implement that determines what a player does during a game.
 
 

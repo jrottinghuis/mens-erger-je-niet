@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Used to assign a value to zero, first, second, third, fourth etc player
- * finishing. This is used to assign a single integer value for these finishing
+ * Used to assign a value to zero, first, second, third, fourth etc finish
+ * place. This is used to assign a single integer value for such finishing
  * order. If two players finish first the same number of time, but one of them
  * never finishes last, then assigning a single score will help differentiate
  * between these players.
