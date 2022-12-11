@@ -22,6 +22,13 @@ import java.util.function.IntSupplier;
 
 import com.rttnghs.mejn.Die;
 
+/**
+ * Used to have a collection of events that can be selected with a given
+ * discrete probability.
+ * 
+ * @param <E> the type of elements that need to be added to and selected from in
+ *            this distribution.
+ */
 public class DiscreteProbabilityDistribution<E> {
 
 	private int frequencySum = 0;
