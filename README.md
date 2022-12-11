@@ -16,7 +16,7 @@ The game is played with two, or four players on the following board:
   title="Four player board"
   style="display: inline-block; margin: 0 auto; max-width: 300px">
  
-Two players play one another from opposite corners. The reverse side of the physical game board can be used for 3 or 6 players. Note the reduced fields per player:
+Two players play one another from opposite corners. The reverse side of the physical game board can be used for 3 or 6 players, evenly spread around th board. Note the reduced fields per player:
 
 <img
   src="src/main/resources/images/MensErgerJeNietBoard_6.svg.png"
@@ -26,12 +26,12 @@ Two players play one another from opposite corners. The reverse side of the phys
 
 ## Rules
 
-Each player starts with four pawns in their respective corner, marked with B ("Begin"). Either youngest players starts, or regular 6-faced fair dice rolls determine who starts. Players take turns in a clock-wise fashion. The purpose of the game is to get all four pawns to the finish, or home, which are the four circles marked with their respective color in the center of the board after completing a loop around the board.
+Each player starts with four pawns in their respective corner, marked with B ("Begin"). Either youngest players starts, or regular 6-faced fair dice rolls determine who starts. Players take turns in a clock-wise fashion. The purpose of the game is to get all four pawns to the finish, or home, which are the four circles marked with their respective color in the center of the board, after completing a clockwise loop around the board.
 For each turn a player rolls the die. If the player rolls a six, they get to move a pawn from their beginning position to their first position on the board, marked with an "A" (for "Anfang", German word for "start"?). They get to roll the die again, and move forward for the number of positions that the die shows. Then the next player takes a turn.
 
-When a player rolls a six and none of their pawns are already on the board, they can choose with which pawn to move six positions forward, and then roll again.
+When a player rolls a six and none of their pawns are in their Begin area, in other words, all of them are already on the board, they can choose with which pawn to move six positions forward, and then roll again.
 
-If another player is already in the position that your pawn would land in, you strike their pawn and send that pawn back to it's beginning position "B". Once a pawn is on one of the final home positions, they are safe from strikes. The home position are marked with lower letters "a", and in some versions, "b", "c", and "d" respectively. On the four player board above only the first home position is marked, and on the image of the six-player board, none are marked. In short, you start at "B", then go to "A" then finish at "a", makes sense? If a player has their pawn right in front of the home ("a") position and would theoretically land on another pawn that is already in a home position, that is not considered a legal move and they have to choose another pawn to move, or forfeit that turn. Whether a player can strike their own pawn anywhere on the regular board or not should be agreed upon ahead of time. If this is allowed, there are cases when this is the only turn, and one pawn would move back to the beginning position.
+If another player is already in the position that your pawn would land in, you strike their pawn and send that pawn back to it's beginning position "B". Once a pawn is on one of the final home positions, they are safe from strikes. On some version of the board, the home position are marked with lower letters "a", and in some versions, "b", "c", and "d" respectively. On the four player board above only the first home position is marked, and on the image of the six-player board, none are marked. In short, you start at "B", then go to "A" then finish at "a", makes sense? If a player has their pawn right in front of the home ("a") position and would theoretically land on another pawn that is already in a home position, that is not considered a legal move and they have to choose another pawn to move, or forfeit that turn. Whether or not a player can strike their own pawn anywhere on the regular board should be agreed upon ahead of time. Even though players are unlikely to choose to strike themselves, there can be situations when this is the only option. Note that no pawn can be removed from a home position.
 
 ## Implementation
 
@@ -57,7 +57,7 @@ Following similar modulo logic, the blue player's starting position is equivalen
   title="Begin layer"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
 
-The blue "begin" layer spots 35..39 are depicted with a dotted border, because they are not allowed. Only when a six is rolled can a new pawn enter the regular playing area. Let's call the regular playing area the "Event layer", marked with "E" in the diagram above. So now we have $(B34+6) mod 40 = E0$. To avoid confusion, we dropped the original "A" (from the Germain "Anfang" = start), and simply labeled the spot E0.
+The blue "begin" layer spots 35..39 are depicted with a dotted border, because they are not allowed. Only when a six is rolled can a new pawn enter the regular playing area. Let's call the regular playing area the "Event layer", marked with "E" in the diagram above. So now we have $(B34+6) mod 40 = E0$. To avoid confusion, we dropped the original "A" (from the German "Anfang" = start), and simply labeled the spot E0.
 Again, following the same logic for different players, we can see that yellow starts at B4, green at B14, and red at B24. These starting positions are unique in two ways: first, only the respective color can occupy them. This is similar to the home fields. Moreover, more than one pawn can be on the same begin field.
 
 <img
@@ -109,7 +109,7 @@ If your method implements some mechanism to rank the list of moves by an integer
  
  ## Configuration
  
-A user can provide a `mejn-user.properties` file on the classpath, or use the following default properties:
+A user can provide a `mejn-user.properties` file on the classpath, or use the following [default properties](src/main/resources/mejn-default.properties):
 
     #
     # Board Settings
@@ -132,12 +132,12 @@ A user can provide a `mejn-user.properties` file on the classpath, or use the fo
     games = 10000
 
 For a regular six player game, set the following properties:  `playerCount = 6` and `dotsPerPlayer = 8`
-Strategies for a tournament are a little more structured. See `src/main/resources/mejn-strategy-config.xml` and it's corresponding schema. Strategies can be configured by name, providing the fully qualified classname of the implementation, and a set of parameters passed.
+Strategies for a tournament are a little more structured. See [src/main/resources/mejn-strategy-config.xml](src/main/resources/mejn-strategy-config.xml) and it's corresponding schema. Strategies can be configured by name, providing the fully qualified classname of the implementation, and a set of parameters passed.
 
 
  ## Build
 
- The project uses gradle for building, testing, and running. For example:
+ The project is coded in Java (requires version 17+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
  
      /mens-erger-je-niet% gradle test
  
@@ -156,6 +156,11 @@ To import the project into Eclipse, use:
 For IntelliJ fans use:
 
      /mens-erger-je-niet% gradle intelliJ
+
+ ## Logging
+
+Log4j is used for logging. The default configuration [src/main/resources/log4j2.properties](src/main/resources/log4j2.properties) a log file `target/rolling-logs/log4j-mejn.log` with up to 7 days of archives in `target/rolling-logs/log4j-mejn.log` 
+
  
  ## License
  
