@@ -1,9 +1,27 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.rttnghs.mejn.ml.de;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 
 import com.rttnghs.mejn.Die;
@@ -13,9 +31,6 @@ import com.rttnghs.mejn.Die;
  * characterized by a vector (list) of <i>D</i> variables with a max limit of
  * these values, and possibly parameters for the crossover rate <i>Cr</i> and
  * mutation scaling factor <i>F</i>.
- * <p>
- * The constraing handling for this individual is pretty simple. The values are
- * cut off at the lower and uppper bound, 0 and {@link #maxValue}
  */
 public class Individual {
 
@@ -30,6 +45,15 @@ public class Individual {
 	 */
 	private final String name;
 
+	// Determines the fitness score of this individual, used to rank individuals in
+	// the population
+	private int fitness = 0;
+
+	// How many generations this individual has survived.
+	private int generation = 0;
+
+	private Map<Individual, Integer> scoreCache = new WeakHashMap<>();
+
 	/**
 	 * Create a new individual with given dimension
 	 * 
@@ -42,6 +66,7 @@ public class Individual {
 		for (int i = 0; i < vector.size(); i++) {
 			vector.add(i, die.roll() - 1);
 		}
+		// TODO: verify if there are comma separators.
 		name = vector.stream().collect(Collectors.toList()).toString();
 	}
 
@@ -57,6 +82,57 @@ public class Individual {
 	}
 
 	/**
+	 * @return the fitness
+	 */
+	public int getFitness() {
+		return fitness;
+	}
+
+	/**
+	 * @param fitness the fitness to set. Setting a fitness will increase the
+	 *                generation count.
+	 */
+	public void setFitness(int fitness) {
+		this.fitness = fitness;
+		generation++;
+	}
+
+	/**
+	 * @return how many generations this individual survived, determined by number
+	 *         of calls to {@link #setFitness(int)}
+	 */
+	public int getGeneration() {
+		return generation;
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * Return the previous score against the provided opponent.
+	 *
+	 * @param opponent against which this individual may have previously competed.
+	 * @return score How much this individual scored against provided opponent, or
+	 *         null if they previous score is not found.
+	 */
+	public Integer getPreviousScore(Individual opponent) {
+		return scoreCache.get(opponent);
+	}
+
+	/**
+	 * @param opponent against whom this individual competed.
+	 * @param score    how much this individual scored against the provided
+	 *                 opponent.
+	 */
+	public void setScore(Individual opponent, int score) {
+		scoreCache.put(opponent, score);
+	}
+
+	/**
 	 * @param best                 non-null best individual in the population, must
 	 *                             have same dimension as this individual.
 	 * @param random1              random individual from population, must have same
@@ -69,6 +145,10 @@ public class Individual {
 	 *                             determine crossover if variable is from parent or
 	 *                             from mutation vectore
 	 * @return new individual
+	 *         <p>
+	 *         The constraint handling for this new individual is pretty simple. The
+	 *         values are cut off at the lower and upper bound, 0 and
+	 *         {@link #maxValue}
 	 */
 	public Individual mutateCurrentToBest(Individual best, Individual random1, Individual random2,
 			int scalingFactorPercent, int crossOverRatePercent) {
@@ -95,7 +175,7 @@ public class Individual {
 			mutation.add(i, vector.get(i) + (scalingFactorPercent * (best.vector.get(i)) - vector.get(i)) / 100
 					+ (scalingFactorPercent * (random1.vector.get(i)) - random2.vector.get(i)));
 		}
-		
+
 		// Do crossover
 		for (int i = 0; i < vector.size(); i++) {
 			if (crossoverRandomizer.roll() <= crossOverRatePercent) {
@@ -104,9 +184,10 @@ public class Individual {
 				trial.add(i, vector.get(i));
 			}
 		}
-		
-		// Pick at least one mutation, to ensure a different individual if best != random1, != random 2
-		int randomIndex = new Die(mutation.size()).roll() -1;
+
+		// Pick at least one mutation, to ensure a different individual if best !=
+		// random1, != random 2
+		int randomIndex = new Die(mutation.size()).roll() - 1;
 		trial.add(randomIndex, mutation.get(randomIndex));
 
 		return new Individual(mutation);
@@ -140,25 +221,4 @@ public class Individual {
 		Individual other = (Individual) obj;
 		return Objects.equals(name, other.name);
 	}
-
-	// TODO: remove this temporary code.
-	public static void main(String[] args) {
-		ArrayList<Integer> mutation = new ArrayList<>(3);
-		mutation.add(0);
-		mutation.add(0);
-		mutation.add(0);
-		mutation.add(99);
-		mutation.add(0);
-		mutation.add(0);
-		mutation.add(0);
-		mutation.add(99);
-		mutation.add(-109);
-		mutation.add(2);
-		Individual ind = new Individual(mutation);
-		System.out.println("hashCode=" + ind.hashCode());
-		System.out.println("hashCode=" + Objects.hash(ind.getVector()));
-		System.out.println("Mutation=" + ind.toString());
-
-	}
-
 }

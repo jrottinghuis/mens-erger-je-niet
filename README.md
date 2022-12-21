@@ -154,6 +154,10 @@ and a tournament through:
 
      /mens-erger-je-niet% gradle runTournament
 
+You can pass parameters to gradle as follows:
+
+	/mens-erger-je-niet% GRADLE_OPTS="-Xms1024m -Xmx2048m" time gradle runTournament
+
 To import the project into Eclipse, use:
 
      /mens-erger-je-niet% gradle eclipse
