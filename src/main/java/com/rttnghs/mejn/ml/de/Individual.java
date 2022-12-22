@@ -36,7 +36,7 @@ public class Individual {
 
 	// TODO: read this from a config
 	// fileConfig.configuration.getInt("individualVariableMax");
-	public static int maxValue = 199;
+	public static int maxValue = 100;
 	private final ArrayList<Integer> vector;
 
 	/**
@@ -62,9 +62,11 @@ public class Individual {
 	public Individual(int dimension) {
 		vector = new ArrayList<>(dimension);
 		// Die is 1-based, we need a zero based random number
-		Die die = new Die(maxValue + 1);
+		Die die = new Die(maxValue*2);
 		for (int i = 0; i < vector.size(); i++) {
-			vector.add(i, die.roll() - 1);
+			// Shift the random number back to [-maxValue, maxValue)
+			int randomInRange = (die.roll() - (maxValue +1));
+			vector.add(i, randomInRange);
 		}
 		// TODO: verify if there are comma separators.
 		name = vector.stream().collect(Collectors.toList()).toString();
@@ -76,7 +78,7 @@ public class Individual {
 	 * @param vector non-null vector containing the variables that this individual
 	 *               should be created with
 	 */
-	public Individual(ArrayList<Integer> vector) {
+	private Individual(ArrayList<Integer> vector) {
 		this.vector = new ArrayList<>(vector);
 		name = vector.stream().collect(Collectors.toList()).toString();
 	}
@@ -119,7 +121,7 @@ public class Individual {
 	 * @return score How much this individual scored against provided opponent, or
 	 *         null if they previous score is not found.
 	 */
-	public Integer getPreviousScore(Individual opponent) {
+	public Integer getScore(Individual opponent) {
 		return scoreCache.get(opponent);
 	}
 
@@ -141,9 +143,9 @@ public class Individual {
 	 *                             dimension as this individual.
 	 * @param scalingFactorPercent number between 0-100 to scale the vectors
 	 * @param crossOverRatePercent percentage indicating crossover rate used as
-	 *                             variable for each bernoulli experiment to
+	 *                             variable for each Bernoulli experiment to
 	 *                             determine crossover if variable is from parent or
-	 *                             from mutation vectore
+	 *                             from mutation vector
 	 * @return new individual
 	 *         <p>
 	 *         The constraint handling for this new individual is pretty simple. The
