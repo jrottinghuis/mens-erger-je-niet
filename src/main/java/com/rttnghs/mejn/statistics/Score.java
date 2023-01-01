@@ -43,17 +43,17 @@ public class Score {
 	 * @param finishOrderIndex 0-based index of finish order. The first to finish
 	 *                         has finishOrderIndex 0. This cannot be a negative
 	 *                         number.
-	 * @param players          how many players participated in a game.
+	 * @param playerCount          how many players participated in a game.
 	 * @return score. Only the first min(X, #players) finishers will get any score,
 	 *         beyond that, all scores are 0;
 	 */
-	public static int get(int finishOrderIndex, int players) {
+	public static int get(int finishOrderIndex, int playerCount) {
 		if (finishOrderIndex < 0) {
 			return 0;
 		}
 
 		// Make sure we don't count back more than the size of SCORES
-		int offset = (players <= SCORES.size()) ? players : SCORES.size();
+		int offset = (playerCount <= SCORES.size()) ? playerCount : SCORES.size();
 		// Count offset back from the end of SCORES, then add the finishOrder.
 		int scoreIndex = SCORES.size() - offset + finishOrderIndex;
 		return (scoreIndex >= 0 && scoreIndex < SCORES.size()) ? SCORES.get(scoreIndex) : 0;

@@ -125,8 +125,8 @@ public class Tournament {
 			finishCounts.add(completableFuture.get());
 		}
 		// Assume all brackets have the same number of players.
-		int players = strategyNameBrackets.get(0).size();
-		Function<Integer, Integer> scorer = (finishPosition) -> Score.get(finishPosition, players);
+		int playerCount = strategyNameBrackets.get(0).size();
+		Function<Integer, Integer> scorer = (finishPosition) -> Score.get(finishPosition, playerCount);
 		// Multiply by 100, to keep a reasonable resolution when dividing by games
 		// as the smallest score for each game is 1, and we don't want to loose too much
 		// precision without having to go to floats of doubles.
