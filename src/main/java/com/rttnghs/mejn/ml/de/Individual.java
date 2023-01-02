@@ -25,6 +25,7 @@ import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 
 import com.rttnghs.mejn.Die;
+import com.rttnghs.mejn.configuration.Config;
 
 /**
  * Individual represents a candidate solution in Differential Evolution is
@@ -35,8 +36,7 @@ import com.rttnghs.mejn.Die;
 public class Individual {
 
 	// TODO: read this from a config
-	// fileConfig.configuration.getInt("individualVariableMax");
-	public static int maxValue = 100;
+	public static int maxValue = Config.configuration.getInt("individualVariableMax");
 	private final ArrayList<Integer> vector;
 
 	/**
@@ -57,18 +57,21 @@ public class Individual {
 	/**
 	 * Create a new individual with given dimension
 	 * 
-	 * @param dimension number of variables in the vector for this individual.
+	 * @param dimension number of variables in the vector for this individual. Must
+	 *                  be larger than 1.
 	 */
 	public Individual(int dimension) {
+		if (dimension < 1) {
+			throw new IllegalArgumentException("Dimension: " + dimension + " must be > 1");
+		}
 		vector = new ArrayList<>(dimension);
 		// Die is 1-based, we need a zero based random number
-		Die die = new Die(maxValue*2);
-		for (int i = 0; i < vector.size(); i++) {
+		Die die = new Die(maxValue * 2);
+		for (int i = 0; i < dimension; i++) {
 			// Shift the random number back to [-maxValue, maxValue)
-			int randomInRange = (die.roll() - (maxValue +1));
+			int randomInRange = (die.roll() - (maxValue + 1));
 			vector.add(i, randomInRange);
 		}
-		// TODO: verify if there are comma separators.
 		name = vector.stream().collect(Collectors.toList()).toString();
 	}
 
@@ -78,9 +81,16 @@ public class Individual {
 	 * @param vector non-null vector containing the variables that this individual
 	 *               should be created with
 	 */
-	private Individual(ArrayList<Integer> vector) {
+	private Individual(List<Integer> vector) {
 		this.vector = new ArrayList<>(vector);
 		name = vector.stream().collect(Collectors.toList()).toString();
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
 	}
 
 	/**
@@ -105,13 +115,6 @@ public class Individual {
 	 */
 	public int getGeneration() {
 		return generation;
-	}
-
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
 	}
 
 	/**

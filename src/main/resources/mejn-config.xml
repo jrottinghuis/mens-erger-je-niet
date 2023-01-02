@@ -8,4 +8,5 @@
   <properties fileName="${CONFIG_FILE}" config-optional="true"/>
   <xml fileName="mejn-strategy-config.xml"/>
   <properties fileName="mejn-default.properties"/>
+  <properties fileName="mejn-de.properties"/>
 </configuration>
