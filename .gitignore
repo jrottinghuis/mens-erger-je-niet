@@ -37,6 +37,7 @@ tmp/
 local.properties
 .loadpath
 .factorypath
+.eclipse-user-dictionary
 
 ##############################
 ## Log4J2

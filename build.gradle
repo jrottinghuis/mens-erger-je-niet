@@ -19,10 +19,11 @@
  plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java'
-    id 'eclipse'
-    id 'idea'
+    id 'jvm-test-suite' // Adds task test
+    id 'eclipse' // Adds tasks eclipse , cleanEclipse, cleanEclipseProject, cleanEclipseClasspath, , eclipseProject, eclipseClasspath, eclipseJdt
+    id 'idea' // Adds tasks idea, openIdea, and cleanIdea tasks
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'application'
+    id 'application' // Adds task run
 }
 
 group = 'com.rttnghs'
@@ -45,8 +46,9 @@ repositories {
 dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.11.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    implementation 'org.junit.platform:junit-platform-suite:1.9.1'
 
     implementation 'org.apache.commons:commons-collections4:4.4'
     implementation 'org.apache.logging.log4j:log4j-api:2.24.0'
@@ -65,27 +67,33 @@ dependencies {
     implementation 'com.google.guava:guava:33.3.0-jre'
 }
 
-sourceSets {
-    test {
-        java.srcDirs += ['src/main/java']
+testing {
+    suites {
+        test {
+            useJUnitJupiter()
+        }
+        integrationTest(JvmTestSuite) {
+            dependencies {
+                implementation project()
+            }
+
+            targets {
+                configureEach {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
     }
+}
+
+tasks.named('check') {
+    dependsOn(testing.suites.integrationTest)
 }
 
 application {
     mainClass = 'com.javafx.mejn.MainApp'
-}
-
-tasks.named('test') {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
-    
-    // Always run tests, even when nothing changed.
-    dependsOn 'cleanTest'
-
-    // Show test results.
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
 }
 
 tasks.register('runGame', JavaExec) {
