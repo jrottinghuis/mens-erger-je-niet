@@ -37,7 +37,7 @@ public abstract class BaseStrategy implements Strategy {
 	 * Parameters to be used for the strategy. Could be empty if so configured in
 	 * the config file.
 	 */
-	protected final List<Integer> parameters = new ArrayList<Integer>();
+	protected final List<Integer> parameters = new ArrayList<>();
 
 	public BaseStrategy(String name, Collection<Integer> parameters) {
 		this.name = name;
@@ -64,7 +64,7 @@ public abstract class BaseStrategy implements Strategy {
 	 * there really isn't anything to choose. In cases when there is something to
 	 * choose, this method will defer to the implementor's
 	 * {@link #multiChoose(List, Supplier) method.
-	 * 
+	 * <p>
 	 * @param choices
 	 * @return null for no choice, return the one choice in that case, or
 	 *         multiChoose() if there are more choices.
@@ -74,11 +74,11 @@ public abstract class BaseStrategy implements Strategy {
 			// This should not happen, we should not get called with null choice;
 			throw new IllegalArgumentException();
 		}
-		if (choices.size() == 0) {
+		if (choices.isEmpty()) {
 			return null;
 		}
 		if (choices.size() == 1) {
-			return choices.get(0);
+			return choices.getFirst();
 		}
 		return multiChoose(choices, stateSupplier);
 	}
@@ -86,8 +86,7 @@ public abstract class BaseStrategy implements Strategy {
 	/**
 	 * Called iff there is more than one choice to make and the implementing class
 	 * defers the {@link #choose(List, Supplier)} method to the
-	 * {@link #autoChoose(List, Supplier) method. <p> If the
-	 * 
+	 * {@link #autoChoose(List, Supplier) method.
 	 * @param choices       Two or more choices to choose from.
 	 * @param stateSupplier to get to the state of the board.
 	 * @return

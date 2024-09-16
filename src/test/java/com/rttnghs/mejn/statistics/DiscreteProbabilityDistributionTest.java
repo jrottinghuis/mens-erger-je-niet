@@ -17,6 +17,7 @@
 package com.rttnghs.mejn.statistics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 class DiscreteProbabilityDistributionTest {
 
-	class TestDiscreteProbabilityDistribution extends DiscreteProbabilityDistribution<String> {
+	static class TestDiscreteProbabilityDistribution extends DiscreteProbabilityDistribution<String> {
 		/**
 		 * @param fixed always picks this fixed number.
 		 */
@@ -38,8 +39,8 @@ class DiscreteProbabilityDistributionTest {
 	final void testRegular() {
 		DiscreteProbabilityDistribution<String> distribution = new DiscreteProbabilityDistribution<>();
 		// Selecting without adding item should always return null;
-		assertEquals(null, distribution.select());
-		assertEquals(null, distribution.select());
+        assertNull(distribution.select());
+        assertNull(distribution.select());
 
 		distribution.add("A", 1);
 		assertEquals("A", distribution.select());

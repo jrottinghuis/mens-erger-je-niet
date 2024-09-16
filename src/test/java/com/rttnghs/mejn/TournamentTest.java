@@ -42,9 +42,9 @@ class TournamentTest {
 		Tournament tournament = new Tournament(new BaseStrategyFactory(),
 				Arrays.asList("FarStrategy", "RandomStrategy", "NearStrategy"), games);
 		EventCounter<String, Integer> tournamentResults = tournament.play();
-		logger.info("History " + games + " games: " + tournamentResults);
+        logger.info("History {} games: {}", games, tournamentResults);
 		Duration interval = Duration.between(start, Instant.now());
-		logger.info("Tournament took " + interval.toMillis() + " millis");
+        logger.info("Tournament took {} millis", interval.toMillis());
 	}
 
 	@Test
@@ -57,7 +57,7 @@ class TournamentTest {
 	final void testGetStrategyNameBrackets() {
 		List<String> strategyNames = Tournament.getStrategyNames();
 		List<List<String>> strategyNameBrackets = Tournament.getStrategyNameBrackets(strategyNames);
-		assertEquals(4, strategyNameBrackets.get(0).size());
+		assertEquals(4, strategyNameBrackets.getFirst().size());
 	}
 
 	@Test

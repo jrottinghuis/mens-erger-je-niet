@@ -54,7 +54,7 @@ class DieTest {
 	@Test
 	public final void testRoll() {
 		Die die = new Die(6);
-		int freq[] = new int[die.faces]; // creating an array to compute frequency of each face
+		int[] freq = new int[die.faces]; // creating an array to compute frequency of each face
 		int val;
 		int chance = 1;
 		int rolls = 100000;
@@ -70,14 +70,14 @@ class DieTest {
 		Instant end = Instant.now();
 		Duration interval = Duration.between(start, end);
 
-		logger.trace("Rolled " + rolls + " times in " + interval.toMillis() + " millis");
+        logger.trace("Rolled {} times in {} millis", rolls, interval.toMillis());
 
 		int sum = 0;
 		for (int i = 1; i <= die.faces; i++) {
 			sum += i * freq[i - 1];
-			logger.trace("Side: " + i + "-> Frequency : " + freq[i - 1]);
+            logger.trace("Side: {}-> Frequency : {}", i, freq[i - 1]);
 		}
-		logger.trace("Average: " + (float) sum / rolls);
+        logger.trace("Average: {}", (float) sum / rolls);
 
 	}
 

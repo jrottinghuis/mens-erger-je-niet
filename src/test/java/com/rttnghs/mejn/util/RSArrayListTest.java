@@ -30,12 +30,12 @@ class RSArrayListTest {
 
 	@Test
 	final void testReversableStreamArrayList() {
-		RSList<Integer> list = new RSArrayList<Integer>(Arrays.asList(4, 2, 3, 5, 6, 1, 8, 9, 10, 11));
+		RSList<Integer> list = new RSArrayList<>(Arrays.asList(4, 2, 3, 5, 6, 1, 8, 9, 10, 11));
 
 		Stream<Integer> stream = list.stream();
 		boolean print = false;
 		if (print) {
-			stream.forEach(p -> System.out.println(p));
+			stream.forEach(System.out::println);
 		}
 
 		stream = list.reverseStream();
@@ -45,7 +45,7 @@ class RSArrayListTest {
 		assertEquals(list, result);
 
 		// Do this again with a different constructor
-		list = new RSArrayList<Integer>();
+		list = new RSArrayList<>();
 		list.addAll(Arrays.asList(4, 2, 3, 5, 6, 1, 8, 9, 10, 11));
 		stream = list.stream();
 		stream = list.reverseStream();
@@ -54,7 +54,7 @@ class RSArrayListTest {
 		assertEquals(list, result);
 
 		// Do this again with a different constructor
-		list = new RSArrayList<Integer>(4);
+		list = new RSArrayList<>(4);
 		list.addAll(Arrays.asList(4, 2, 3, 5, 6, 1, 8, 9, 10, 11));
 		stream = list.stream();
 		stream = list.reverseStream();

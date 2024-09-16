@@ -31,7 +31,7 @@ import com.rttnghs.mejn.configuration.Config;
 /**
  * The board is in charge of keeping track of the board state. It also provides
  * a list of potential moves, and can apply a move. Further, the board
- * determines who next players is.
+ * determines who next player is.
  */
 public class Board {
 
@@ -41,7 +41,7 @@ public class Board {
 	private final int boardSize;
 
 	/**
-	 * List of positions where each respective players begins from or get struck
+	 * List of positions where each respective player begins from or get struck
 	 * back to.
 	 */
 	private final List<Position> beginPositions;
@@ -131,8 +131,6 @@ public class Board {
 	}
 
 	/**
-	 * @param player
-	 * @param spots
 	 * @return non-null, possibly empty list of potential moves
 	 */
 	protected List<Move> getPotentialMoves() {
@@ -175,7 +173,7 @@ public class Board {
 	}
 
 	/**
-	 * @param move from the boards perspective.
+	 * @param move from the board's perspective.
 	 * @return the index of the player that finished the game with this move, or -1
 	 *         otherwise.
 	 */

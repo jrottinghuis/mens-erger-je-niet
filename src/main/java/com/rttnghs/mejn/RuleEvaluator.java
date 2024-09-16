@@ -31,7 +31,7 @@ import com.rttnghs.mejn.configuration.Config;
  */
 public class RuleEvaluator {
 
-	public static boolean isSelfStrikeAllowed = Config.configuration.getBoolean("isSelfStrikeAllowed");
+	public static final boolean isSelfStrikeAllowed = Config.configuration.getBoolean("isSelfStrikeAllowed");
 	private static final Logger logger = LogManager.getLogger(RuleEvaluator.class);
 
 	private final BoardState state;
@@ -106,15 +106,15 @@ public class RuleEvaluator {
 		return switch (move.to().layer()) {
 		case BEGIN -> true; // Any move to begin is legal
 		case EVENT -> isSelfStrikeAllowed || (state.getPlayer(move.from()) != state.getPlayer(move.to()));
-		case HOME -> (state.getPlayer(move.to()) == -1) ? true : false; // If nobody is in the to spot, that is legal.
+		case HOME -> state.getPlayer(move.to()) == -1; // If nobody is in the to spot, that is legal.
 		default -> throw new IllegalArgumentException("Unexpected value: " + move.to().layer());
 		};
 	}
 
 	/**
 	 * @param potentialMoves non-null, possibly empty, normalized list of moves.
-	 * @param roll
-	 * @return
+	 * @param roll what the die showed
+	 * @return a reduced list of moves with any non-optional moves removed.
 	 */
 	public List<Move> evaluate(List<Move> potentialMoves, int roll) {
 		// Eliminate any illegal moves

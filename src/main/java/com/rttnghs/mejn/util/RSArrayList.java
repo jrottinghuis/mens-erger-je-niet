@@ -16,6 +16,7 @@
  */
 package com.rttnghs.mejn.util;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -44,6 +45,7 @@ import org.apache.commons.collections4.iterators.ReverseListIterator;
  */
 public class RSArrayList<E> extends ArrayList<E> implements RSList<E> {
 
+	@Serial
 	private static final long serialVersionUID = 2100071895313519943L;
 
 	/**
@@ -79,7 +81,6 @@ public class RSArrayList<E> extends ArrayList<E> implements RSList<E> {
 	public Stream<E> reverseStream() {
 		ReverseListIterator<E> reverseListIterator = new ReverseListIterator<>(this);
 		Iterable<E> reverseIterable = () -> reverseListIterator;
-		Stream<E> reverseStream = StreamSupport.stream(reverseIterable.spliterator(), false);
-		return reverseStream;
+        return StreamSupport.stream(reverseIterable.spliterator(), false);
 	}
 }

@@ -21,7 +21,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,7 +46,6 @@ public class BaseStrategyFactory implements StrategyFactory {
 		strategyNames = Config.configuration.getList(String.class, "strategies.strategy.name");
 		strategyClasses = Config.configuration.getList(String.class, "strategies.strategy.class");
 		strategyParametersList = Config.configuration.getList(String.class, "strategies.strategy.parameters");
-
 	}
 
 	@Override
@@ -70,21 +68,21 @@ public class BaseStrategyFactory implements StrategyFactory {
 	 *                          argument
 	 * @param strategyClassName Class name for the strategy to be created through
 	 *                          reflection.
-	 * @param strategyParamters if
-	 * @return
+	 * @param strategyParameters if
+	 * @return Strategy loaded from the classpath
 	 */
 	@SuppressWarnings("unchecked")
-	public Strategy getStrategy(String strategyName, String strategyClassName, String strategyParamters) {
+	public Strategy getStrategy(String strategyName, String strategyClassName, String strategyParameters) {
 		try {
 			Class<?> strategyClass = Class.forName(strategyClassName);
 			Constructor<? extends Strategy> cons;
 			Strategy strategy;
-			if ((strategyParamters == null) || (strategyParamters.equals(""))) {
+			if ((strategyParameters == null) || (strategyParameters.isEmpty()) || strategyParameters.equals("null")) {
 				cons = (Constructor<? extends Strategy>) strategyClass.getConstructor(String.class);
 				strategy = cons.newInstance(strategyName);
 			} else {
 				cons = (Constructor<? extends Strategy>) strategyClass.getConstructor(String.class, List.class);
-				List<Integer> parameterList = Stream.of(strategyParamters.split(",", -1)).map(String::trim)
+				List<Integer> parameterList = Stream.of(strategyParameters.split(",", -1)).map(String::trim)
 						.map(Integer::parseInt).collect(Collectors.toList());
 				strategy = cons.newInstance(strategyName, parameterList);
 			}

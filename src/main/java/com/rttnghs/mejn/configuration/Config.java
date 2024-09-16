@@ -32,7 +32,7 @@ public record Config(int dieFaces, int pawnsPerPlayer, int dotsPerPlayer) {
 
 	private static final Logger logger = LogManager.getLogger(Config.class);
 
-	private static String CONFIG_FILENAME = "mejn-config.xml";
+	private static final String CONFIG_FILENAME = "mejn-config.xml";
 	public static Configuration configuration;
 
 	static {
@@ -42,12 +42,12 @@ public record Config(int dieFaces, int pawnsPerPlayer, int dotsPerPlayer) {
 		try {
 			configuration = builder.getConfiguration();
 		} catch (ConfigurationException e) {
-			logger.fatal("Unable to load configuraiton. Due to " + e);
+            logger.fatal("Unable to load configuraiton. Due to {}", String.valueOf(e));
 			throw new RuntimeException("Unable to load configuraiton.", e);
 		}
 	}
 
-	public static Config value = new Config(configuration.getInt("dieFaces"), configuration.getInt("pawnsPerPlayer"),
+	public static final Config value = new Config(configuration.getInt("dieFaces"), configuration.getInt("pawnsPerPlayer"),
 			configuration.getInt("dotsPerPlayer"));
 
 	/**

@@ -19,11 +19,7 @@ package com.rttnghs.mejn;
 import static com.rttnghs.mejn.Layer.BEGIN;
 import static com.rttnghs.mejn.Layer.EVENT;
 import static com.rttnghs.mejn.Layer.HOME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,20 +42,20 @@ class PositionTest {
 	void testEquals() {
 		assertTrue(start.equals(start));
 		assertTrue(otherStart.equals(otherStart));
-		assertTrue(start.equals(otherStart));
-		assertTrue(otherStart.equals(start));
+        assertEquals(start, otherStart);
+        assertEquals(otherStart, start);
 
-		assertFalse(aBegin.equals(start));
-		assertFalse(aBegin.equals(null));
+        assertNotEquals(aBegin, start);
+        assertNotEquals(null, aBegin);
 	}
 
 	@Test
 	void testCompareTo() {
-		assertTrue(start.compareTo(start) == 0);
-		assertTrue(otherStart.compareTo(otherStart) == 0);
+        assertEquals(0, start.compareTo(start));
+        assertEquals(0, otherStart.compareTo(otherStart));
 
-		assertTrue(start.compareTo(otherStart) == 0);
-		assertTrue(otherStart.compareTo(start) == 0);
+        assertEquals(0, start.compareTo(otherStart));
+        assertEquals(0, otherStart.compareTo(start));
 
 		assertTrue(aBegin.compareTo(start) < 0);
 		assertTrue(aBegin.compareTo(three) < 0);
@@ -72,9 +68,9 @@ class PositionTest {
 	@Test
 	void testOf() {
 		Position e0 = new Position(EVENT, 0);
-		assertTrue(e0.equals(Position.of("E0")));
-		assertTrue(Position.of("E0").equals(e0.move(0)));
-		assertTrue(e0.move(8).equals(Position.of("E8")));
+        assertEquals(e0, Position.of("E0"));
+        assertEquals(Position.of("E0"), e0.move(0));
+        assertEquals(e0.move(8), Position.of("E8"));
 
 		assertEquals(e0, Position.of(e0.toString()));
 		assertEquals(new Position(BEGIN, 1), Position.of("B1"));
@@ -93,32 +89,32 @@ class PositionTest {
 	@Test
 	void testNormalize() {
 		// Positions with positive spots map to themselves
-		assertTrue(start.equals(start.normalize(40)));
-		assertTrue(start.equals(start.normalize(48)));
-		assertTrue(three.equals(three.normalize(40)));
-		assertTrue(three.equals(three.normalize(48)));
-		assertTrue(forty.equals(forty.normalize(48)));
+        assertEquals(start, start.normalize(40));
+        assertEquals(start, start.normalize(48));
+        assertEquals(three, three.normalize(40));
+        assertEquals(three, three.normalize(48));
+        assertEquals(forty, forty.normalize(48));
 
 		// Positions with negative positions do not map to themselves
-		assertFalse(aBegin.equals(aBegin.normalize(40)));
-		assertFalse(aBegin.equals(aBegin.normalize(48)));
+        assertNotEquals(aBegin, aBegin.normalize(40));
+        assertNotEquals(aBegin, aBegin.normalize(48));
 
 		// wrapped is not equal to itself
-		assertFalse(forty.equals(forty.normalize(40)));
+        assertNotEquals(forty, forty.normalize(40));
 
 		// Forty wraps to start in a 40 board.
-		assertTrue(forty.normalize(40).equals(start));
-		assertTrue(start.equals(forty.normalize(40)));
+        assertEquals(forty.normalize(40), start);
+        assertEquals(start, forty.normalize(40));
 
 		// Double-normalized is equal to itself.
-		assertTrue(forty.normalize(40).equals(forty.normalize(40)));
+        assertEquals(forty.normalize(40), forty.normalize(40));
 
 		// Positions are identical to themselves (same object) if not wrapped
-		assertTrue(start == (start.normalize(40)));
-		assertTrue(three == (three.normalize(40)));
+        assertSame(start, (start.normalize(40)));
+        assertSame(three, (three.normalize(40)));
 
 		// Confirm wrapping with of methods.
-		assertTrue(new Position(EVENT, 37).move(5).equals(Position.of("E42")));
+        assertEquals(new Position(EVENT, 37).move(5), Position.of("E42"));
 	}
 
 	@Test
@@ -172,9 +168,9 @@ class PositionTest {
 
 		assertEquals(EVENT, BEGIN.next());
 
-		assertThrows(IllegalStateException.class, () -> h1.nextLayer());
-		assertThrows(IllegalStateException.class, () -> h11.nextLayer());
-		assertThrows(IllegalStateException.class, () -> h13.nextLayer());
+		assertThrows(IllegalStateException.class, h1::nextLayer);
+		assertThrows(IllegalStateException.class, h11::nextLayer);
+		assertThrows(IllegalStateException.class, h13::nextLayer);
 	}
 
 }

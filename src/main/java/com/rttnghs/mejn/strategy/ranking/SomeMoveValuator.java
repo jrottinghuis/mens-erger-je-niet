@@ -155,9 +155,8 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 	@Override
 	public Integer valuate(Move move, Supplier<BoardState> stateSupplier) {
 		// Add them all up.
-		Integer value = valuateSelfStrike(move, stateSupplier) + valuateHome(move, stateSupplier)
-				+ valueateSpot(move, stateSupplier);
-		return value;
+        return valuateSelfStrike(move, stateSupplier) + valuateHome(move, stateSupplier)
+                + valueateSpot(move, stateSupplier);
 	}
 
 }

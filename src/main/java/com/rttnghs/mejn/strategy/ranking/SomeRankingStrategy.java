@@ -30,10 +30,9 @@ public class SomeRankingStrategy extends RankingStrategy {
 	private static final Logger logger = LogManager.getLogger(SomeRankingStrategy.class);
 
 	public SomeRankingStrategy(String name, List<Integer> parameters) {
-		///SomeMoveValuator moveValuator = new SomeMoveValuator(parameters);
 		// Pass a reference to the valuate method, which takes a move and a board state supplier and returns an integer.
 		super(new SomeMoveValuator(parameters), name, parameters);
-		logger.debug("New " + SomeRankingStrategy.class.getSimpleName());
+        logger.debug("New {}", SomeRankingStrategy.class.getSimpleName());
 	}
 
 	@Override

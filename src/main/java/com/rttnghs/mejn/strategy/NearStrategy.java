@@ -45,7 +45,7 @@ public class NearStrategy extends BaseStrategy implements Strategy {
 
 	@Override
 	public Move multiChoose(List<Move> choices, Supplier<BoardState> stateSupplier) {
-		return choices.get(0);
+		return choices.getFirst();
 	}
 
 	@Override

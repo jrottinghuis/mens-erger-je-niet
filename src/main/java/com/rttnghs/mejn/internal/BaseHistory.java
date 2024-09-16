@@ -115,7 +115,7 @@ public class BaseHistory<E> implements HistorySupplier<E>, History<E> {
 	@Override
 	public Supplier<History<E>> getSupplier(UnaryOperator<E> operator) {
 		BaseHistory<E> wrapped = this;
-		History<E> history = new History<E>() {
+		History<E> history = new History<>() {
 
 			@Override
 			public int size() {
@@ -134,7 +134,7 @@ public class BaseHistory<E> implements HistorySupplier<E>, History<E> {
 
 			@Override
 			public String toString() {
-				return this.stream().collect(Collectors.toList()).toString();
+				return this.stream().toList().toString();
 			}
 		};
 		return () -> history;
