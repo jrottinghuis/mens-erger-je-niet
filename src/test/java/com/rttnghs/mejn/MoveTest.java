@@ -156,11 +156,17 @@ class MoveTest {
 		Move move = new Move(e0, e3);
 		Move shifted = move.shift(-10, 40);
 		assertEquals(move, shifted.shift(10, 40));
-
 		Position e30 = new Position(EVENT, 30);
 		Position e33 = new Position(EVENT, 33);
 		Move expected = new Move(e30, e33);
 		assertEquals(expected, shifted);
+
+		shifted = move.shift(7, 40);
+		assertEquals(move, shifted.shift(-7, 40));
+
+		move = new Move(b34, e0);
+		shifted = move.shift(-5, 40);
+		assertEquals(move, shifted.shift(5, 40));
 
 		move = new Move(b34, e0);
 		shifted = move.shift(-10, 40);
