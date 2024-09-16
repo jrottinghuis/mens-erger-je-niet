@@ -31,7 +31,7 @@ public abstract class BaseMoveEvaluator implements BiFunction<Move, Supplier<Boa
 	 * Parameters to be used for the strategy. Could be empty if so configured in
 	 * the config file.
 	 */
-	protected final List<Integer> parameters = new ArrayList<Integer>();
+	protected final List<Integer> parameters = new ArrayList<>();
 
 	public BaseMoveEvaluator(Collection<Integer> parameters) {
 		if (parameters != null) {

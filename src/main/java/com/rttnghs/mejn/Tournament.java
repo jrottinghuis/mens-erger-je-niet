@@ -57,7 +57,7 @@ public class Tournament {
 	}
 
 	public EventCounter<String, Integer> play() {
-		logger.info("Starting " + games + " games: " + Config.value + " Strategies: " + strategyNames);
+        logger.info("Starting {} games: {} Strategies: {}", games, Config.value, strategyNames);
 		for (int i = 0; i < games; i++) {
 			Game game = new Game(strategyFactory, strategyNames);
 			EventCounter<String, Integer> gameFinishCounts = game.play();
@@ -69,9 +69,8 @@ public class Tournament {
 
 	public static List<String> getStrategyNames() {
 		String bracketStrategyNamesAttribute = Config.configuration.getString("brackets[@strategies]");
-		List<String> bracketStrategyNames = new ArrayList<>(
-				Arrays.asList(bracketStrategyNamesAttribute.split(",", -1)));
-		return bracketStrategyNames;
+        return new ArrayList<>(
+                Arrays.asList(bracketStrategyNamesAttribute.split(",", -1)));
 	}
 
 	/**
@@ -92,7 +91,7 @@ public class Tournament {
 
 		// Function that takes an index (from the bracket) and does a lookup in the list
 		// of bracketStrategyNames
-		Function<Integer, String> bracketStrategyNameMapper = index -> bracketStrategyNames.get(index);
+		Function<Integer, String> bracketStrategyNameMapper = bracketStrategyNames::get;
 
 		for (String bracketString : bracketConfigurations) {
 			List<String> bracketList = Stream.of(bracketString.split(",", -1)).map(String::trim).map(Integer::parseInt)
@@ -116,16 +115,16 @@ public class Tournament {
 		for (List<String> strategyNameBracket : strategyNameBrackets) {
 			Tournament tournament = new Tournament(new BaseStrategyFactory(), strategyNameBracket,
 					Config.configuration.getInt("games"));
-			CompletableFuture<EventCounter<String, Integer>> future = CompletableFuture
-					.supplyAsync(() -> tournament.play());
-			futures.add(future);
+			CompletableFuture<EventCounter<String, Integer>> future;
+            future = CompletableFuture.supplyAsync(tournament::play);
+            futures.add(future);
 		}
 
 		for (CompletableFuture<EventCounter<String, Integer>> completableFuture : futures) {
 			finishCounts.add(completableFuture.get());
 		}
 		// Assume all brackets have the same number of players.
-		int playerCount = strategyNameBrackets.get(0).size();
+		int playerCount = strategyNameBrackets.getFirst().size();
 		Function<Integer, Integer> scorer = (finishPosition) -> Score.get(finishPosition, playerCount);
 		// Multiply by 100, to keep a reasonable resolution when dividing by games
 		// as the smallest score for each game is 1, and we don't want to loose too much
@@ -137,7 +136,7 @@ public class Tournament {
 		Duration interval = Duration.between(start, Instant.now());
 		logger.info(finishCounts);
 		logger.info(scores);
-		logger.info("Tournament took " + interval.toMillis() + " millis");
+        logger.info("Tournament took {} millis", interval.toMillis());
 	}
 
 }

@@ -88,7 +88,7 @@ public class DiscreteProbabilityDistribution<E> {
 	 *         Will return null if nothing has been added to this frequency
 	 */
 	public E select() {
-		if (frequencyIndex.size() == 0) {
+		if (frequencyIndex.isEmpty()) {
 			return null;
 		}
 		int pick = (externalRandomIntSupplier == null) ? randomIntSupplier.getAsInt()

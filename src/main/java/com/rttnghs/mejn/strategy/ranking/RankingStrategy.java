@@ -65,7 +65,7 @@ public abstract class RankingStrategy extends BaseStrategy implements Strategy {
 		for (Move move : choices) {
 			rankedMoves.put(moveEvaluator.apply(move, stateSupplier), move);
 		}
-		logger.debug("rankedMoves:" + rankedMoves);
+        logger.debug("rankedMoves:{}", rankedMoves);
 		return rankedMoves.get(rankedMoves.lastKey());
 	}
 

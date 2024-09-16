@@ -83,7 +83,7 @@ class EventCounterTest {
 
 		// eventCounter3={actorTwo={2=4}, actorOne={1=2}}
 
-		eventCounter3.add("actorThree", 3l, 5);
+		eventCounter3.add("actorThree", 3L, 5);
 
 		// eventCounter3={actorThree={3=5}, actorTwo={2=4}, actorOne={1=2}}
 	}
@@ -189,14 +189,14 @@ class EventCounterTest {
 		EventCounter<String, Number> eventCounter3 = new EventCounter<>();
 		eventCounter3.add(eventCounter).add(eventCounter2);
 
-		eventCounter3.add("actorThree", 3l, 3);
+		eventCounter3.add("actorThree", 3L, 3);
 
 		System.out.println(eventCounter3);
 		
 		
 		// eventCounter3={actorOne={1=1}, actorThree={3=3}, actorTwo={2=2}}
 
-		Map<String, Integer> scores = EventCounter.getNormalizedScores(eventCounter3, (number) -> number.intValue(), 1);
+		Map<String, Integer> scores = EventCounter.getNormalizedScores(eventCounter3, Number::intValue, 1);
 		assertEquals(1, scores.get("actorOne"));
 		assertEquals(2, scores.get("actorTwo"));
 		assertEquals(3, scores.get("actorThree"));

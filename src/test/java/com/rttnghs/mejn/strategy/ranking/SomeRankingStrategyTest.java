@@ -38,7 +38,7 @@ class SomeRankingStrategyTest {
 	 * Some extra plumbing to make use of the static {@link #of(String) method in
 	 * TestBoardState} that is meant only for test cases.
 	 */
-	class MyTestBoardState extends TestBoardState {
+    static class MyTestBoardState extends TestBoardState {
 		static BoardState myOf(String boardStateString) {
 			return of(boardStateString);
 		}

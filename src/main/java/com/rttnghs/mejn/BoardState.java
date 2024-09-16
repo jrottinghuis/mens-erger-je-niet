@@ -18,10 +18,7 @@ package com.rttnghs.mejn;
 
 import static com.rttnghs.mejn.Layer.HOME;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -54,7 +51,7 @@ public class BoardState {
 	 *                       number of players. Cannot be null;
 	 */
 	public BoardState(int boardSize, int pawnsPerPlayer, List<Position> beginPositions) {
-		if ((beginPositions == null) || beginPositions.size() < 1 || pawnsPerPlayer < 1) {
+		if ((beginPositions == null) || beginPositions.isEmpty() || pawnsPerPlayer < 1) {
 			throw new IllegalStateException(
 					"Cannot create BoardState with empty/null beginpositions or < 1 pawns per player");
 		}
@@ -62,7 +59,7 @@ public class BoardState {
 		List<List<Position>> newState = new ArrayList<>(beginPositions.size());
 		// Iterate over player begin positions and expand them to the pawnsPerPlayer
 		for (int i = 0; i < beginPositions.size(); i++) {
-			ArrayList<Position> playerState = new ArrayList<Position>(pawnsPerPlayer);
+			ArrayList<Position> playerState = new ArrayList<>(pawnsPerPlayer);
 			for (int j = 0; j < pawnsPerPlayer; j++) {
 				playerState.add(j, beginPositions.get(i));
 			}
@@ -80,11 +77,11 @@ public class BoardState {
 	protected BoardState(int boardSize, List<List<Position>> otherState) {
 		this.boardSize = boardSize;
 		List<List<Position>> newStateCopy = new ArrayList<>(otherState.size());
-		for (int i = 0; i < otherState.size(); i++) {
-			List<Position> playerState = new ArrayList<>(otherState.get(i));
-			playerState.sort(Position::compareTo);
-			newStateCopy.add(Collections.unmodifiableList(playerState));
-		}
+        for (List<Position> positions : otherState) {
+            List<Position> playerState = new ArrayList<>(positions);
+            playerState.sort(Position::compareTo);
+            newStateCopy.add(Collections.unmodifiableList(playerState));
+        }
 		this.state = Collections.unmodifiableList(newStateCopy);
 	}
 
@@ -99,7 +96,7 @@ public class BoardState {
 	 * @return the pawnsPerPlayer
 	 */
 	public int getPawnsPerPlayer() {
-		return state.get(0).size();
+		return state.getFirst().size();
 	}
 
 	/**
@@ -165,10 +162,10 @@ public class BoardState {
 	@Override
 	public String toString() {
 		StringBuilder str = new StringBuilder();
-		str.append("(" + boardSize + ")[");
+		str.append("(").append(boardSize).append(")[");
 
 		for (int i = 0; i < state.size(); i++) {
-			str.append("P" + i + "={");
+			str.append("P").append(i).append("={");
 			List<Position> playerState = state.get(i);
 			for (int j = 0; j < playerState.size(); j++) {
 				str.append(playerState.get(j));
@@ -225,19 +222,7 @@ public class BoardState {
 			return this;
 		}
 		List<Position> oldPlayerState = state.get(player);
-		List<Position> newPlayerState = new ArrayList<>(oldPlayerState.size());
-		// Count backwards, and replace the first match on move.from(). This is useful
-		// to replace only one move from BEGIN layer, and keep list sorted.
-		int replacedIndex = -1;
-		for (int i = oldPlayerState.size() - 1; i >= 0; i--) {
-			Position oldPosition = oldPlayerState.get(i);
-			if ((replacedIndex < 0) && oldPosition.equals(move.from())) {
-				newPlayerState.add(move.to());
-				replacedIndex = i;
-			} else {
-				newPlayerState.add(oldPosition);
-			}
-		}
+		List<Position> newPlayerState = getPositions(move, oldPlayerState);
 		// Determine if the newPlayerState is in order, most of the time it will be
 		// Note that this seems some unnecessarily complicated logic.
 		// The initial version of this method was more straightforward, but performance
@@ -252,7 +237,7 @@ public class BoardState {
 			}
 		}
 		if (outOfOrder) {
-			newPlayerState.sort((p1, p2) -> p1.compareTo(p2));
+			newPlayerState.sort(Comparator.naturalOrder());
 		}
 
 		List<List<Position>> newState = new ArrayList<>(state.size());
@@ -265,6 +250,23 @@ public class BoardState {
 			}
 		}
 		return new BoardState(boardSize, newState);
+	}
+
+	private static List<Position> getPositions(Move move, List<Position> oldPlayerState) {
+		List<Position> newPlayerState = new ArrayList<>(oldPlayerState.size());
+		// Count backwards, and replace the first match on move.from(). This is useful
+		// to replace only one move from BEGIN layer, and keep list sorted.
+		int replacedIndex = -1;
+		for (int i = oldPlayerState.size() - 1; i >= 0; i--) {
+			Position oldPosition = oldPlayerState.get(i);
+			if ((replacedIndex < 0) && oldPosition.equals(move.from())) {
+				newPlayerState.add(move.to());
+				replacedIndex = i;
+			} else {
+				newPlayerState.add(oldPosition);
+			}
+		}
+		return newPlayerState;
 	}
 
 	/**
@@ -301,7 +303,7 @@ public class BoardState {
 	 */
 	public boolean isFinished(int player) {
 		// Assuming all players have the same # pawns.
-		int pawnsPerPlayer = state.get(0).size();
+		int pawnsPerPlayer = state.getFirst().size();
 		for (int i = 0; i < pawnsPerPlayer; i++) {
 			if (getPosition(player, i).layer() != HOME) {
 				return false;

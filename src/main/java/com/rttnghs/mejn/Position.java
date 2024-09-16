@@ -47,7 +47,7 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
 		try {
 			spot = Integer.valueOf(position.substring(1));
 		} catch (NumberFormatException nfe) {
-			logger.debug("Not a valid number in " + position);
+            logger.debug("Not a valid number in {}", position);
 			return null;
 		}
 		return new Position(layer, spot);
@@ -110,11 +110,8 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
 		if (this.compareTo(min) <= 0) {
 			return false;
 		}
-		if (this.compareTo(max) > 0) {
-			return false;
-		}
-		return true;
-	}
+        return this.compareTo(max) <= 0;
+    }
 
 	@Override
 	public String toString() {

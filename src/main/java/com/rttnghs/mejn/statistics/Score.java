@@ -53,7 +53,7 @@ public class Score {
 		}
 
 		// Make sure we don't count back more than the size of SCORES
-		int offset = (playerCount <= SCORES.size()) ? playerCount : SCORES.size();
+		int offset = Math.min(playerCount, SCORES.size());
 		// Count offset back from the end of SCORES, then add the finishOrder.
 		int scoreIndex = SCORES.size() - offset + finishOrderIndex;
 		return (scoreIndex >= 0 && scoreIndex < SCORES.size()) ? SCORES.get(scoreIndex) : 0;

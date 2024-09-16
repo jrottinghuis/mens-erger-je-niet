@@ -43,7 +43,7 @@ public class TestBoardState extends BoardState {
 		int boardSize = Integer.valueOf(matcher.group(1));
 		List<String> playerStates = Arrays.asList(matcher.group(2).split(";"));
 
-		ArrayList<List<Position>> newState = new ArrayList<List<Position>>(playerStates.size());
+		ArrayList<List<Position>> newState = new ArrayList<>(playerStates.size());
 
 		Pattern playerStatePattern = Pattern.compile("P(\\d+)=\\{(.*)\\}");
 		Matcher playterStateMatcher = null;
@@ -56,8 +56,8 @@ public class TestBoardState extends BoardState {
 
 			playterStateMatcher.matches();
 
-			int playerIndex = Integer.valueOf(playterStateMatcher.group(1));
-			List<String> positionStrings = Arrays.asList(playterStateMatcher.group(2).split(","));
+			int playerIndex = Integer.parseInt(playterStateMatcher.group(1));
+			String[] positionStrings = playterStateMatcher.group(2).split(",");
 			for (String positionString : positionStrings) {
 				playerState.add(Position.of(positionString));
 			}

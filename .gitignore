@@ -26,7 +26,6 @@ out/
 ## Eclipse
 ##############################
 .settings/
-bin/
 tmp/
 .metadata
 .classpath

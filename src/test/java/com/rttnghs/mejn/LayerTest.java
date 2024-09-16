@@ -48,7 +48,7 @@ class LayerTest {
 	void testNext() {
 		assertEquals(EVENT, BEGIN.next());
 		assertEquals(HOME, EVENT.next());
-		assertThrows(IllegalStateException.class, () -> HOME.next());
+		assertThrows(IllegalStateException.class, HOME::next);
 	}
 
 	@Test

@@ -5,17 +5,17 @@
 		<strategy>
 			<name>RandomStrategy</name>
 			<class>com.rttnghs.mejn.strategy.RandomStrategy</class>
-			<parameters />
+			<parameters>null</parameters>
 		</strategy>
 		<strategy>
 			<name>FarStrategy</name>
 			<class>com.rttnghs.mejn.strategy.FarStrategy</class>
-			<parameters />
+			<parameters>null</parameters>
 		</strategy>
 		<strategy>
 			<name>NearStrategy</name>
 			<class>com.rttnghs.mejn.strategy.NearStrategy</class>
-			<parameters />
+			<parameters>null</parameters>
 		</strategy>
 		<strategy>
 			<name>RankingStrategy</name>

@@ -16,7 +16,7 @@
  */
 package com.rttnghs.mejn;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -40,12 +40,12 @@ class GameTest {
 		Game game = new Game(new BaseStrategyFactory(), Arrays.asList("RandomStrategy", "RankingStrategy"));
 
 		EventCounter<String, Integer> results = game.play();
-		assertTrue(results.getEvents("RandomStrategy").size() > 0);
-		assertTrue(results.getEvents("RankingStrategy").size() > 0);
+		assertFalse(results.getEvents("RandomStrategy").isEmpty());
+		assertFalse(results.getEvents("RankingStrategy").isEmpty());
 
 		Instant end = Instant.now();
 		Duration interval = Duration.between(start, end);
-		logger.info("Game took " + interval.toMillis() + " millis");
+        logger.info("Game took {} millis", interval.toMillis());
 	}
 
 	@Test
@@ -56,11 +56,11 @@ class GameTest {
 				Arrays.asList("FarStrategy", "RandomStrategy", "NearStrategy"));
 
 		EventCounter<String, Integer> results = game.play();
-		assertTrue(results.getEvents("RandomStrategy").size() > 0);
+        assertFalse(results.getEvents("RandomStrategy").isEmpty());
 
 		Instant end = Instant.now();
 		Duration interval = Duration.between(start, end);
-		logger.info("Game took " + interval.toMillis() + " millis");
+		logger.info("Game took {} millis", interval.toMillis());
 	}
 
 	@Test

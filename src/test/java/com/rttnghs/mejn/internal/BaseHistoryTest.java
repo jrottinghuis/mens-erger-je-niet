@@ -35,7 +35,7 @@ class BaseHistoryTest {
 
 	@Test
 	final void testSize() {
-		BaseHistory<String> history = new BaseHistory<String>(Arrays.asList("A", "B", "C"));
+		BaseHistory<String> history = new BaseHistory<>(Arrays.asList("A", "B", "C"));
 		assertEquals(3, history.size());
 		history.add("D");
 		assertTrue(history.add("E"));
@@ -45,7 +45,7 @@ class BaseHistoryTest {
 
 	@Test
 	final void testStream() {
-		BaseHistory<String> history = new BaseHistory<String>(Arrays.asList("A", "B", "C"));
+		BaseHistory<String> history = new BaseHistory<>(Arrays.asList("A", "B", "C"));
 		history.add("D");
 		history.add("E");
 
@@ -56,7 +56,7 @@ class BaseHistoryTest {
 
 	@Test
 	final void testReverseStream() {
-		BaseHistory<Integer> history = new BaseHistory<Integer>();
+		BaseHistory<Integer> history = new BaseHistory<>();
 		history.addAll(Arrays.asList(1, 2, 3, 4));
 		history.add(5);
 
@@ -67,7 +67,7 @@ class BaseHistoryTest {
 
 	@Test
 	final void testGetSupplier() {
-		BaseHistory<Integer> history = new BaseHistory<Integer>();
+		BaseHistory<Integer> history = new BaseHistory<>();
 		history.addAll(Arrays.asList(1, 2, 3, 4));
 		history.add(5);
 
@@ -92,7 +92,7 @@ class BaseHistoryTest {
 
 	@Test
 	final void testToString() {
-		BaseHistory<Integer> history = new BaseHistory<Integer>();
+		BaseHistory<Integer> history = new BaseHistory<>();
 		history.addAll(Arrays.asList(2, 4, 6, 8));
 		history.add(17);
 		assertEquals("[2, 4, 6, 8, 17]", history.toString());

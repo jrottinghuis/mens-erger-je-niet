@@ -62,18 +62,16 @@ public record Move(Position from, Position to) implements Comparable<Move> {
 		return new Move(from, to);
 	}
 
-	/**
-	 * @param from position
-	 * @param to   position
-	 * @throws IllegalArgumentException if either argument is null
-	 */
-	public Move(Position from, Position to) {
-		if ((from == null) || (to == null)) {
-			throw new IllegalArgumentException("Cannote create a move with a null Position");
-		}
-		this.from = from;
-		this.to = to;
-	}
+    /**
+     * @param from position
+     * @param to   position
+     * @throws IllegalArgumentException if either argument is null
+     */
+    public Move {
+        if ((from == null) || (to == null)) {
+            throw new IllegalArgumentException("Cannote create a move with a null Position");
+        }
+    }
 
 	@Override
 	public int compareTo(Move that) {

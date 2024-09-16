@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
-import java.util.stream.Collectors;
 
 import com.rttnghs.mejn.Die;
 import com.rttnghs.mejn.configuration.Config;
@@ -36,7 +35,7 @@ import com.rttnghs.mejn.configuration.Config;
 public class Individual {
 
 	// TODO: read this from a config
-	public static int maxValue = Config.configuration.getInt("individualVariableMax");
+	public static final int maxValue = Config.configuration.getInt("individualVariableMax");
 	private final ArrayList<Integer> vector;
 
 	/**
@@ -52,7 +51,7 @@ public class Individual {
 	// How many generations this individual has survived.
 	private int generation = 0;
 
-	private Map<Individual, Integer> scoreCache = new WeakHashMap<>();
+	private final Map<Individual, Integer> scoreCache = new WeakHashMap<>();
 
 	/**
 	 * Create a new individual with given dimension
@@ -72,7 +71,7 @@ public class Individual {
 			int randomInRange = (die.roll() - (maxValue + 1));
 			vector.add(i, randomInRange);
 		}
-		name = vector.stream().collect(Collectors.toList()).toString();
+		name = vector.stream().toList().toString();
 	}
 
 	/**
@@ -83,7 +82,7 @@ public class Individual {
 	 */
 	private Individual(List<Integer> vector) {
 		this.vector = new ArrayList<>(vector);
-		name = vector.stream().collect(Collectors.toList()).toString();
+		name = vector.stream().toList().toString();
 	}
 
 	/**
@@ -220,10 +219,9 @@ public class Individual {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof Individual)) {
+		if (!(obj instanceof Individual other)) {
 			return false;
 		}
-		Individual other = (Individual) obj;
-		return Objects.equals(name, other.name);
+        return Objects.equals(name, other.name);
 	}
 }

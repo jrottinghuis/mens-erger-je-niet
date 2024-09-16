@@ -239,7 +239,7 @@ class BoardStateTest {
 
 		assertThrows(UnsupportedOperationException.class, () -> positions.add(new Position(HOME, 0)));
 
-		assertThrows(UnsupportedOperationException.class, () -> positions.add(0, new Position(HOME, 0)));
+		assertThrows(UnsupportedOperationException.class, () -> positions.addFirst(new Position(HOME, 0)));
 	}
 
 	@Test

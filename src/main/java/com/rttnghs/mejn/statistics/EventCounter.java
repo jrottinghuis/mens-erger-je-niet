@@ -114,7 +114,7 @@ public class EventCounter<A, E> {
 	 */
 	public EventCounter<A, E> add(EventCounter<? extends A, ? extends E> other) {
 		if (other != null) {
-			other.actorEventCounts.forEach((actor, otherEventCounts) -> this.add(actor, otherEventCounts));
+			other.actorEventCounts.forEach(this::add);
 		}
 		return this;
 	}
@@ -134,9 +134,8 @@ public class EventCounter<A, E> {
 	 * Returns an unmodifiable Set containing the events for the given actor of this
 	 * EventCounter. If the EventCounter is subsequently modified, the returned Set
 	 * will not reflect such modifications.
-	 * 
-	 * * @param actor for whom to return the events
-	 * 
+	 * </p>
+	 * @param actor for whom to return the events
 	 * @return A set of current actors of this EventCounter
 	 */
 

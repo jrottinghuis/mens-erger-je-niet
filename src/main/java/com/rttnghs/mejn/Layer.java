@@ -19,7 +19,7 @@ package com.rttnghs.mejn;
 /**
  * Dividing a board up in layers helps keeping the normal numbering and avoiding
  * other players being able to strike your pawns in the lower or upper layers.
- * 
+ * <p>
  * In terms of naming, the lowest (bottom) layer seems to make sense to call
  * BEGIN as that is where the pawns begin from. After rolling 6 (or the number
  * of die faces if that is configured differently) you are allowed to go to the
@@ -48,14 +48,11 @@ public enum Layer {
 	}
 
 	public Layer next() {
-		switch (this) {
-		case BEGIN:
-			return EVENT;
-		case EVENT:
-			return HOME;
-		default:
-			throw new IllegalStateException("No layer after home.");
-		}
+        return switch (this) {
+            case BEGIN -> EVENT;
+            case EVENT -> HOME;
+            default -> throw new IllegalStateException("No layer after home.");
+        };
 	}
 
 	/**

@@ -32,7 +32,7 @@ public class Population {
 	// TODO: round up to the next power of two.
 	// Should be a power of two
 	private final int populationSize = 64;
-	List<Individual> population = new ArrayList<>(populationSize);
+	private final List<Individual> population = new ArrayList<>(populationSize);
 
 	private final int halfPopulationSize = populationSize / 2;
 
@@ -75,7 +75,7 @@ public class Population {
 			mutate();
 
 		}
-		return population.get(0).getVector();
+		return population.getFirst().getVector();
 	}
 
 	private void compete() {
@@ -118,7 +118,7 @@ public class Population {
 	}
 
 	private void mutate() {
-		Individual bestIndividual = population.get(0);
+		Individual bestIndividual = population.getFirst();
 		// Walk through the first half of the population, find
 		for (int i = 0; i < halfPopulationSize; i++) {
 			Individual random1 = selectRandomIndividual(population.get(i), bestIndividual);
@@ -150,13 +150,13 @@ public class Population {
 		while (selected == null) {
 			selected = population.get(populationDie.roll() - 1);
 			// Check if the selected individual is in the excluded list
-			for (int i = 0; i < excluded.length; i++) {
-				if (selected == excluded[i]) {
-					// Discard this individual
-					selected = null;
-					break; // for loop
-				}
-			}
+            for (Individual individual : excluded) {
+                if (selected == individual) {
+                    // Discard this individual
+                    selected = null;
+                    break; // for loop
+                }
+            }
 		}
 		return selected;
 	}

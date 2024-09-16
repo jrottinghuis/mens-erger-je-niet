@@ -41,7 +41,7 @@ public class FarStrategy extends BaseStrategy implements Strategy {
 
 	@Override
 	public Move multiChoose(List<Move> choices, Supplier<BoardState> stateSupplier) {
-		return choices.get(choices.size()-1);
+		return choices.getLast();
 	}
 
 	@Override
