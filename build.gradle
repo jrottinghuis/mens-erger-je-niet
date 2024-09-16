@@ -21,6 +21,8 @@
     id 'java'
     id 'eclipse'
     id 'idea'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'application'
 }
 
 group = 'com.rttnghs'
@@ -29,6 +31,12 @@ version = '0.0.2-SNAPSHOT'
 java {
     sourceCompatibility = JavaVersion.VERSION_22
 }
+
+javafx {
+    version = '22'
+    modules = [ 'javafx.controls', 'javafx.graphics' ]
+}
+
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
@@ -57,6 +65,16 @@ dependencies {
     implementation 'com.google.guava:guava:33.3.0-jre'
 }
 
+sourceSets {
+    test {
+        java.srcDirs += ['src/main/java']
+    }
+}
+
+application {
+    mainClass = 'com.javafx.mejn.MainApp'
+}
+
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
@@ -67,11 +85,6 @@ tasks.named('test') {
     // Show test results.
     testLogging {
         events "passed", "skipped", "failed"
-    }
-}
-sourceSets {
-    test {
-        java.srcDirs += ['src/main/java']
     }
 }
 
@@ -104,5 +117,13 @@ tasks.register('runConfig', JavaExec) {
 
 }
 
+tasks.register('runGui', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+
+    mainClass = 'com.javafx.mejn.MainApp'
+
+    // arguments to pass to the application
+    args 'appArg1'
+}
 
 
