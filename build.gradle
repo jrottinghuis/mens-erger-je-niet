@@ -125,13 +125,4 @@ tasks.register('runConfig', JavaExec) {
 
 }
 
-tasks.register('runGui', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.javafx.mejn.MainApp'
-
-    // arguments to pass to the application
-    args 'appArg1'
-}
-
 
