@@ -1,29 +1,25 @@
 package com.javafx.mejn;
 
+import com.rttnghs.mejn.Tournament;
 import javafx.application.Application;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MainApp extends Application {
+
+    private static final Logger logger = LogManager.getLogger(MainApp.class);
 
     private final TextArea consoleTextArea = new TextArea();
 
     /**
-     * @param primaryStage
-     * @throws Exception
+     * @param primaryStage the primary stage for the application
+     * @throws Exception when things go south
      */
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -32,29 +28,7 @@ public class MainApp extends Application {
         // // Add a menubar, a status bar, and a toolbar
         MenuBar menuBar = createMenuBar(primaryStage);
 
-
-        Button btn = new Button();
-        btn.setText("Say 'Hello World'");
-        btn.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                System.out.println("Hello World!");
-            }
-        });
-
-
-        TabPane tabPane = new TabPane();
-        Tab tab1 = new Tab("Board", new Label("Show all planes available"));
-        tab1.setClosable(false);
-
-        Tab tab2 = getConsoleTab();
-        tab2.setClosable(false);
-
-        tabPane.getTabs().add(tab1);
-        tabPane.getTabs().add(tab2);
-
-        AnchorPane anchorPane = new AnchorPane();
-        AnchorPane.setTopAnchor(menuBar, 0.0);
+        TabPane tabPane = createTabPane();
 
         VBox vBox = new VBox(menuBar, tabPane);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
@@ -65,10 +39,41 @@ public class MainApp extends Application {
 
     }
 
+    private TabPane createTabPane() {
+
+        // TODO: Remove this when the game is implemented.
+        Button btn1 = new Button();
+        btn1.setText("Say 'Hello World'");
+        btn1.setOnAction(event -> logger.error("Throw the Hello World Error message."));
+
+        Button btn2 = new Button();
+        btn2.setText("Play Tournament");
+        btn2.setOnAction(event -> logger.error("Throw the Play Tournament looooooooooong message."));
+
+        VBox buttonvBox = new VBox(btn1, btn2);
+
+        TabPane tabPane = new TabPane();
+        Tab tab1 = new Tab("Board", buttonvBox);
+        tab1.setClosable(false);
+
+        Tab tab2 = getConsoleTab();
+        tab2.setClosable(false);
+        tab2.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue && !oldValue) {
+                consoleTextArea.setScrollTop(Double.MAX_VALUE);
+            }
+        });
+
+        tabPane.getTabs().add(tab1);
+        tabPane.getTabs().add(tab2);
+        return tabPane;
+    }
+
     private Tab getConsoleTab() {
-        consoleTextArea.setWrapText(true);
+        consoleTextArea.setWrapText(false);
         consoleTextArea.setEditable(false);
-        consoleTextArea.setText("Enable console through the menu.");
+        consoleTextArea.setText("Enable console through the menu.\n");
+        consoleTextArea.setScrollTop(Double.MAX_VALUE);
 
         AnchorPane consoleAnchorPane = new AnchorPane();
         AnchorPane.setTopAnchor(consoleTextArea, 5.0);
@@ -96,6 +101,8 @@ public class MainApp extends Application {
         CheckMenuItem enqbleConfoleCheckMenuItem = new CheckMenuItem("Enable Console");
         enqbleConfoleCheckMenuItem.setSelected(false);
         enqbleConfoleCheckMenuItem.setOnAction(e -> System.out.println("Enable console: " + enqbleConfoleCheckMenuItem.isSelected()));
+
+        TextAreaAppender.setTextArea(consoleTextArea, enqbleConfoleCheckMenuItem.selectedProperty());
 
         MenuItem clearConsoleItem = new MenuItem("Clear Console");
         clearConsoleItem.setOnAction(e -> consoleTextArea.clear());
