@@ -142,7 +142,7 @@ Strategies for a tournament are a little more structured. See [src/main/resource
 
  ## Build
 
- The project is coded in Java (requires version 17+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
+ The project is coded in Java (requires version 22+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
 
      /mens-erger-je-niet% gradle test
 
@@ -154,6 +154,10 @@ and a tournament through:
 
      /mens-erger-je-niet% gradle runTournament
 
+You can launch the GUI through:
+
+     /mens-erger-je-niet% gradle run
+
 You can pass parameters to gradle as follows:
 
 	/mens-erger-je-niet% GRADLE_OPTS="-Xms1024m -Xmx2048m" time gradle runTournament
@@ -164,7 +168,7 @@ To import the project into Eclipse, use:
 
 For IntelliJ fans use:
 
-     /mens-erger-je-niet% gradle intelliJ
+     /mens-erger-je-niet% gradle idea
 
  ## Logging
 
