@@ -1,6 +1,8 @@
 package com.javafx.mejn;
 
 import javafx.application.Application;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -12,6 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.StrokeType;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +29,7 @@ public class MainApp extends Application {
 
     private final static MenuItem debugItem = new MenuItem("Capture");
 
+    private Scene scene;
 
     /**
      * @param primaryStage the primary stage for the application
@@ -42,7 +46,7 @@ public class MainApp extends Application {
 
         VBox vBox = new VBox(menuBar, tabPane);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
-        Scene scene = new Scene(vBox, 400, 400);
+        scene = new Scene(vBox, 800, 858);
 
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -90,83 +94,89 @@ public class MainApp extends Application {
     }
 
     private TabPane createTabPane() {
-        GridPane boardGridPane = new GridPane(12, 12);
-        boardGridPane.setAlignment(Pos.CENTER);
-        GridPane.setHalignment(boardGridPane, HPos.CENTER);
-        GridPane.setValignment(boardGridPane, VPos.CENTER);
-        //GridPane.setVgrow(boardGridPane, Priority.ALWAYS);
-        //GridPane.setHgrow(boardGridPane, Priority.ALWAYS);
-        // TODO: REMOVE THIS after debugging
-        boardGridPane.setGridLinesVisible(true);
+
+        DoubleProperty cellWidth = new SimpleDoubleProperty();
+        DoubleProperty circleRadius = new SimpleDoubleProperty();
+        DoubleProperty smallCircleRadius = new SimpleDoubleProperty();
+        DoubleProperty strokeWidth = new SimpleDoubleProperty();
+
+        Pane boardPane = new Pane();
+        boardPane.setPrefSize(790, 790);
+        AnchorPane boardAnchorPane = new AnchorPane();
+        AnchorPane.setTopAnchor(boardPane, BORDER_OFFSET);
+        AnchorPane.setRightAnchor(boardPane, BORDER_OFFSET);
+        AnchorPane.setLeftAnchor(boardPane, BORDER_OFFSET);
+        AnchorPane.setBottomAnchor(boardPane, BORDER_OFFSET);
+        boardAnchorPane.getChildren().add(boardPane);
+        // Add a listener to boardPane to resize the height when the width changes
+        boardPane.widthProperty().addListener((observable, oldValue, newValue) -> {
+            boardPane.setPrefHeight(newValue.doubleValue());
+        });
+
+        TabPane tabPane = new TabPane();
+        Tab tab1 = new Tab("Board", boardAnchorPane);
+        tab1.setClosable(false);
+
+        // A cell on a real board is 2.5mm. All other sizes are derived from this.
+        cellWidth.bind(boardPane.widthProperty().divide(13));
+        circleRadius.bind(cellWidth.multiply(0.375)); // 0.75/2.5=0.6
+        smallCircleRadius.bind(cellWidth.multiply(0.22)); // 0.55/2.5=0.22
+        strokeWidth.bind(cellWidth.divide(18)); // 0.1/2.5=0.04 = 1/25
+
+        addBorders(strokeWidth, cellWidth, boardPane);
+        addLine(boardPane, strokeWidth, cellWidth, 6, 6, 8, 12);
+        addLine(boardPane, strokeWidth, cellWidth, 2, 6, 8, 8);
+        addLine(boardPane, strokeWidth, cellWidth, 2, 2, 6, 8);
+        addLine(boardPane, strokeWidth, cellWidth, 2, 6, 6, 6);
+        addLine(boardPane, strokeWidth, cellWidth, 6, 6, 2, 6);
+        addLine(boardPane, strokeWidth, cellWidth, 6, 8, 2, 2);
+        addLine(boardPane, strokeWidth, cellWidth, 6, 8, 2, 2);
+        addLine(boardPane, strokeWidth, cellWidth, 8, 8, 2, 6);
+        addLine(boardPane, strokeWidth, cellWidth, 8, 12, 6, 6);
+        addLine(boardPane, strokeWidth, cellWidth, 12, 12, 6, 8);
+        addLine(boardPane, strokeWidth, cellWidth, 8, 12, 8, 8);
+        addLine(boardPane, strokeWidth, cellWidth, 8, 8, 8, 12);
+        addLine(boardPane, strokeWidth, cellWidth, 8, 6, 12, 12);
 
 
-        boardGridPane.setHgap(0);
-        boardGridPane.setVgap(0);
-
-        Circle circle = new Circle(15);
-        circle.setStrokeWidth(5);
+        Circle circle = new Circle();
+        circle.strokeWidthProperty().bind(strokeWidth);
         circle.setStroke(javafx.scene.paint.Color.BLACK);
         circle.setFill(javafx.scene.paint.Color.WHITE);
+        circle.radiusProperty().bind(circleRadius);
+        circle.centerXProperty().bind(cellWidth.multiply(6));
+        circle.centerYProperty().bind(cellWidth.multiply(12));
+        boardPane.getChildren().add(circle);
 
-        Circle circle1 = new Circle(15);
-        circle1.setStrokeWidth(5); // Cell width / 12.5
+        Circle circle1 = new Circle();
+        circle1.strokeWidthProperty().bind(strokeWidth);
         circle1.setStroke(javafx.scene.paint.Color.BLACK);
         circle1.setFill(javafx.scene.paint.Color.WHITE);
+        circle1.radiusProperty().bind(circleRadius);
+        circle1.centerXProperty().bind(cellWidth.multiply(6));
+        circle1.centerYProperty().bind(cellWidth.multiply(11));
+        boardPane.getChildren().add(circle1);
 
-        Circle circle2 = new Circle(15);
-        circle2.setStrokeWidth(5); // Cell width / 12.5
+        debugItem.setOnAction(e -> {
+            // log scene height and width
+            logger.error("Scene Width, Height: {}, {}", scene.getWidth(), scene.getHeight());
+            logger.error("Cell Width: {}", cellWidth.get());
+            logger.error("BoardPane Width, Height: {}, {}", boardPane.getWidth(), boardPane.getHeight());
+            logger.error("Debugging Circle X, Y, r: {}, {}, {}", circle.getCenterX(), circle.getCenterY(), circle.getRadius());
+            logger.error("Debugging Circle1 X, Y, r: {}, {}, {}", circle1.getCenterX(), circle1.getCenterY(), circle1.getRadius());
+            logger.error("Distance between circle and circle1: {}", circle.getCenterY() - circle1.getCenterY());
+            logger.error("");
+        });
+
+        Circle circle2 = new Circle();
+        circle2.strokeWidthProperty().bind(strokeWidth);
         circle2.setStroke(javafx.scene.paint.Color.BLACK);
         circle2.setFill(javafx.scene.paint.Color.WHITE);
         circle2.setOpacity(1.0);
-
-        for (int i = 0; i < 12; i++) {
-            ColumnConstraints columnI = new ColumnConstraints();
-            columnI.setPercentWidth(100.0 / 12);
-            boardGridPane.getColumnConstraints().add(columnI);
-            RowConstraints rowI = new RowConstraints();
-            rowI.setPercentHeight(100.0 / 12);
-            boardGridPane.getRowConstraints().add(rowI);
-        }
-
-        StackPane cell = new StackPane();
-        cell.setAlignment(Pos.CENTER);
-        cell.getChildren().add(circle);
-        boardGridPane.add(cell, 5, 10);
-
-        debugItem.setOnAction(e -> {
-            logger.error("Debugging Circle X, Y, r: {}, {}, {}", circle.getCenterX(), circle.getCenterY(), circle.getRadius());
-            logger.error("cell Width, Height: {}, {}", cell.getWidth(), cell.getHeight());
-        });
-
-        StackPane cell1 = new StackPane();
-        cell1.setAlignment(Pos.CENTER);
-        cell1.getChildren().add(circle1);
-        boardGridPane.add(cell1, 11, 11);
-
-        StackPane cell2 = new StackPane();
-        cell2.setAlignment(Pos.CENTER);
-        cell2.getChildren().add(circle2);
-        // boardGridPane.add(cell2, 5, 7);
-
-
-        Line line1 = new Line();
-        line1.setStartX(0);
-        line1.setStartY(0);
-        line1.setEndX(0);
-
-        line1.setStrokeWidth(5);
-        line1.setStroke(Color.BLACK);
-        line1.endYProperty().bind(cell.heightProperty().multiply(4));
-        StackPane lineContainer = new StackPane();
-        lineContainer.setAlignment(Pos.CENTER);
-        lineContainer.getChildren().add(line1);
-        boardGridPane.add(lineContainer, 5, 7, 1, 4);
-        GridPane.setValignment(lineContainer, VPos.CENTER);
-
-
-        StackPane boardStackPane = new StackPane();
-        //boardGridPane.setStyle("-fx-background-color: cornsilk;");
-        boardStackPane.getChildren().addAll(boardGridPane);
+        circle2.radiusProperty().bind(circleRadius);
+        circle2.centerXProperty().bind(cellWidth.multiply(6));
+        circle2.centerYProperty().bind(cellWidth.multiply(8));
+        boardPane.getChildren().add(circle2);
 
         /*GridPane.setHalignment(boardGridPane, HPos.CENTER);
         GridPane.setHgrow(boardGridPane, Priority.ALWAYS);
@@ -192,11 +202,6 @@ public class MainApp extends Application {
 
          */
 
-
-        TabPane tabPane = new TabPane();
-        Tab tab1 = new Tab("Board", boardStackPane);
-        tab1.setClosable(false);
-
         Tab tab2 = getConsoleTab();
         tab2.setClosable(false);
         tab2.selectedProperty().addListener((observable, oldValue, newValue) -> {
@@ -208,8 +213,40 @@ public class MainApp extends Application {
         tabPane.getTabs().add(tab1);
         tabPane.getTabs().add(tab2);
 
-
         return tabPane;
+    }
+
+    private static void addLine(Pane boardPane, DoubleProperty strokeWidth, DoubleProperty cellWidth, int startX, int endX, int startY, int endY) {
+        Line line = new Line();
+        line.strokeWidthProperty().bind(strokeWidth);
+        line.setStroke(Color.BLACK);
+        line.startXProperty().bind(cellWidth.multiply(startX));
+        line.endXProperty().bind(cellWidth.multiply(endX));
+        line.startYProperty().bind(cellWidth.multiply(startY));
+        line.endYProperty().bind(cellWidth.multiply(endY));
+        boardPane.getChildren().add(line);
+    }
+
+    private static void addBorders(DoubleProperty strokeWidth, DoubleProperty cellWidth, Pane boardPane) {
+        Rectangle redBorder = new Rectangle();
+        redBorder.strokeWidthProperty().bind(strokeWidth.multiply(2));
+        redBorder.setStroke(Color.CRIMSON);
+        redBorder.setStrokeType(StrokeType.INSIDE);
+        redBorder.setFill(Color.KHAKI);
+        redBorder.widthProperty().bind(cellWidth.multiply(13));
+        redBorder.heightProperty().bind(cellWidth.multiply(13));
+        boardPane.getChildren().add(redBorder);
+
+        // Add another rectangle with black stroke and transparent color half the cellWidth inside the boardPane
+        Rectangle blackBorder = new Rectangle();
+        blackBorder.strokeWidthProperty().bind(strokeWidth);
+        blackBorder.setStroke(Color.BLACK);
+        blackBorder.setFill(Color.TRANSPARENT);
+        blackBorder.widthProperty().bind(cellWidth.multiply(12.5));
+        blackBorder.heightProperty().bind(cellWidth.multiply(12.5));
+        blackBorder.xProperty().bind(cellWidth.multiply(0.25));
+        blackBorder.yProperty().bind(cellWidth.multiply(0.25));
+        boardPane.getChildren().add(blackBorder);
     }
 
     private Tab getConsoleTab() {
