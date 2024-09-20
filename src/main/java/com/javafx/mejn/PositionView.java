@@ -2,14 +2,17 @@ package com.javafx.mejn;
 
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Position;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.*;
+import javafx.geometry.Pos;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
 import static com.javafx.mejn.BoardView.*;
@@ -22,13 +25,12 @@ public class PositionView {
     // Indicate if this field is a choice for the BoardView.PLAYER_INDEX and set border accordingly
     final BooleanProperty isChoice = new SimpleBooleanProperty(false);
 
-    final DoubleProperty cellWidth;
-    final DoubleProperty strokeWidth;
+    // The player index occupying this property. Any other value indicates, not occupied.
+    final IntegerProperty occupiedBy = new SimpleIntegerProperty(-1);
+
 
     public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth) {
         this.position = position;
-        this.cellWidth = cellWidth;
-        this.strokeWidth = strokeWidth;
 
         // A cell on a real board is 2.5mm. All other sizes are derived from this.
         DoubleProperty circleRadius = new SimpleDoubleProperty();
@@ -60,14 +62,13 @@ public class PositionView {
                 circle.setStroke(Color.BLACK);
             }
         });
-
         StackPane stackPane = new StackPane();
         stackPane.getChildren().add(circle);
-        Text text = createLetter();
-        text.scaleXProperty().bind(circle.radiusProperty().divide(10));
-        text.scaleYProperty().bind(circle.radiusProperty().divide(10));
 
-        stackPane.getChildren().add(text);
+        Text letter = createLetter();
+        letter.scaleXProperty().bind(circle.radiusProperty().divide(10));
+        letter.scaleYProperty().bind(circle.radiusProperty().divide(10));
+        stackPane.getChildren().add(letter);
 
         Text number = new Text(String.valueOf(position.spot()));
         number.scaleXProperty().bind(circle.radiusProperty().divide(30));
@@ -75,9 +76,25 @@ public class PositionView {
         number.visibleProperty().bind(showPositionNumbers);
         stackPane.getChildren().add(number);
 
+        Circle pawn = new Circle();
+        pawn.strokeWidthProperty().bind(strokeWidth);
+        pawn.radiusProperty().bind(smallCircleRadius);
+        // Default to not visible
+        pawn.setVisible(false);
+
+        occupiedBy.addListener((_, _, newValue) -> {
+            if (newValue.intValue() < 0 || newValue.intValue() > 3) {
+                pawn.setVisible(false);
+            } else {
+                pawn.setVisible(true);
+                pawn.setFill(PlayerView.getGradient(newValue.intValue()));
+            }
+        });
+        stackPane.getChildren().add(pawn);
+
+        // Position the stackPane in the right place
         stackPane.layoutXProperty().bind(cellWidth.multiply(x).subtract(circle.radiusProperty()));
         stackPane.layoutYProperty().bind(cellWidth.multiply(y).subtract(circle.radiusProperty()));
-
         stackPane.prefWidthProperty().bind(circle.radiusProperty());
         rotateStackPane(stackPane);
         boardPane.getChildren().add(stackPane);
@@ -114,6 +131,8 @@ public class PositionView {
                 case 3, 13, 23, 33 -> letter = createLetter("d");
             }
         }
+        letter.setFill(Color.BLACK);
+        letter.setFont(Font.font("System", FontWeight.BOLD, 12)); // Set the font to bold
         return letter;
     }
 

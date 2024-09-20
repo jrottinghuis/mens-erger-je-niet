@@ -38,12 +38,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.javafx.mejn.MainApp.BORDER_OFFSET;
+import static com.javafx.mejn.MainApp.debugItem;
 
 
 public class BoardView {
     private static final Logger logger = LogManager.getLogger(BoardView.class);
     static final int BOARD_SIZE = 40;
     static final List<PositionView> eventPositionViews = new ArrayList<>(BOARD_SIZE);
+
+    static final List<List<PositionView>> homePositions = new ArrayList<>(4);
+    static final List<List<PositionView>> beginPositions = new ArrayList<>(4);
+    static {
+        for (int i = 0; i < 4; i++) {
+            List<PositionView> positions = new ArrayList<>(4);
+            homePositions.add(positions);
+
+            positions = new ArrayList<>(4);
+            beginPositions.add(positions);
+        }
+    }
 
     private final DoubleProperty cellWidth = new SimpleDoubleProperty(44.0);
     private final DoubleProperty strokeWidth = new SimpleDoubleProperty();
@@ -71,84 +84,94 @@ public class BoardView {
 
         int spot = 0;
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5, 11-j, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5, 11 - j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5-j, 7, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5 - j, 7, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 1, 7-j, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 1, 7 - j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 1+j, 5, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 1 + j, 5, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5, 5-j, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5, 5 - j, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5+j, 1, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5 + j, 1, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7, 1+j, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7, 1 + j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7+j, 5, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7 + j, 5, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 11, 5+j, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 11, 5 + j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 11-j ,7, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 11 - j, 7, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7 ,7+j, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7, 7 + j, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7-j, 11, boardPane));
+            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7 - j, 11, boardPane));
             spot++;
         }
 
         // TODO: Add these to a separate array so that I can easily access them for the Controller class
         spot = 0;
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 6 ,10-j, boardPane);
+            getPositionView(spot, Layer.HOME, 6, 10 - j, boardPane);
             spot++;
         }
         spot = 10;
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 2+j ,6, boardPane);
+            getPositionView(spot, Layer.HOME, 2 + j, 6, boardPane);
             spot++;
         }
         spot = 20;
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 6 ,2+j, boardPane);
+            getPositionView(spot, Layer.HOME, 6, 2 + j, boardPane);
             spot++;
         }
         spot = 30;
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 10-j ,6, boardPane);
+            getPositionView(spot, Layer.HOME, 10 - j, 6, boardPane);
             spot++;
         }
 
-        /*
+
+        // TODO: Remove after debugging
         debugItem.setOnAction(e -> {
             // log scene height and width
             logger.error("Cell Width: {}", cellWidth.get());
             logger.error("BoardPane Width, Height: {}, {}", boardPane.getWidth(), boardPane.getHeight());
             logger.error("");
-        })
-         */
+            if (eventPositionViews.get(3).isChoice.get()) {
+                eventPositionViews.get(3).isChoice.setValue(false);
+            } else {
+                eventPositionViews.get(3).isChoice.setValue(true);
+            }
+            if (eventPositionViews.get(10).occupiedBy.get() == -1) {
+                eventPositionViews.get(10).occupiedBy.setValue(0);
+            } else {
+                eventPositionViews.get(10).occupiedBy.setValue(-1);
+            }
+        });
     }
 
     private PositionView getPositionView(int spot, Layer layer, int x, int y, Pane boardPane) {
