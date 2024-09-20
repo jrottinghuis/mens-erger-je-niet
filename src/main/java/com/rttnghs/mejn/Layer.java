@@ -43,7 +43,7 @@ public enum Layer {
 	/**
 	 * Constructor for the layer.
 	 */
-	private Layer() {
+    Layer() {
 		this.number = this.ordinal() - 1;
 	}
 

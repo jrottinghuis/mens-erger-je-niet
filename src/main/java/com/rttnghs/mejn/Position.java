@@ -98,8 +98,8 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
 	}
 
 	/**
-	 * @param min
-	 * @param max
+	 * @param min the minimum position
+	 * @param max the maximum position
 	 * @return if min < this <= max, or null if any argument is null.
 	 */
 	public boolean isBetween(Position min, Position max) {
