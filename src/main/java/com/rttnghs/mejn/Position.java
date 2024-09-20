@@ -57,7 +57,6 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
 	 * Normalize the position given the modulo where the board wraps.
 	 * 
 	 * @param boardSize the number of positions on the board until the board wraps.
-	 * @param position  given position. Cannot be null.
 	 * @return new position (or the same one) with layer the same and position
 	 *         modulo boardSize. Except when position is 0, then layer is always
 	 *         EVENT.

@@ -63,8 +63,7 @@ public class Player {
 	}
 
 	/**
-	 * @param config
-	 * @param playerIndex
+	 * @param playerIndex zero based index where along the board this player sits.
 	 * @return how many spots the Moves of a board need to be rotated to put the
 	 *         current player start from 0;
 	 */
@@ -84,8 +83,7 @@ public class Player {
 	 * @param strategy        used to choose moves
 	 * @param playerIndex     zero based index where along the board this player
 	 *                        sits.
-	 * @param historySupplier used to get to history with moves shifted to our
-	 *                        position.
+	 * @param boardSize       number of spots on the board.
 	 */
 	private Player(Strategy strategy, int playerIndex, int boardSize) {
 		this.strategy = strategy;
@@ -94,11 +92,11 @@ public class Player {
 	}
 
 	/**
-	 * For public use, see {@link Player.playersOf}
+	 * For public use, see {@link Player#playersOf(StrategyFactory, List, HistorySupplier)}.
 	 * 
 	 * @param state    of the board
-	 * @param choices. Could be empty to indicate that there are no choices.
-	 * @return the move the from list. Could be null if there were no choices.
+	 * @param choices Could be empty to indicate that there are no choices.
+	 * @return the move the choices list. Could be null if there were no choices.
 	 */
 	public Move choose(List<Move> choices, BoardState state) {
 		// Rotate perspective counter clockwise
