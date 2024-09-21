@@ -19,12 +19,24 @@ public class PositionView {
     private final Position position;
 
     // Indicate if this field is a choice for the BoardView.PLAYER_INDEX and set border accordingly
-    final BooleanProperty isChoice = new SimpleBooleanProperty(false);
+    private final BooleanProperty isChoice = new SimpleBooleanProperty(false);
 
     // The player index occupying this property. Any other value indicates, not occupied.
-    final IntegerProperty occupiedBy = new SimpleIntegerProperty(-1);
+    private final IntegerProperty occupiedBy = new SimpleIntegerProperty(-1);
 
 
+    // Add javadoc
+
+    /**
+     * Create a new PositionView
+     *
+     * @param position    the position to represent
+     * @param x           the x coordinate of the position in terms of cellWidth
+     * @param y           the y coordinate of the position in terms of cellWidth
+     * @param boardPane   the pane to add the position to
+     * @param cellWidth   the width of the cell
+     * @param strokeWidth the width of the stroke
+     */
     public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth) {
         this.position = position;
 
@@ -73,7 +85,8 @@ public class PositionView {
         stackPane.getChildren().add(number);
 
         Circle pawn = new Circle();
-        pawn.strokeWidthProperty().bind(strokeWidth);
+        pawn.strokeWidthProperty().bind(strokeWidth.multiply(0.3));
+        pawn.setStroke(Color.BLACK);
         pawn.radiusProperty().bind(smallCircleRadius);
         // Default to not visible
         pawn.setVisible(false);
@@ -96,6 +109,26 @@ public class PositionView {
         boardPane.getChildren().add(stackPane);
     }
 
+    /**
+     * Get the isChoice property of this position to be used by Board
+     */
+    BooleanProperty isChoiceProperty() {
+        return isChoice;
+    }
+
+    /**
+     * Get the occupiedBy property of this position to be used by Board
+     */
+    IntegerProperty occupiedProperty() {
+        return occupiedBy;
+    }
+
+
+    /**
+     * Rotate the stackPane based on the position which indicated the layer and spot of the position and hence the player orientation
+     *
+     * @param stackPane the stackPane to rotate
+     */
     private void rotateStackPane(StackPane stackPane) {
         if (position.layer().equals(Layer.EVENT)) {
             switch (position.spot()) {
@@ -112,19 +145,23 @@ public class PositionView {
         }
     }
 
-
+    /**
+     * Create the appropriate letter based on the position
+     *
+     * @return the letter to display
+     */
     private Text createLetter() {
         Text letter = new Text("");
         if (position.layer().equals(Layer.EVENT)) {
             switch (position.spot()) {
-                case 0, 10, 20, 30 -> letter =  new Text("A");
+                case 0, 10, 20, 30 -> letter = new Text("A");
             }
         } else if (position.layer().equals(Layer.HOME)) {
             switch (position.spot()) {
-                case 0, 10, 20, 30 -> letter =  new Text("a");
-                case 1, 11, 21, 31 -> letter =  new Text("b");
-                case 2, 12, 22, 32 -> letter =  new Text("c");
-                case 3, 13, 23, 33 -> letter =  new Text("d");
+                case 0, 10, 20, 30 -> letter = new Text("a");
+                case 1, 11, 21, 31 -> letter = new Text("b");
+                case 2, 12, 22, 32 -> letter = new Text("c");
+                case 3, 13, 23, 33 -> letter = new Text("d");
             }
         }
         letter.setFill(Color.BLACK);
@@ -132,6 +169,12 @@ public class PositionView {
         return letter;
     }
 
+    /**
+     * Set the fill of the circle based on the position
+     *
+     * @param position the position to set the fill for
+     * @param circle   the circle to set the fill for
+     */
     private static void setFill(Position position, Circle circle) {
         if (position.layer().equals(Layer.EVENT)) {
             switch (position.spot()) {

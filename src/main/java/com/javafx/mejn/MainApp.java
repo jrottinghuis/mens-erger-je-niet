@@ -67,6 +67,12 @@ public class MainApp extends Application {
         launch(args);
     }
 
+    /**
+     * Create the menu bar
+     *
+     * @param primaryStage the primary stage for the application
+     * @return the menu bar
+     */
     private MenuBar createMenuBar(Stage primaryStage) {
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("File");
@@ -87,6 +93,19 @@ public class MainApp extends Application {
         MenuItem clearConsoleItem = new MenuItem("Clear Console");
         clearConsoleItem.setAccelerator(KeyCombination.keyCombination("Ctrl+C"));
         clearConsoleItem.setOnAction(_ -> consoleTextArea.clear());
+
+        // Create Play menu
+        Menu menuPlay = new Menu("Play");
+        Slider playbackSpeedSlider = new Slider(1, 100, 25);
+        playbackSpeedSlider.setShowTickLabels(true);
+        playbackSpeedSlider.setShowTickMarks(true);
+        playbackSpeedSlider.setMajorTickUnit(10);
+        playbackSpeedSlider.setMinorTickCount(1);
+        playbackSpeedSlider.setBlockIncrement(1);
+        CustomMenuItem playbackSpeedItem = new CustomMenuItem(playbackSpeedSlider);
+        playbackSpeedItem.setHideOnClick(false);
+        menuPlay.getItems().add(playbackSpeedItem);
+        menuBar.getMenus().add(menuPlay);
 
         menuConsole.getItems().addAll(enableConsoleCheckMenuItem, clearConsoleItem);
         menuBar.getMenus().add(menuConsole);

@@ -24,23 +24,39 @@ import javafx.scene.paint.Stop;
 
 public class PlayerView {
 
-
-    // Create a public static method getColor that returns a Color based on an integer index, with a default value of Color.BLACK
-    public static Color getColor(int index) {
-        return switch (index) {
+    /**
+     * Get the color for the player with the given index.
+     *
+     * @param playerIndex the index of the player
+     * @return the color for the player
+     */
+    public static Color getColor(int playerIndex) {
+        return switch (playerIndex) {
             case 0 -> Color.DODGERBLUE;
-            case 1 -> Color.YELLOW;
+            case 1 -> Color.GOLD;
             case 2 -> Color.GREEN;
             case 3 -> Color.RED;
             default -> Color.BLACK;
         };
     }
 
-    public static Color getColor(IntegerProperty index) {
-        return getColor(index.get());
+    /**
+     * Get the color for the player with the given index.
+     *
+     * @param playerIndex the index of the player
+     * @return the color for the player
+     */
+    public static Color getColor(IntegerProperty playerIndex) {
+        return getColor(playerIndex.get());
     }
 
-    public static RadialGradient getGradient(int index) {
+    /**
+     * Get a radial gradient for the player with the given index.
+     *
+     * @param playerIndex the index of the player
+     * @return the radial gradient for the player
+     */
+    public static RadialGradient getGradient(int playerIndex) {
         return new RadialGradient(
                 0, // focusAngle
                 0.0, // focusDistance
@@ -50,11 +66,11 @@ public class PlayerView {
                 true, // proportional
                 CycleMethod.NO_CYCLE, // cycleMethod
                 new Stop(0.25, Color.WHITE), // stop at 30% with white color
-                new Stop(1.0, getColor(index)) // stop at 100% with black color
+                new Stop(1.0, getColor(playerIndex)) // stop at 100% with black color
         );
     }
 
-    public static RadialGradient getGradient(IntegerProperty index) {
-        return getGradient(index.get());
+    public static RadialGradient getGradient(IntegerProperty playerIndex) {
+        return getGradient(playerIndex.get());
     }
 }

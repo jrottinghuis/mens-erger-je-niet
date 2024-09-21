@@ -23,6 +23,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.layout.BorderPane;
@@ -45,7 +46,9 @@ import java.util.List;
 import static com.javafx.mejn.MainApp.BORDER_OFFSET;
 import static com.javafx.mejn.MainApp.debugItem;
 
-
+/**
+ * The BoardView class is responsible for creating the board view. It creates the board, the positions, the dice, and the play control buttons.
+ */
 public class BoardView {
     private static final Logger logger = LogManager.getLogger(BoardView.class);
     static final int BOARD_SIZE = 40;
@@ -53,6 +56,7 @@ public class BoardView {
 
     static final List<List<PositionView>> homePositions = new ArrayList<>(4);
     static final List<List<PositionView>> beginPositions = new ArrayList<>(4);
+
     static {
         for (int i = 0; i < 4; i++) {
             List<PositionView> positions = new ArrayList<>(4);
@@ -65,9 +69,15 @@ public class BoardView {
 
     private final DoubleProperty cellWidth = new SimpleDoubleProperty(44.0);
     private final DoubleProperty strokeWidth = new SimpleDoubleProperty();
-    static final IntegerProperty currentPlayerIndex = new SimpleIntegerProperty(0);
-    static final IntegerProperty currentDieValue = new SimpleIntegerProperty(5);
+    static final IntegerProperty currentPlayerIndex = new SimpleIntegerProperty(-1);
+    static final IntegerProperty currentDieValue = new SimpleIntegerProperty(6);
 
+    /**
+     * The constructor for the BoardView class. It creates
+     * the board, the positions, the dice, and the play control buttons.
+     *
+     * @param borderPane the BorderPane to which the board is added
+     */
     public BoardView(BorderPane borderPane) {
         Pane boardPane = new Pane();
 
@@ -85,9 +95,122 @@ public class BoardView {
         cellWidth.bind(boardPane.widthProperty().divide(12));
         strokeWidth.bind(cellWidth.divide(18)); // 0.1/2.5=0.04 = 1/25
 
-        addBorders(boardPane, cellWidth, strokeWidth);
+        addBorders(boardPane);
         addLines(boardPane);
+        addPositions(boardPane);
 
+        addLettersB(boardPane);
+        addText(boardPane);
+
+        addDice(boardPane);
+
+        addDebugAction();
+    }
+
+
+    /**
+     * Add the play control buttons to the buttonBar.
+     *
+     * @param buttonBar the ButtonBar to which the buttons are added
+     */
+    private void addButtons(ButtonBar buttonBar) {
+        List<Button> buttons = new ArrayList<>();
+        Button stepButton = new Button("Step");
+        Button nextPlayer = new Button("Next Player");
+        Button playButton = new Button("Play");
+        Button pauseBUtton = new Button("Pause");
+        pauseBUtton.setDisable(true);
+
+        ButtonBar.setButtonUniformSize(stepButton, false);
+        ButtonBar.setButtonUniformSize(nextPlayer, false);
+        ButtonBar.setButtonUniformSize(playButton, false);
+        ButtonBar.setButtonUniformSize(pauseBUtton, false);
+
+        buttons.add(stepButton);
+        buttons.add(nextPlayer);
+        buttons.add(playButton);
+        buttons.add(pauseBUtton);
+
+        buttonBar.getButtons().addAll(buttons);
+    }
+
+
+    /**
+     * Add an outside and a black inside border to the boardPane.
+     *
+     * @param boardPane the Pane to which the borders are added
+     */
+    private void addBorders(Pane boardPane) {
+        Rectangle redBorder = new Rectangle();
+        redBorder.strokeWidthProperty().bind(strokeWidth.multiply(2));
+        redBorder.setStroke(Color.CRIMSON);
+        redBorder.setStrokeType(StrokeType.INSIDE);
+        redBorder.setFill(Color.KHAKI);
+        redBorder.widthProperty().bind(cellWidth.multiply(12));
+        redBorder.heightProperty().bind(cellWidth.multiply(12));
+        boardPane.getChildren().add(redBorder);
+
+        // Add another rectangle with black stroke and transparent color half the cellWidth inside the boardPane
+        Rectangle blackBorder = new Rectangle();
+        blackBorder.strokeWidthProperty().bind(strokeWidth);
+        blackBorder.setStroke(Color.BLACK);
+        blackBorder.setFill(Color.TRANSPARENT);
+        blackBorder.widthProperty().bind(cellWidth.multiply(11.5));
+        blackBorder.heightProperty().bind(cellWidth.multiply(11.5));
+        blackBorder.xProperty().bind(cellWidth.multiply(0.25));
+        blackBorder.yProperty().bind(cellWidth.multiply(0.25));
+        boardPane.getChildren().add(blackBorder);
+    }
+
+    /**
+     * Add the black lines going around the board to the boardPane to create path of the pawn around the board.
+     *
+     * @param boardPane the Pane to which the lines are added
+     */
+    private void addLines(Pane boardPane) {
+        addLine(boardPane, strokeWidth, cellWidth, 5, 5, 7, 11);
+        addLine(boardPane, strokeWidth, cellWidth, 1, 5, 7, 7);
+        addLine(boardPane, strokeWidth, cellWidth, 1, 1, 5, 7);
+        addLine(boardPane, strokeWidth, cellWidth, 1, 5, 5, 5);
+        addLine(boardPane, strokeWidth, cellWidth, 5, 5, 1, 5);
+        addLine(boardPane, strokeWidth, cellWidth, 5, 7, 1, 1);
+        addLine(boardPane, strokeWidth, cellWidth, 5, 7, 1, 1);
+        addLine(boardPane, strokeWidth, cellWidth, 7, 7, 1, 5);
+        addLine(boardPane, strokeWidth, cellWidth, 7, 11, 5, 5);
+        addLine(boardPane, strokeWidth, cellWidth, 11, 11, 5, 7);
+        addLine(boardPane, strokeWidth, cellWidth, 7, 11, 7, 7);
+        addLine(boardPane, strokeWidth, cellWidth, 7, 7, 7, 11);
+        addLine(boardPane, strokeWidth, cellWidth, 5, 7, 11, 11);
+    }
+
+    /**
+     * Add a line to the boardPane with the given start and end coordinates.
+     *
+     * @param boardPane   the Pane to which the line is added
+     * @param strokeWidth the width of the stroke
+     * @param cellWidth   the width of the cell
+     * @param startX      the x coordinate of the start of the line in terms of cellWidth
+     * @param endX        the x coordinate of the end of the line in terms of cellWidth
+     * @param startY      the y coordinate of the start of the line in terms of cellWidth
+     * @param endY        the y coordinate of the end of the line in terms of cellWidth
+     */
+    private static void addLine(Pane boardPane, DoubleProperty strokeWidth, DoubleProperty cellWidth, int startX, int endX, int startY, int endY) {
+        Line line = new Line();
+        line.strokeWidthProperty().bind(strokeWidth);
+        line.setStroke(Color.BLACK);
+        line.startXProperty().bind(cellWidth.multiply(startX));
+        line.endXProperty().bind(cellWidth.multiply(endX));
+        line.startYProperty().bind(cellWidth.multiply(startY));
+        line.endYProperty().bind(cellWidth.multiply(endY));
+        boardPane.getChildren().add(line);
+    }
+
+    /**
+     * Draw the circle for each of the board positions in the Event, Begin, and Home layers. Add each to the respective static list for later manipulation of the properties. The positions are added in a clockwise fashion starting from the bottom left corner of the board and numbered according to the README.md file.
+     *
+     * @param boardPane the Pane to which the positions are added
+     */
+    private void addPositions(Pane boardPane) {
         int spot = 0;
         for (int j = 0; j < 4; j++) {
             eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5, 11 - j, boardPane));
@@ -138,7 +261,7 @@ public class BoardView {
             spot++;
         }
 
-
+        // Home positions
         for (int j = 0; j < 4; j++) {
             homePositions.get(0).add(j, getPositionView(j, Layer.HOME, 6, 10 - j, boardPane));
         }
@@ -168,131 +291,48 @@ public class BoardView {
         beginPositions.get(3).add(1, getPositionView(24, Layer.BEGIN, 10, 10, boardPane));
         beginPositions.get(3).add(2, getPositionView(24, Layer.BEGIN, 11, 10, boardPane));
         beginPositions.get(3).add(3, getPositionView(24, Layer.BEGIN, 11, 11, boardPane));
-
-
-         StackPane stackPane = getLetterBStackPane(1.5, 10.5, 0);
-        boardPane.getChildren().add(stackPane);
-        stackPane = getLetterBStackPane(1.5, 1.5, 180);
-        boardPane.getChildren().add(stackPane);
-        stackPane = getLetterBStackPane(10.5, 1.5, 180);
-        boardPane.getChildren().add(stackPane);
-        stackPane = getLetterBStackPane(10.5, 10.5, 0);
-        boardPane.getChildren().add(stackPane);
-
-        StackPane die = createDie(currentPlayerIndex, 0, 3, 11);
-        boardPane.getChildren().add(die);
-        die = createDie(currentPlayerIndex, 1, 1, 3);
-        boardPane.getChildren().add(die);
-        die = createDie(currentPlayerIndex, 2, 9, 1);
-        boardPane.getChildren().add(die);
-        die = createDie(currentPlayerIndex, 3, 11, 9);
-        boardPane.getChildren().add(die);
-
-        // TODO: Remove after debugging
-        debugItem.setOnAction(e -> {
-            // log scene height and width
-            logger.error("Cell Width: {}", cellWidth.get());
-            logger.error("BoardPane Width, Height: {}, {}", boardPane.getWidth(), boardPane.getHeight());
-            logger.error("");
-            if (eventPositionViews.get(3).isChoice.get()) {
-                eventPositionViews.get(3).isChoice.setValue(false);
-            } else {
-                eventPositionViews.get(3).isChoice.setValue(true);
-            }
-            if (eventPositionViews.get(1).occupiedBy.get() == -1) {
-                eventPositionViews.get(1).occupiedBy.setValue(currentPlayerIndex.get());
-            } else {
-                eventPositionViews.get(1).occupiedBy.setValue(-1);
-            }
-            // Increased the current die value by 1 but not to increase it beyond 6 then start at 1 again
-            currentDieValue.set((currentDieValue.get() + 1));
-            if (currentDieValue.get() > 6) {
-                currentDieValue.set(1);
-            }
-            logger.error("Current Die Value: {}", currentDieValue.get());
-            currentPlayerIndex.set((currentPlayerIndex.get() + 3) % 4);
-            logger.error("Current Player Index: {}", currentPlayerIndex.get());
-        });
     }
 
-
-
+    /**
+     * Creates a PositionView for a given spot and layer.
+     *
+     * @param spot      the spot number
+     * @param layer     the layer of the position
+     * @param x         the x coordinate of the position in terms of cellWidth
+     * @param y         the y coordinate of the position in terms of cellWidth
+     * @param boardPane the Pane to which the position view is added
+     * @return the created PositionView
+     */
     private PositionView getPositionView(int spot, Layer layer, int x, int y, Pane boardPane) {
         Position position = new Position(layer, spot);
         return new PositionView(position, x, y, boardPane, cellWidth, strokeWidth);
     }
 
-    private void addLines(Pane boardPane) {
-        addLine(boardPane, strokeWidth, cellWidth, 5, 5, 7, 11);
-        addLine(boardPane, strokeWidth, cellWidth, 1, 5, 7, 7);
-        addLine(boardPane, strokeWidth, cellWidth, 1, 1, 5, 7);
-        addLine(boardPane, strokeWidth, cellWidth, 1, 5, 5, 5);
-        addLine(boardPane, strokeWidth, cellWidth, 5, 5, 1, 5);
-        addLine(boardPane, strokeWidth, cellWidth, 5, 7, 1, 1);
-        addLine(boardPane, strokeWidth, cellWidth, 5, 7, 1, 1);
-        addLine(boardPane, strokeWidth, cellWidth, 7, 7, 1, 5);
-        addLine(boardPane, strokeWidth, cellWidth, 7, 11, 5, 5);
-        addLine(boardPane, strokeWidth, cellWidth, 11, 11, 5, 7);
-        addLine(boardPane, strokeWidth, cellWidth, 7, 11, 7, 7);
-        addLine(boardPane, strokeWidth, cellWidth, 7, 7, 7, 11);
-        addLine(boardPane, strokeWidth, cellWidth, 5, 7, 11, 11);
+    /**
+     * Add the letter B to the boardPane at the corners of the board.
+     *
+     * @param boardPane the Pane to which the letters are added
+     */
+    private void addLettersB(Pane boardPane) {
+        StackPane stackPane = getLetterBPane(1.5, 10.5, 0);
+        boardPane.getChildren().add(stackPane);
+        stackPane = getLetterBPane(1.5, 1.5, 180);
+        boardPane.getChildren().add(stackPane);
+        stackPane = getLetterBPane(10.5, 1.5, 180);
+        boardPane.getChildren().add(stackPane);
+        stackPane = getLetterBPane(10.5, 10.5, 0);
+        boardPane.getChildren().add(stackPane);
     }
 
-    private void addButtons(ButtonBar buttonBar) {
-        List<Button> buttons = new ArrayList<>();
-        Button stepButton = new Button("Step");
-        Button nextPlayer = new Button("Next Player");
-        Button playButton = new Button("Play");
-        Button pauseBUtton = new Button("Pause");
-        pauseBUtton.setDisable(true);
-
-        ButtonBar.setButtonUniformSize(stepButton, false);
-        ButtonBar.setButtonUniformSize(nextPlayer, false);
-        ButtonBar.setButtonUniformSize(playButton, false);
-        ButtonBar.setButtonUniformSize(pauseBUtton, false);
-
-        buttons.add(stepButton);
-        buttons.add(nextPlayer);
-        buttons.add(playButton);
-        buttons.add(pauseBUtton);
-
-        buttonBar.getButtons().addAll(buttons);
-    }
-
-    private static void addLine(Pane boardPane, DoubleProperty strokeWidth, DoubleProperty cellWidth, int startX, int endX, int startY, int endY) {
-        Line line = new Line();
-        line.strokeWidthProperty().bind(strokeWidth);
-        line.setStroke(Color.BLACK);
-        line.startXProperty().bind(cellWidth.multiply(startX));
-        line.endXProperty().bind(cellWidth.multiply(endX));
-        line.startYProperty().bind(cellWidth.multiply(startY));
-        line.endYProperty().bind(cellWidth.multiply(endY));
-        boardPane.getChildren().add(line);
-    }
-
-    private static void addBorders(Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth) {
-        Rectangle redBorder = new Rectangle();
-        redBorder.strokeWidthProperty().bind(strokeWidth.multiply(2));
-        redBorder.setStroke(Color.CRIMSON);
-        redBorder.setStrokeType(StrokeType.INSIDE);
-        redBorder.setFill(Color.KHAKI);
-        redBorder.widthProperty().bind(cellWidth.multiply(12));
-        redBorder.heightProperty().bind(cellWidth.multiply(12));
-        boardPane.getChildren().add(redBorder);
-
-        // Add another rectangle with black stroke and transparent color half the cellWidth inside the boardPane
-        Rectangle blackBorder = new Rectangle();
-        blackBorder.strokeWidthProperty().bind(strokeWidth);
-        blackBorder.setStroke(Color.BLACK);
-        blackBorder.setFill(Color.TRANSPARENT);
-        blackBorder.widthProperty().bind(cellWidth.multiply(11.5));
-        blackBorder.heightProperty().bind(cellWidth.multiply(11.5));
-        blackBorder.xProperty().bind(cellWidth.multiply(0.25));
-        blackBorder.yProperty().bind(cellWidth.multiply(0.25));
-        boardPane.getChildren().add(blackBorder);
-    }
-
-    private StackPane getLetterBStackPane(double x, double y, double rotation) {
+    /**
+     * Create a StackPane with the letter B at the given x and y coordinates and rotation.
+     *
+     * @param x        the x coordinate in terms of cellWidth
+     * @param y        the y coordinate in terms of cellWidth
+     * @param rotation the rotation of the letter
+     * @return the created StackPane
+     */
+    private StackPane getLetterBPane(double x, double y, double rotation) {
         Text letterB = new Text("B");
         letterB.setFill(Color.BLACK);
         letterB.setFont(Font.font("System", FontWeight.BOLD, 10)); // Set the font to bold
@@ -305,10 +345,77 @@ public class BoardView {
         return stackPane;
     }
 
-    // TODO: create 6 die objects and set an object property based on the current die value like so:
-    // https://stackoverflow.com/questions/43844808/change-the-image-in-imageview-in-javafx
-    // Do this for all 4 positions, leaving the current visibility logic in place.
-    private StackPane createDie(IntegerProperty currentPlayerIndex, int index, double x, double y) {
+    /**
+     * Add the text "Mens erger je niet" to the boardPane.
+     *
+     * @param boardPane the Pane to which the text is added
+     */
+    private void addText(Pane boardPane) {
+        addWord(boardPane, "Mens", 1.5, 4);
+        addWord(boardPane, "erger", 9, 4);
+        addWord(boardPane, "  je", 1.5, 9);
+        addWord(boardPane, "niet!", 9, 9);
+    }
+
+    /**
+     * Add a word to the boardPane at the given x and y coordinates.
+     *
+     * @param boardPane the Pane to which the word is added
+     * @param word      the word to add
+     * @param x         the x coordinate in terms of cellWidth
+     * @param y         the y coordinate in terms of cellWidth
+     */
+    private void addWord(Pane boardPane, String word, double x, double y) {
+        Text text = new Text(word);
+        text.xProperty().bind(cellWidth.multiply(x));
+        text.yProperty().bind(cellWidth.multiply(y));
+        text.setFont(Font.font("Brush Script MT", 60));
+
+        // Add an event handler to cellWidth to resize the font size when the cellWidth changes
+        cellWidth.addListener((_, _, newValue) -> text.setFont(Font.font("Brush Script MT", newValue.doubleValue())));
+
+        boardPane.getChildren().add(text);
+    }
+
+    /**
+     * Add the dice to the boardPane. All dice combinations will be created,
+     * but only the one for the current player, and the current die value will be visible.
+     *
+     * @param boardPane the Pane to which the dice are added
+     */
+    private void addDice(Pane boardPane) {
+        addDice(boardPane, 0, 3, 11);
+        addDice(boardPane, 1, 1, 3);
+        addDice(boardPane, 2, 9, 1);
+        addDice(boardPane, 3, 11, 9);
+
+    }
+
+    /**
+     * Add the dice for the player with the given index at the given x and y coordinates.
+     *
+     * @param boardPane   the Pane to which the dice are added
+     * @param playerIndex the index of the player
+     * @param x           the x coordinate in terms of cellWidth
+     * @param y           the y coordinate in terms of cellWidth
+     */
+    private void addDice(Pane boardPane, int playerIndex, double x, double y) {
+        for (int i = 1; i < 7; i++) {
+            StackPane diePane = createDie(playerIndex, i, x, y);
+            boardPane.getChildren().add(diePane);
+        }
+    }
+
+    /**
+     * Create a die with the given playerIndex and dieValue at the given x and y coordinates.
+     *
+     * @param playerIndex the index of the player
+     * @param dieValue    the value of the die
+     * @param x           the x coordinate in terms of cellWidth
+     * @param y           the y coordinate in terms of cellWidth
+     * @return the created StackPane
+     */
+    private StackPane createDie(int playerIndex, int dieValue, double x, double y) {
         StackPane diePane = new StackPane();
         Rectangle die = new Rectangle();
         die.setFill(Color.FIREBRICK);
@@ -320,61 +427,89 @@ public class BoardView {
         StackPane.setAlignment(die, javafx.geometry.Pos.CENTER);
         diePane.layoutXProperty().bind(cellWidth.multiply(x).subtract(cellWidth.multiply(0.3)));
         diePane.layoutYProperty().bind(cellWidth.multiply(y).subtract(cellWidth.multiply(0.3)));
-        diePane.visibleProperty().bind(currentPlayerIndex.isEqualTo(index));
-
-        // Create dots based on dieValue
-        for (int i = 1; i <= 6; i++) {
-            Circle dot = new Circle();
-            dot.radiusProperty().bind(cellWidth.multiply(0.05));
-            dot.setFill(Color.GOLD);
-            dot.setVisible(false);
-            diePane.getChildren().add(dot);
-        }
+        diePane.visibleProperty().bind(currentPlayerIndex.isEqualTo(playerIndex).and(currentDieValue.isEqualTo(dieValue)));
 
         // Position dots based on dieValue
-        switch (currentDieValue.get()) {
+        switch (dieValue) {
             case 1:
-                setDotPosition(diePane, 0, 0.5, 0.5);
+                addDot(diePane, 0.5, 0.5);
                 break;
             case 2:
-                setDotPosition(diePane, 0, 0.25, 0.25);
-                setDotPosition(diePane, 1, 0.75, 0.75);
+                addDot(diePane, 0.25, 0.25);
+                addDot(diePane, 0.75, 0.75);
                 break;
             case 3:
-                setDotPosition(diePane, 0, 0.25, 0.25);
-                setDotPosition(diePane, 1, 0.5, 0.5);
-                setDotPosition(diePane, 2, 0.75, 0.75);
+                addDot(diePane, 0.25, 0.25);
+                addDot(diePane, 0.5, 0.5);
+                addDot(diePane, 0.75, 0.75);
                 break;
             case 4:
-                setDotPosition(diePane, 0, 0.25, 0.25);
-                setDotPosition(diePane, 1, 0.75, 0.25);
-                setDotPosition(diePane, 2, 0.25, 0.75);
-                setDotPosition(diePane, 3, 0.75, 0.75);
+                addDot(diePane, 0.25, 0.25);
+                addDot(diePane, 0.75, 0.25);
+                addDot(diePane, 0.25, 0.75);
+                addDot(diePane, 0.75, 0.75);
                 break;
             case 5:
-                setDotPosition(diePane, 0, 0.25, 0.25);
-                setDotPosition(diePane, 1, 0.75, 0.25);
-                setDotPosition(diePane, 2, 0.5, 0.5);
-                setDotPosition(diePane, 3, 0.25, 0.75);
-                setDotPosition(diePane, 4, 0.75, 0.75);
+                addDot(diePane, 0.25, 0.25);
+                addDot(diePane, 0.75, 0.25);
+                addDot(diePane, 0.5, 0.5);
+                addDot(diePane, 0.25, 0.75);
+                addDot(diePane, 0.75, 0.75);
                 break;
             case 6:
-                setDotPosition(diePane, 0, 0.25, 0.25);
-                setDotPosition(diePane, 1, 0.75, 0.25);
-                setDotPosition(diePane, 2, 0.25, 0.5);
-                setDotPosition(diePane, 3, 0.75, 0.5);
-                setDotPosition(diePane, 4, 0.25, 0.75);
-                setDotPosition(diePane, 5, 0.75, 0.75);
+                addDot(diePane, 0.25, 0.25);
+                addDot(diePane, 0.75, 0.25);
+                addDot(diePane, 0.25, 0.5);
+                addDot(diePane, 0.75, 0.5);
+                addDot(diePane, 0.25, 0.75);
+                addDot(diePane, 0.75, 0.75);
                 break;
         }
 
         return diePane;
     }
 
-    private void setDotPosition(StackPane diePane, int dotIndex, double x, double y) {
-        Circle dot = (Circle) diePane.getChildren().get(dotIndex + 1);
+    private void addDot(StackPane diePane, double x, double y) {
+        Circle dot = new Circle();
+        dot.radiusProperty().bind(cellWidth.multiply(0.05));
+        dot.setFill(Color.GOLDENROD);
+        diePane.getChildren().add(dot);
         dot.translateXProperty().bind(cellWidth.multiply(0.6).multiply(x - 0.5));
         dot.translateYProperty().bind(cellWidth.multiply(0.6).multiply(y - 0.5));
-        dot.setVisible(true);
     }
+
+    private void addDebugAction() {
+        // TODO: Remove after debugging
+        debugItem.setOnAction(e -> {
+            // log scene height and width
+            logger.error("Cell Width: {}", cellWidth.get());
+            logger.error("");
+            if (eventPositionViews.get(3).isChoiceProperty().get()) {
+                eventPositionViews.get(3).isChoiceProperty().setValue(false);
+            } else {
+                eventPositionViews.get(3).isChoiceProperty().setValue(true);
+            }
+            /*
+            if (eventPositionViews.get(1).occupiedBy.get() == -1) {
+                eventPositionViews.get(1).occupiedBy.setValue(currentPlayerIndex.get());
+            } else {
+                eventPositionViews.get(1).occupiedBy.setValue(-1);
+            }
+
+             */
+            // Increased the current die value by 1 but not to increase it beyond 6 then start at 1 again
+            currentDieValue.set((currentDieValue.get() + 1));
+            if (currentDieValue.get() > 6) {
+                currentDieValue.set(1);
+            }
+            logger.error("Current Die Value: {}", currentDieValue.get());
+            currentPlayerIndex.set((currentPlayerIndex.get() + 3) % 4);
+            // Toggle a single pawn on
+            eventPositionViews.get(1).occupiedProperty().setValue(currentPlayerIndex.get());
+
+            logger.error("Current Player Index: {}", currentPlayerIndex.get());
+        });
+    }
+
+
 }
