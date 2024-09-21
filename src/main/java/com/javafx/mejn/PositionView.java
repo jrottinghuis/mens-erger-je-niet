@@ -3,19 +3,15 @@ package com.javafx.mejn;
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Position;
 import javafx.beans.property.*;
-import javafx.geometry.Pos;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.RadialGradient;
-import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
-import static com.javafx.mejn.BoardView.*;
+import static com.javafx.mejn.BoardView.currentPlayerIndex;
 import static com.javafx.mejn.MainApp.showPositionNumbers;
 
 public class PositionView {
@@ -36,7 +32,7 @@ public class PositionView {
         DoubleProperty circleRadius = new SimpleDoubleProperty();
         circleRadius.bind(cellWidth.multiply(0.375)); // 0.75/2.5=0.6
         DoubleProperty smallCircleRadius = new SimpleDoubleProperty();
-        smallCircleRadius.bind(cellWidth.multiply(0.22)); // 0.55/2.5=0.22
+        smallCircleRadius.bind(cellWidth.multiply(0.26)); // 0.55/2.5=0.22
 
         Circle circle = new Circle();
         circle.strokeWidthProperty().bind(strokeWidth);
@@ -55,7 +51,7 @@ public class PositionView {
         isChoice.addListener((_, _, newValue) -> {
             if (newValue) {
                 circle.getStrokeDashArray().addAll(5d, 10d);
-                circle.setStroke(PlayerView.getColor(PLAYER_INDEX));
+                circle.setStroke(PlayerView.getColor(currentPlayerIndex));
             } else {
                 // Remove the stroke dash array
                 circle.getStrokeDashArray().clear();
@@ -66,8 +62,8 @@ public class PositionView {
         stackPane.getChildren().add(circle);
 
         Text letter = createLetter();
-        letter.scaleXProperty().bind(circle.radiusProperty().divide(10));
-        letter.scaleYProperty().bind(circle.radiusProperty().divide(10));
+        letter.scaleXProperty().bind(circle.radiusProperty().divide(8));
+        letter.scaleYProperty().bind(circle.radiusProperty().divide(8));
         stackPane.getChildren().add(letter);
 
         Text number = new Text(String.valueOf(position.spot()));
@@ -121,27 +117,20 @@ public class PositionView {
         Text letter = new Text("");
         if (position.layer().equals(Layer.EVENT)) {
             switch (position.spot()) {
-                case 0, 10, 20, 30 -> letter = createLetter("A");
+                case 0, 10, 20, 30 -> letter =  new Text("A");
             }
         } else if (position.layer().equals(Layer.HOME)) {
             switch (position.spot()) {
-                case 0, 10, 20, 30 -> letter = createLetter("a");
-                case 1, 11, 21, 31 -> letter = createLetter("b");
-                case 2, 12, 22, 32 -> letter = createLetter("c");
-                case 3, 13, 23, 33 -> letter = createLetter("d");
+                case 0, 10, 20, 30 -> letter =  new Text("a");
+                case 1, 11, 21, 31 -> letter =  new Text("b");
+                case 2, 12, 22, 32 -> letter =  new Text("c");
+                case 3, 13, 23, 33 -> letter =  new Text("d");
             }
         }
         letter.setFill(Color.BLACK);
-        letter.setFont(Font.font("System", FontWeight.BOLD, 12)); // Set the font to bold
+        letter.setFont(Font.font("System", FontWeight.BOLD, 11)); // Set the font to bold
         return letter;
     }
-
-    private static Text createLetter(String letter) {
-        Text text = new Text(letter);
-        text.setFill(Color.BLACK);
-        return text;
-    }
-
 
     private static void setFill(Position position, Circle circle) {
         if (position.layer().equals(Layer.EVENT)) {

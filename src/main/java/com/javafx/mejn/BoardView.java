@@ -27,10 +27,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -60,7 +65,8 @@ public class BoardView {
 
     private final DoubleProperty cellWidth = new SimpleDoubleProperty(44.0);
     private final DoubleProperty strokeWidth = new SimpleDoubleProperty();
-    static final IntegerProperty PLAYER_INDEX = new SimpleIntegerProperty(0);
+    static final IntegerProperty currentPlayerIndex = new SimpleIntegerProperty(0);
+    static final IntegerProperty currentDieValue = new SimpleIntegerProperty(5);
 
     public BoardView(BorderPane borderPane) {
         Pane boardPane = new Pane();
@@ -132,28 +138,55 @@ public class BoardView {
             spot++;
         }
 
-        // TODO: Add these to a separate array so that I can easily access them for the Controller class
-        spot = 0;
+
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 6, 10 - j, boardPane);
-            spot++;
+            homePositions.get(0).add(j, getPositionView(j, Layer.HOME, 6, 10 - j, boardPane));
         }
-        spot = 10;
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 2 + j, 6, boardPane);
-            spot++;
+            homePositions.get(1).add(j, getPositionView(10 + j, Layer.HOME, 2 + j, 6, boardPane));
         }
-        spot = 20;
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 6, 2 + j, boardPane);
-            spot++;
+            homePositions.get(2).add(j, getPositionView(20 + j, Layer.HOME, 6, 2 + j, boardPane));
         }
-        spot = 30;
         for (int j = 0; j < 4; j++) {
-            getPositionView(spot, Layer.HOME, 10 - j, 6, boardPane);
-            spot++;
+            homePositions.get(3).add(j, getPositionView(30 + j, Layer.HOME, 10 - j, 6, boardPane));
         }
 
+        beginPositions.get(0).add(0, getPositionView(34, Layer.BEGIN, 1, 11, boardPane));
+        beginPositions.get(0).add(1, getPositionView(34, Layer.BEGIN, 1, 10, boardPane));
+        beginPositions.get(0).add(2, getPositionView(34, Layer.BEGIN, 2, 10, boardPane));
+        beginPositions.get(0).add(3, getPositionView(34, Layer.BEGIN, 2, 11, boardPane));
+        beginPositions.get(1).add(0, getPositionView(4, Layer.BEGIN, 1, 2, boardPane));
+        beginPositions.get(1).add(1, getPositionView(4, Layer.BEGIN, 1, 1, boardPane));
+        beginPositions.get(1).add(2, getPositionView(4, Layer.BEGIN, 2, 1, boardPane));
+        beginPositions.get(1).add(3, getPositionView(4, Layer.BEGIN, 2, 2, boardPane));
+        beginPositions.get(2).add(0, getPositionView(14, Layer.BEGIN, 10, 2, boardPane));
+        beginPositions.get(2).add(1, getPositionView(14, Layer.BEGIN, 10, 1, boardPane));
+        beginPositions.get(2).add(2, getPositionView(14, Layer.BEGIN, 11, 1, boardPane));
+        beginPositions.get(2).add(3, getPositionView(14, Layer.BEGIN, 11, 2, boardPane));
+        beginPositions.get(3).add(0, getPositionView(24, Layer.BEGIN, 10, 11, boardPane));
+        beginPositions.get(3).add(1, getPositionView(24, Layer.BEGIN, 10, 10, boardPane));
+        beginPositions.get(3).add(2, getPositionView(24, Layer.BEGIN, 11, 10, boardPane));
+        beginPositions.get(3).add(3, getPositionView(24, Layer.BEGIN, 11, 11, boardPane));
+
+
+         StackPane stackPane = getLetterBStackPane(1.5, 10.5, 0);
+        boardPane.getChildren().add(stackPane);
+        stackPane = getLetterBStackPane(1.5, 1.5, 180);
+        boardPane.getChildren().add(stackPane);
+        stackPane = getLetterBStackPane(10.5, 1.5, 180);
+        boardPane.getChildren().add(stackPane);
+        stackPane = getLetterBStackPane(10.5, 10.5, 0);
+        boardPane.getChildren().add(stackPane);
+
+        StackPane die = createDie(currentPlayerIndex, 0, 3, 11);
+        boardPane.getChildren().add(die);
+        die = createDie(currentPlayerIndex, 1, 1, 3);
+        boardPane.getChildren().add(die);
+        die = createDie(currentPlayerIndex, 2, 9, 1);
+        boardPane.getChildren().add(die);
+        die = createDie(currentPlayerIndex, 3, 11, 9);
+        boardPane.getChildren().add(die);
 
         // TODO: Remove after debugging
         debugItem.setOnAction(e -> {
@@ -166,13 +199,23 @@ public class BoardView {
             } else {
                 eventPositionViews.get(3).isChoice.setValue(true);
             }
-            if (eventPositionViews.get(10).occupiedBy.get() == -1) {
-                eventPositionViews.get(10).occupiedBy.setValue(0);
+            if (eventPositionViews.get(1).occupiedBy.get() == -1) {
+                eventPositionViews.get(1).occupiedBy.setValue(currentPlayerIndex.get());
             } else {
-                eventPositionViews.get(10).occupiedBy.setValue(-1);
+                eventPositionViews.get(1).occupiedBy.setValue(-1);
             }
+            // Increased the current die value by 1 but not to increase it beyond 6 then start at 1 again
+            currentDieValue.set((currentDieValue.get() + 1));
+            if (currentDieValue.get() > 6) {
+                currentDieValue.set(1);
+            }
+            logger.error("Current Die Value: {}", currentDieValue.get());
+            currentPlayerIndex.set((currentPlayerIndex.get() + 3) % 4);
+            logger.error("Current Player Index: {}", currentPlayerIndex.get());
         });
     }
+
+
 
     private PositionView getPositionView(int spot, Layer layer, int x, int y, Pane boardPane) {
         Position position = new Position(layer, spot);
@@ -201,14 +244,12 @@ public class BoardView {
         Button nextPlayer = new Button("Next Player");
         Button playButton = new Button("Play");
         Button pauseBUtton = new Button("Pause");
-
         pauseBUtton.setDisable(true);
 
         ButtonBar.setButtonUniformSize(stepButton, false);
         ButtonBar.setButtonUniformSize(nextPlayer, false);
         ButtonBar.setButtonUniformSize(playButton, false);
         ButtonBar.setButtonUniformSize(pauseBUtton, false);
-
 
         buttons.add(stepButton);
         buttons.add(nextPlayer);
@@ -249,5 +290,91 @@ public class BoardView {
         blackBorder.xProperty().bind(cellWidth.multiply(0.25));
         blackBorder.yProperty().bind(cellWidth.multiply(0.25));
         boardPane.getChildren().add(blackBorder);
+    }
+
+    private StackPane getLetterBStackPane(double x, double y, double rotation) {
+        Text letterB = new Text("B");
+        letterB.setFill(Color.BLACK);
+        letterB.setFont(Font.font("System", FontWeight.BOLD, 10)); // Set the font to bold
+        letterB.scaleXProperty().bind(cellWidth.multiply(0.035));
+        letterB.scaleYProperty().bind(cellWidth.multiply(0.035));
+        StackPane stackPane = new StackPane(letterB);
+        stackPane.layoutXProperty().bind(cellWidth.multiply(x));
+        stackPane.layoutYProperty().bind(cellWidth.multiply(y));
+        stackPane.setRotate(rotation);
+        return stackPane;
+    }
+
+    // TODO: create 6 die objects and set an object property based on the current die value like so:
+    // https://stackoverflow.com/questions/43844808/change-the-image-in-imageview-in-javafx
+    // Do this for all 4 positions, leaving the current visibility logic in place.
+    private StackPane createDie(IntegerProperty currentPlayerIndex, int index, double x, double y) {
+        StackPane diePane = new StackPane();
+        Rectangle die = new Rectangle();
+        die.setFill(Color.FIREBRICK);
+        die.widthProperty().bind(cellWidth.multiply(0.6));
+        die.heightProperty().bind(cellWidth.multiply(0.6));
+        die.setArcWidth(10);
+        die.setArcHeight(10);
+        diePane.getChildren().add(die);
+        StackPane.setAlignment(die, javafx.geometry.Pos.CENTER);
+        diePane.layoutXProperty().bind(cellWidth.multiply(x).subtract(cellWidth.multiply(0.3)));
+        diePane.layoutYProperty().bind(cellWidth.multiply(y).subtract(cellWidth.multiply(0.3)));
+        diePane.visibleProperty().bind(currentPlayerIndex.isEqualTo(index));
+
+        // Create dots based on dieValue
+        for (int i = 1; i <= 6; i++) {
+            Circle dot = new Circle();
+            dot.radiusProperty().bind(cellWidth.multiply(0.05));
+            dot.setFill(Color.GOLD);
+            dot.setVisible(false);
+            diePane.getChildren().add(dot);
+        }
+
+        // Position dots based on dieValue
+        switch (currentDieValue.get()) {
+            case 1:
+                setDotPosition(diePane, 0, 0.5, 0.5);
+                break;
+            case 2:
+                setDotPosition(diePane, 0, 0.25, 0.25);
+                setDotPosition(diePane, 1, 0.75, 0.75);
+                break;
+            case 3:
+                setDotPosition(diePane, 0, 0.25, 0.25);
+                setDotPosition(diePane, 1, 0.5, 0.5);
+                setDotPosition(diePane, 2, 0.75, 0.75);
+                break;
+            case 4:
+                setDotPosition(diePane, 0, 0.25, 0.25);
+                setDotPosition(diePane, 1, 0.75, 0.25);
+                setDotPosition(diePane, 2, 0.25, 0.75);
+                setDotPosition(diePane, 3, 0.75, 0.75);
+                break;
+            case 5:
+                setDotPosition(diePane, 0, 0.25, 0.25);
+                setDotPosition(diePane, 1, 0.75, 0.25);
+                setDotPosition(diePane, 2, 0.5, 0.5);
+                setDotPosition(diePane, 3, 0.25, 0.75);
+                setDotPosition(diePane, 4, 0.75, 0.75);
+                break;
+            case 6:
+                setDotPosition(diePane, 0, 0.25, 0.25);
+                setDotPosition(diePane, 1, 0.75, 0.25);
+                setDotPosition(diePane, 2, 0.25, 0.5);
+                setDotPosition(diePane, 3, 0.75, 0.5);
+                setDotPosition(diePane, 4, 0.25, 0.75);
+                setDotPosition(diePane, 5, 0.75, 0.75);
+                break;
+        }
+
+        return diePane;
+    }
+
+    private void setDotPosition(StackPane diePane, int dotIndex, double x, double y) {
+        Circle dot = (Circle) diePane.getChildren().get(dotIndex + 1);
+        dot.translateXProperty().bind(cellWidth.multiply(0.6).multiply(x - 0.5));
+        dot.translateYProperty().bind(cellWidth.multiply(0.6).multiply(y - 0.5));
+        dot.setVisible(true);
     }
 }
