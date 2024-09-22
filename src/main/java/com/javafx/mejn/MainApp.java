@@ -22,10 +22,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,11 +45,12 @@ public class MainApp extends Application {
      */
     @Override
     public void start(Stage primaryStage) throws Exception {
-        primaryStage.setTitle("Mens Erger Je Niet");
+        primaryStage.setTitle("Mens erger je niet!");
 
-        MenuBar menuBar = createMenuBar(primaryStage);
+        Controller controller = new Controller();
 
-        TabPane tabPane = createTabPane();
+        MenuBar menuBar = createMenuBar(primaryStage, controller);
+        TabPane tabPane = createTabPane(controller);
 
         VBox vBox = new VBox(menuBar, tabPane);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
@@ -60,6 +58,7 @@ public class MainApp extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.show();
+
 
     }
 
@@ -73,7 +72,7 @@ public class MainApp extends Application {
      * @param primaryStage the primary stage for the application
      * @return the menu bar
      */
-    private MenuBar createMenuBar(Stage primaryStage) {
+    private MenuBar createMenuBar(Stage primaryStage, Controller controller) {
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("File");
         MenuItem exitItem = new MenuItem("Exit");
@@ -95,17 +94,10 @@ public class MainApp extends Application {
         clearConsoleItem.setOnAction(_ -> consoleTextArea.clear());
 
         // Create Play menu
-        Menu menuPlay = new Menu("Play");
-        Slider playbackSpeedSlider = new Slider(1, 100, 25);
-        playbackSpeedSlider.setShowTickLabels(true);
-        playbackSpeedSlider.setShowTickMarks(true);
-        playbackSpeedSlider.setMajorTickUnit(10);
-        playbackSpeedSlider.setMinorTickCount(1);
-        playbackSpeedSlider.setBlockIncrement(1);
-        CustomMenuItem playbackSpeedItem = new CustomMenuItem(playbackSpeedSlider);
-        playbackSpeedItem.setHideOnClick(false);
-        menuPlay.getItems().add(playbackSpeedItem);
-        menuBar.getMenus().add(menuPlay);
+        Menu menuConfigure = new Menu("Configure");
+        CustomMenuItem playbackSpeedItem = getPlaybackSpeedItem();
+        menuConfigure.getItems().add(playbackSpeedItem);
+        menuBar.getMenus().add(menuConfigure);
 
         menuConsole.getItems().addAll(enableConsoleCheckMenuItem, clearConsoleItem);
         menuBar.getMenus().add(menuConsole);
@@ -120,17 +112,38 @@ public class MainApp extends Application {
         menuDebug.getItems().addAll(debugItem, showPositionNumbersCheckMenuItem);
         menuBar.getMenus().add(menuDebug);
 
-        ToolBar toolBar = new ToolBar();
-        Button toolBarButton = new Button("Toolbar Button");
-        toolBar.getItems().add(toolBarButton);
         return menuBar;
     }
 
-    private TabPane createTabPane() {
+    /**
+     * Create a CustomMenuItem for the playback speed slider
+     *
+     * @return the CustomMenuItem
+     */
+    private static CustomMenuItem getPlaybackSpeedItem() {
+        Slider playbackSpeedSlider = new Slider(1, 100, 25);
+        playbackSpeedSlider.setShowTickLabels(true);
+        playbackSpeedSlider.setShowTickMarks(true);
+        playbackSpeedSlider.setMajorTickUnit(10);
+        playbackSpeedSlider.setMinorTickCount(1);
+        playbackSpeedSlider.setBlockIncrement(1);
+        // Create a label for the slider
+        Label playbackSpeedLabel = new Label("Playback Speed");
+
+        // Create an HBox to hold the label and the slider
+        HBox playbackSpeedBox = new HBox(10, playbackSpeedLabel, playbackSpeedSlider);
+
+        // Create a CustomMenuItem with the HBox
+        CustomMenuItem playbackSpeedItem = new CustomMenuItem(playbackSpeedBox);
+        playbackSpeedItem.setHideOnClick(false);
+        return playbackSpeedItem;
+    }
+
+    private TabPane createTabPane(Controller controller) {
 
         BorderPane borderPane = new BorderPane();
 
-        boardView = new BoardView(borderPane);
+        boardView = new BoardView(borderPane, controller);
 
         Tab tab2 = getConsoleTab();
         tab2.setClosable(false);

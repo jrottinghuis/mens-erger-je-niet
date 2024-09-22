@@ -18,14 +18,11 @@ package com.javafx.mejn;
 
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Position;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.*;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -37,6 +34,7 @@ import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,7 +54,7 @@ public class BoardView {
 
     static final List<List<PositionView>> homePositions = new ArrayList<>(4);
     static final List<List<PositionView>> beginPositions = new ArrayList<>(4);
-
+    static final List<StringProperty> playerStrategies = new ArrayList<>(4);
     static {
         for (int i = 0; i < 4; i++) {
             List<PositionView> positions = new ArrayList<>(4);
@@ -64,6 +62,7 @@ public class BoardView {
 
             positions = new ArrayList<>(4);
             beginPositions.add(positions);
+            playerStrategies.add(new SimpleStringProperty("Strategy-" + i));
         }
     }
 
@@ -72,13 +71,18 @@ public class BoardView {
     static final IntegerProperty currentPlayerIndex = new SimpleIntegerProperty(-1);
     static final IntegerProperty currentDieValue = new SimpleIntegerProperty(6);
 
+    static final BooleanProperty isPlaying = new SimpleBooleanProperty(false);
+    private final Controller controller;
+
     /**
      * The constructor for the BoardView class. It creates
      * the board, the positions, the dice, and the play control buttons.
      *
      * @param borderPane the BorderPane to which the board is added
+     * @param controller
      */
-    public BoardView(BorderPane borderPane) {
+    public BoardView(BorderPane borderPane, Controller controller) {
+        this.controller = controller;
         Pane boardPane = new Pane();
 
         // Add a listener to boardPane to resize the height when the width changes
@@ -115,21 +119,39 @@ public class BoardView {
      */
     private void addButtons(ButtonBar buttonBar) {
         List<Button> buttons = new ArrayList<>();
-        Button stepButton = new Button("Step");
-        Button nextPlayer = new Button("Next Player");
-        Button playButton = new Button("Play");
-        Button pauseBUtton = new Button("Pause");
-        pauseBUtton.setDisable(true);
 
-        ButtonBar.setButtonUniformSize(stepButton, false);
+        Button stepButton = new Button("Step");
+        ButtonBar.setButtonData(stepButton, ButtonBar.ButtonData.NEXT_FORWARD);
+
+        Button nextPlayer = new Button("Next Player");
+        ButtonBar.setButtonData(nextPlayer, ButtonBar.ButtonData.NEXT_FORWARD);
+
+        Button playButton = new Button("Play");
+        ButtonBar.setButtonData(playButton, ButtonBar.ButtonData.NEXT_FORWARD);
+
+        Button pauseButton = new Button("Pause");
+        pauseButton.setCancelButton(true);
+        pauseButton.setDisable(true);
+
+        // TODO: Adjust for then the game is waiting for a user input
+        isPlaying.addListener((_, _, newValue) -> {
+            playButton.setDisable(newValue);
+            stepButton.setDisable(newValue);
+            nextPlayer.setDisable(newValue);
+            pauseButton.setDisable(!newValue);
+        });
+        ButtonBar.setButtonData(pauseButton, ButtonBar.ButtonData.CANCEL_CLOSE);
+
+
+        //ButtonBar.setButtonUniformSize(stepButton, false);
         ButtonBar.setButtonUniformSize(nextPlayer, false);
-        ButtonBar.setButtonUniformSize(playButton, false);
-        ButtonBar.setButtonUniformSize(pauseBUtton, false);
+        //ButtonBar.setButtonUniformSize(playButton, false);
+        //ButtonBar.setButtonUniformSize(pauseBUtton, false);
 
         buttons.add(stepButton);
         buttons.add(nextPlayer);
         buttons.add(playButton);
-        buttons.add(pauseBUtton);
+        buttons.add(pauseButton);
 
         buttonBar.getButtons().addAll(buttons);
     }
@@ -314,25 +336,29 @@ public class BoardView {
      * @param boardPane the Pane to which the letters are added
      */
     private void addLettersB(Pane boardPane) {
-        StackPane stackPane = getLetterBPane(1.5, 10.5, 0);
+        StackPane stackPane = getLetterBPane(0, 1.5, 10.5, 0);
         boardPane.getChildren().add(stackPane);
-        stackPane = getLetterBPane(1.5, 1.5, 180);
+
+        stackPane = getLetterBPane(1, 1.5, 1.5, 180);
         boardPane.getChildren().add(stackPane);
-        stackPane = getLetterBPane(10.5, 1.5, 180);
+
+        stackPane = getLetterBPane(2, 10.5, 1.5, 180);
         boardPane.getChildren().add(stackPane);
-        stackPane = getLetterBPane(10.5, 10.5, 0);
+
+        stackPane = getLetterBPane(3, 10.5, 10.5, 0);
         boardPane.getChildren().add(stackPane);
     }
 
     /**
      * Create a StackPane with the letter B at the given x and y coordinates and rotation.
      *
-     * @param x        the x coordinate in terms of cellWidth
-     * @param y        the y coordinate in terms of cellWidth
-     * @param rotation the rotation of the letter
+     * @param playerIndex the index of the player
+     * @param x           the x coordinate in terms of cellWidth
+     * @param y           the y coordinate in terms of cellWidth
+     * @param rotation    the rotation of the letter
      * @return the created StackPane
      */
-    private StackPane getLetterBPane(double x, double y, double rotation) {
+    private StackPane getLetterBPane(int playerIndex, double x, double y, double rotation) {
         Text letterB = new Text("B");
         letterB.setFill(Color.BLACK);
         letterB.setFont(Font.font("System", FontWeight.BOLD, 10)); // Set the font to bold
@@ -342,6 +368,12 @@ public class BoardView {
         stackPane.layoutXProperty().bind(cellWidth.multiply(x));
         stackPane.layoutYProperty().bind(cellWidth.multiply(y));
         stackPane.setRotate(rotation);
+
+        Tooltip tooltip = new Tooltip();
+        tooltip.textProperty().bind(playerStrategies.get(playerIndex));
+        tooltip.setShowDelay(Duration.seconds(0.5));
+        tooltip.setShowDuration(Duration.seconds(10));
+        Tooltip.install(stackPane, tooltip);
         return stackPane;
     }
 
@@ -508,6 +540,10 @@ public class BoardView {
             eventPositionViews.get(1).occupiedProperty().setValue(currentPlayerIndex.get());
 
             logger.error("Current Player Index: {}", currentPlayerIndex.get());
+
+            for (int i = 0; i < 4; i++) {
+                beginPositions.get(i).getFirst().occupiedProperty().setValue(i);
+            }
         });
     }
 
