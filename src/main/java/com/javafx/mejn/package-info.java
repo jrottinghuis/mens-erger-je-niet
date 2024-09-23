@@ -14,21 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.rttnghs.mejn.strategy;
 
-import java.util.List;
-
-public interface StrategyFactory {
-
-	/**
-	 * @return list of strategy names.
-	 */
-	public List<String> listStrategies();
-
-	/**
-	 * @param strategyName to get.
-	 * @return uninitialized strategy for the given name.
-	 */
-	public Strategy getStrategy(String strategyName);
-
-}
+/**
+ * This package contains classes related to the JavaFX application for the Mejn game.
+ * It includes custom components and utilities for the user interface.
+ */
+package com.javafx.mejn;

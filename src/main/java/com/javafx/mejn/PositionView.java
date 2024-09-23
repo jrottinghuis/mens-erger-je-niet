@@ -11,7 +11,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
-import static com.javafx.mejn.BoardView.currentPlayerIndex;
 import static com.javafx.mejn.MainApp.showPositionNumbers;
 
 public class PositionView {
@@ -30,14 +29,15 @@ public class PositionView {
     /**
      * Create a new PositionView
      *
-     * @param position    the position to represent
-     * @param x           the x coordinate of the position in terms of cellWidth
-     * @param y           the y coordinate of the position in terms of cellWidth
-     * @param boardPane   the pane to add the position to
-     * @param cellWidth   the width of the cell
-     * @param strokeWidth the width of the stroke
+     * @param position           the position to represent
+     * @param x                  the x coordinate of the position in terms of cellWidth
+     * @param y                  the y coordinate of the position in terms of cellWidth
+     * @param boardPane          the pane to add the position to
+     * @param cellWidth          the width of the cell
+     * @param strokeWidth        the width of the stroke
+     * @param currentPlayerIndex
      */
-    public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth) {
+    public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, IntegerProperty currentPlayerIndex) {
         this.position = position;
 
         // A cell on a real board is 2.5mm. All other sizes are derived from this.

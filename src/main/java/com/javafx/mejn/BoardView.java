@@ -50,28 +50,18 @@ import static com.javafx.mejn.MainApp.debugItem;
 public class BoardView {
     private static final Logger logger = LogManager.getLogger(BoardView.class);
     static final int BOARD_SIZE = 40;
-    static final List<PositionView> eventPositionViews = new ArrayList<>(BOARD_SIZE);
+    final List<PositionView> eventPositions = new ArrayList<>(BOARD_SIZE);
 
-    static final List<List<PositionView>> homePositions = new ArrayList<>(4);
-    static final List<List<PositionView>> beginPositions = new ArrayList<>(4);
-    static final List<StringProperty> playerStrategies = new ArrayList<>(4);
-    static {
-        for (int i = 0; i < 4; i++) {
-            List<PositionView> positions = new ArrayList<>(4);
-            homePositions.add(positions);
-
-            positions = new ArrayList<>(4);
-            beginPositions.add(positions);
-            playerStrategies.add(new SimpleStringProperty("Strategy-" + i));
-        }
-    }
+    final List<List<PositionView>> homePositions = new ArrayList<>(4);
+    final List<List<PositionView>> beginPositions = new ArrayList<>(4);
+    final List<StringProperty> playerStrategies = new ArrayList<>(4);
 
     private final DoubleProperty cellWidth = new SimpleDoubleProperty(44.0);
     private final DoubleProperty strokeWidth = new SimpleDoubleProperty();
-    static final IntegerProperty currentPlayerIndex = new SimpleIntegerProperty(-1);
-    static final IntegerProperty currentDieValue = new SimpleIntegerProperty(6);
+    final IntegerProperty currentPlayerIndex = new SimpleIntegerProperty(-1);
+    final IntegerProperty currentDieValue = new SimpleIntegerProperty(6);
 
-    static final BooleanProperty isPlaying = new SimpleBooleanProperty(false);
+    final BooleanProperty isPlaying = new SimpleBooleanProperty(false);
     private final Controller controller;
 
     /**
@@ -83,6 +73,16 @@ public class BoardView {
      */
     public BoardView(BorderPane borderPane, Controller controller) {
         this.controller = controller;
+
+        for (int i = 0; i < 4; i++) {
+            List<PositionView> positions = new ArrayList<>(4);
+            homePositions.add(positions);
+
+            positions = new ArrayList<>(4);
+            beginPositions.add(positions);
+            playerStrategies.add(new SimpleStringProperty("Strategy-" + i));
+        }
+
         Pane boardPane = new Pane();
 
         // Add a listener to boardPane to resize the height when the width changes
@@ -142,11 +142,7 @@ public class BoardView {
         });
         ButtonBar.setButtonData(pauseButton, ButtonBar.ButtonData.CANCEL_CLOSE);
 
-
-        //ButtonBar.setButtonUniformSize(stepButton, false);
         ButtonBar.setButtonUniformSize(nextPlayer, false);
-        //ButtonBar.setButtonUniformSize(playButton, false);
-        //ButtonBar.setButtonUniformSize(pauseBUtton, false);
 
         buttons.add(stepButton);
         buttons.add(nextPlayer);
@@ -235,51 +231,51 @@ public class BoardView {
     private void addPositions(Pane boardPane) {
         int spot = 0;
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5, 11 - j, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 5, 11 - j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5 - j, 7, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 5 - j, 7, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 1, 7 - j, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 1, 7 - j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 1 + j, 5, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 1 + j, 5, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5, 5 - j, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 5, 5 - j, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 5 + j, 1, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 5 + j, 1, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7, 1 + j, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 7, 1 + j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7 + j, 5, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 7 + j, 5, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 11, 5 + j, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 11, 5 + j, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 11 - j, 7, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 11 - j, 7, boardPane));
             spot++;
         }
         for (int j = 0; j < 4; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7, 7 + j, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 7, 7 + j, boardPane));
             spot++;
         }
         for (int j = 0; j < 2; j++) {
-            eventPositionViews.add(spot, getPositionView(spot, Layer.EVENT, 7 - j, 11, boardPane));
+            eventPositions.add(spot, getPositionView(spot, Layer.EVENT, 7 - j, 11, boardPane));
             spot++;
         }
 
@@ -327,7 +323,7 @@ public class BoardView {
      */
     private PositionView getPositionView(int spot, Layer layer, int x, int y, Pane boardPane) {
         Position position = new Position(layer, spot);
-        return new PositionView(position, x, y, boardPane, cellWidth, strokeWidth);
+        return new PositionView(position, x, y, boardPane, cellWidth, strokeWidth, currentPlayerIndex);
     }
 
     /**
@@ -513,37 +509,9 @@ public class BoardView {
     private void addDebugAction() {
         // TODO: Remove after debugging
         debugItem.setOnAction(e -> {
-            // log scene height and width
-            logger.error("Cell Width: {}", cellWidth.get());
-            logger.error("");
-            if (eventPositionViews.get(3).isChoiceProperty().get()) {
-                eventPositionViews.get(3).isChoiceProperty().setValue(false);
-            } else {
-                eventPositionViews.get(3).isChoiceProperty().setValue(true);
-            }
-            /*
-            if (eventPositionViews.get(1).occupiedBy.get() == -1) {
-                eventPositionViews.get(1).occupiedBy.setValue(currentPlayerIndex.get());
-            } else {
-                eventPositionViews.get(1).occupiedBy.setValue(-1);
-            }
-
-             */
-            // Increased the current die value by 1 but not to increase it beyond 6 then start at 1 again
-            currentDieValue.set((currentDieValue.get() + 1));
-            if (currentDieValue.get() > 6) {
-                currentDieValue.set(1);
-            }
             logger.error("Current Die Value: {}", currentDieValue.get());
-            currentPlayerIndex.set((currentPlayerIndex.get() + 3) % 4);
-            // Toggle a single pawn on
-            eventPositionViews.get(1).occupiedProperty().setValue(currentPlayerIndex.get());
-
             logger.error("Current Player Index: {}", currentPlayerIndex.get());
-
-            for (int i = 0; i < 4; i++) {
-                beginPositions.get(i).getFirst().occupiedProperty().setValue(i);
-            }
+            logger.error("Playback Speed: {}", MainApp.playbackSpeed);
         });
     }
 

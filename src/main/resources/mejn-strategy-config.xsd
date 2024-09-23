@@ -3,7 +3,7 @@
   <xs:element name="config">
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="strategies">
+        <xs:element name="strategies" minOccurs="1" maxOccurs="1">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="strategy" maxOccurs="unbounded">
@@ -22,12 +22,17 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="brackets">
+        <xs:element name="tournamentBrackets" minOccurs="1" maxOccurs="1">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="bracket" maxOccurs="unbounded" type="xs:string" />
             </xs:sequence>
-            <xs:attribute name="strategies" use="required" />
+            <xs:attribute name="strategies" type="xs:string" use="required" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="gui" minOccurs="1" maxOccurs="1">
+          <xs:complexType>
+            <xs:attribute name="strategies" type="xs:string" use="required"/>
           </xs:complexType>
         </xs:element>
       </xs:sequence>

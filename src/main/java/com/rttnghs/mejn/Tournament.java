@@ -68,7 +68,7 @@ public class Tournament {
 	}
 
 	public static List<String> getStrategyNames() {
-		String bracketStrategyNamesAttribute = Config.configuration.getString("brackets[@strategies]");
+		String bracketStrategyNamesAttribute = Config.configuration.getString("tournamentBrackets[@strategies]");
         return new ArrayList<>(
                 Arrays.asList(bracketStrategyNamesAttribute.split(",", -1)));
 	}
@@ -87,7 +87,7 @@ public class Tournament {
 	public static List<List<String>> getStrategyNameBrackets(List<String> bracketStrategyNames) {
 		List<List<String>> strategyNameBrackets = new ArrayList<>();
 
-		List<String> bracketConfigurations = Config.configuration.getList(String.class, "brackets.bracket");
+		List<String> bracketConfigurations = Config.configuration.getList(String.class, "tournamentBrackets.bracket");
 
 		// Function that takes an index (from the bracket) and does a lookup in the list
 		// of bracketStrategyNames

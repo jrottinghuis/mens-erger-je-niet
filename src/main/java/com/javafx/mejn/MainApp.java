@@ -18,7 +18,11 @@ package com.javafx.mejn;
 
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
@@ -37,7 +41,12 @@ public class MainApp extends Application {
 
     final static MenuItem debugItem = new MenuItem("Capture");
     final static BooleanProperty showPositionNumbers = new SimpleBooleanProperty(false);
-    public static BoardView boardView;
+    final static DoubleProperty playbackSpeed = new SimpleDoubleProperty(25);
+    static BoardView boardView;
+    final static ObservableList<String> strategyOptions = FXCollections.observableArrayList();
+    static final ObservableList<String> strategySelections = FXCollections.observableArrayList();
+
+    private Stage primaryStage;
 
     /**
      * @param primaryStage the primary stage for the application
@@ -45,6 +54,7 @@ public class MainApp extends Application {
      */
     @Override
     public void start(Stage primaryStage) throws Exception {
+        this.primaryStage = primaryStage;
         primaryStage.setTitle("Mens erger je niet!");
 
         Controller controller = new Controller();
@@ -57,9 +67,10 @@ public class MainApp extends Application {
         Scene scene = new Scene(vBox, 700, 900);
 
         primaryStage.setScene(scene);
+
+        controller.initialize();
+
         primaryStage.show();
-
-
     }
 
     public static void main(String[] args) {
@@ -77,30 +88,42 @@ public class MainApp extends Application {
         Menu menuFile = new Menu("File");
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.setAccelerator(KeyCombination.keyCombination("Ctrl+X"));
+        // TODO: Cancel all background tasks and stop all background (daemon) threads.
         exitItem.setOnAction(_ -> primaryStage.close());
         menuFile.getItems().add(exitItem);
         menuBar.getMenus().add(menuFile);
 
-        Menu menuConsole = new Menu("Console");
+        // Create Configure menu
+        Menu menuConfigure = new Menu("Configure");
 
+        // Create console sub-menu
+        Menu menuConsole = new Menu("Console");
         CheckMenuItem enableConsoleCheckMenuItem = new CheckMenuItem("Enable Console");
         enableConsoleCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+E"));
         enableConsoleCheckMenuItem.setSelected(true);
-
         TextAreaAppender.setTextArea(consoleTextArea, enableConsoleCheckMenuItem.selectedProperty());
 
         MenuItem clearConsoleItem = new MenuItem("Clear Console");
         clearConsoleItem.setAccelerator(KeyCombination.keyCombination("Ctrl+C"));
         clearConsoleItem.setOnAction(_ -> consoleTextArea.clear());
 
-        // Create Play menu
-        Menu menuConfigure = new Menu("Configure");
-        CustomMenuItem playbackSpeedItem = getPlaybackSpeedItem();
-        menuConfigure.getItems().add(playbackSpeedItem);
+        menuConsole.getItems().addAll(enableConsoleCheckMenuItem, clearConsoleItem);
+
+
+        // Create Game sub-menu
+        Menu menuGame = new Menu("Game");
+        MenuItem strategyItem = new MenuItem("Strategies");
+        menuGame.getItems().add(strategyItem);
+        //strategyItem.setOnAction(_ -> getConfigureGameStrategies());
+        strategyItem.setOnAction((event) -> getConfigureGameStrategies());
+
+        MenuItem playbackSpeedItem = new MenuItem("Playback Speed");
+        menuGame.getItems().add(playbackSpeedItem);
+        playbackSpeedItem.setOnAction(_ -> getPlaybackSpeedItem());
+
+        menuConfigure.getItems().addAll(menuConsole, menuGame);
         menuBar.getMenus().add(menuConfigure);
 
-        menuConsole.getItems().addAll(enableConsoleCheckMenuItem, clearConsoleItem);
-        menuBar.getMenus().add(menuConsole);
 
         // TODO: Remove after debugging
         Menu menuDebug = new Menu("Debug");
@@ -116,27 +139,96 @@ public class MainApp extends Application {
     }
 
     /**
-     * Create a CustomMenuItem for the playback speed slider
-     *
-     * @return the CustomMenuItem
+     * Create a dialog to configure the game strategies
      */
-    private static CustomMenuItem getPlaybackSpeedItem() {
-        Slider playbackSpeedSlider = new Slider(1, 100, 25);
+    private void getConfigureGameStrategies() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Game Strategies");
+
+        // Set the button types
+        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
+
+        // Create the ComboBoxes and pre-set their values
+        ComboBox<String> comboBox0 = new ComboBox<>(strategyOptions);
+        comboBox0.setEditable(false);
+        comboBox0.setValue(strategySelections.get(0));
+
+        ComboBox<String> comboBox1 = new ComboBox<>(strategyOptions);
+        comboBox1.setEditable(false);
+        comboBox1.setValue(strategySelections.get(1));
+
+        ComboBox<String> comboBox2 = new ComboBox<>(strategyOptions);
+        comboBox2.setEditable(false);
+        comboBox2.setValue(strategySelections.get(2));
+
+        ComboBox<String> comboBox3 = new ComboBox<>(strategyOptions);
+        comboBox3.setEditable(false);
+        comboBox3.setValue(strategySelections.get(3));
+
+        // Create a layout and add the ComboBoxes
+        VBox vbox = new VBox(10, comboBox0, comboBox1, comboBox2, comboBox3);
+        dialog.getDialogPane().setContent(vbox);
+
+        // Set result converter to update strategySelections when OK is pressed
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == okButtonType) {
+                strategySelections.set(0, comboBox0.getValue());
+                strategySelections.set(1, comboBox1.getValue());
+                strategySelections.set(2, comboBox2.getValue());
+                strategySelections.set(3, comboBox3.getValue());
+            }
+            return null;
+        });
+
+        // Log the x and y coordinates of the dialog
+        logger.error("Dialog x: " + dialog.getX() + " y: " + dialog.getY());
+
+        // Make sure that the dialog is centered on the primaryStage
+        dialog.initOwner(primaryStage);
+
+        // Show the dialog and wait for the result
+        dialog.showAndWait();
+    }
+
+    /**
+     * Create a dialog to configure the game playback speed
+     */
+    private void getPlaybackSpeedItem() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Playback Speed");
+
+        // Set the button types
+        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
+
+        // Create the playback speed slider
+        Slider playbackSpeedSlider = new Slider(1, 100, playbackSpeed.get());
         playbackSpeedSlider.setShowTickLabels(true);
         playbackSpeedSlider.setShowTickMarks(true);
         playbackSpeedSlider.setMajorTickUnit(10);
         playbackSpeedSlider.setMinorTickCount(1);
         playbackSpeedSlider.setBlockIncrement(1);
-        // Create a label for the slider
-        Label playbackSpeedLabel = new Label("Playback Speed");
 
-        // Create an HBox to hold the label and the slider
-        HBox playbackSpeedBox = new HBox(10, playbackSpeedLabel, playbackSpeedSlider);
+        // Create a layout and add the slider
+        VBox vbox = new VBox(10, playbackSpeedSlider);
+        dialog.getDialogPane().setContent(vbox);
 
-        // Create a CustomMenuItem with the HBox
-        CustomMenuItem playbackSpeedItem = new CustomMenuItem(playbackSpeedBox);
-        playbackSpeedItem.setHideOnClick(false);
-        return playbackSpeedItem;
+        // create a listener for the OK button to set set playbackSpeed to the value of the slider
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == okButtonType) {
+                playbackSpeed.set(playbackSpeedSlider.getValue());
+            }
+            return null;
+        });
+
+        // Make sure that the dialog is centered on the primaryStage
+        dialog.initOwner(primaryStage);
+
+        // Show the dialog and wait for the result
+        dialog.showAndWait();
     }
 
     private TabPane createTabPane(Controller controller) {

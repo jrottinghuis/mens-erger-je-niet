@@ -39,7 +39,7 @@ class PlayerTest {
 	final void testPlayersOf() {
 		final BaseHistory<Move> history = new BaseHistory<>(512);
 
-		String bracketStrategyNamesAttribute = Config.configuration.getString("brackets[@strategies]");
+		String bracketStrategyNamesAttribute = Config.configuration.getString("tournamentBrackets[@strategies]");
 		List<String> bracketStrategyNames = new ArrayList<>(
 				Arrays.asList(bracketStrategyNamesAttribute.split(",", -1)));
 
