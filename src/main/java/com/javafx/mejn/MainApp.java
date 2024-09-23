@@ -27,6 +27,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -141,57 +143,64 @@ public class MainApp extends Application {
     /**
      * Create a dialog to configure the game strategies
      */
-    private void getConfigureGameStrategies() {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Game Strategies");
+   private void getConfigureGameStrategies() {
+    Dialog<Void> dialog = new Dialog<>();
+    dialog.setTitle("Game Strategies");
 
-        // Set the button types
-        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
+    // Set the button types
+    ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+    ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+    dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
 
-        // Create the ComboBoxes and pre-set their values
-        ComboBox<String> comboBox0 = new ComboBox<>(strategyOptions);
-        comboBox0.setEditable(false);
-        comboBox0.setValue(strategySelections.get(0));
+    // Create the ComboBoxes and pre-set their values
+    ComboBox<String> comboBox0 = new ComboBox<>(strategyOptions);
+    comboBox0.setEditable(false);
+    comboBox0.setValue(strategySelections.get(0));
 
-        ComboBox<String> comboBox1 = new ComboBox<>(strategyOptions);
-        comboBox1.setEditable(false);
-        comboBox1.setValue(strategySelections.get(1));
+    ComboBox<String> comboBox1 = new ComboBox<>(strategyOptions);
+    comboBox1.setEditable(false);
+    comboBox1.setValue(strategySelections.get(1));
 
-        ComboBox<String> comboBox2 = new ComboBox<>(strategyOptions);
-        comboBox2.setEditable(false);
-        comboBox2.setValue(strategySelections.get(2));
+    ComboBox<String> comboBox2 = new ComboBox<>(strategyOptions);
+    comboBox2.setEditable(false);
+    comboBox2.setValue(strategySelections.get(2));
 
-        ComboBox<String> comboBox3 = new ComboBox<>(strategyOptions);
-        comboBox3.setEditable(false);
-        comboBox3.setValue(strategySelections.get(3));
+    ComboBox<String> comboBox3 = new ComboBox<>(strategyOptions);
+    comboBox3.setEditable(false);
+    comboBox3.setValue(strategySelections.get(3));
 
-        // Create a layout and add the ComboBoxes
-        VBox vbox = new VBox(10, comboBox0, comboBox1, comboBox2, comboBox3);
-        dialog.getDialogPane().setContent(vbox);
+    // Create a layout and add the HBoxes
+    VBox vbox = new VBox(10, createPlayerHBox(0, comboBox0), createPlayerHBox(1, comboBox1), createPlayerHBox(2, comboBox2), createPlayerHBox(3, comboBox3));
+    dialog.getDialogPane().setContent(vbox);
 
-        // Set result converter to update strategySelections when OK is pressed
-        dialog.setResultConverter(buttonType -> {
-            if (buttonType == okButtonType) {
-                strategySelections.set(0, comboBox0.getValue());
-                strategySelections.set(1, comboBox1.getValue());
-                strategySelections.set(2, comboBox2.getValue());
-                strategySelections.set(3, comboBox3.getValue());
-            }
-            return null;
-        });
+    // Set result converter to update strategySelections when OK is pressed
+    dialog.setResultConverter(buttonType -> {
+        if (buttonType == okButtonType) {
+            strategySelections.set(0, comboBox0.getValue());
+            strategySelections.set(1, comboBox1.getValue());
+            strategySelections.set(2, comboBox2.getValue());
+            strategySelections.set(3, comboBox3.getValue());
+        }
+        return null;
+    });
 
-        // Log the x and y coordinates of the dialog
-        logger.error("Dialog x: " + dialog.getX() + " y: " + dialog.getY());
+    // Make sure that the dialog is centered on the primaryStage
+    dialog.initOwner(primaryStage);
 
-        // Make sure that the dialog is centered on the primaryStage
-        dialog.initOwner(primaryStage);
+    // Show the dialog and wait for the result
+    dialog.showAndWait();
+}
 
-        // Show the dialog and wait for the result
-        dialog.showAndWait();
-    }
+private HBox createPlayerHBox(int playerIndex, ComboBox<String> comboBox) {
+    // Create the Circle (pawn) for the ComboBox
+    Circle pawn = new Circle(12, PlayerView.getColor(playerIndex));
+    pawn.setStrokeWidth(1);
+    pawn.setStroke(Color.BLACK);
+    pawn.setFill(PlayerView.getGradient(playerIndex));
 
+    // Create an HBox to hold the Circle and ComboBox
+    return new HBox(12, pawn, comboBox);
+}
     /**
      * Create a dialog to configure the game playback speed
      */

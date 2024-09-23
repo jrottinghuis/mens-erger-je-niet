@@ -3,6 +3,8 @@ package com.javafx.mejn;
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Position;
 import javafx.beans.property.*;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -10,10 +12,15 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import static com.javafx.mejn.MainApp.debugItem;
 import static com.javafx.mejn.MainApp.showPositionNumbers;
 
 public class PositionView {
+
+    private static final Logger logger = LogManager.getLogger(PositionView.class);
 
     private final Position position;
 
@@ -99,6 +106,7 @@ public class PositionView {
                 pawn.setFill(PlayerView.getGradient(newValue.intValue()));
             }
         });
+
         stackPane.getChildren().add(pawn);
 
         // Position the stackPane in the right place
