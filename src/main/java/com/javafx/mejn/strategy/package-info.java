@@ -14,39 +14,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.rttnghs.mejn;
-
-import java.util.Random;
-
-/**
- *
- */
-public class Die {
-
-	/**
-	 * How many faces this die has.
-	 */
-	public final int faces;
-	private static final Random number = new Random();
-
-	/**
-	 * Die will roll between 1 and faces (including).
-	 * 
-	 * @param faces upper limit of what this die can roll.
-	 * @throws IllegalArgumentException when faces is < 1.
-	 */
-	public Die(int faces) {
-		if (faces < 1) {
-			throw new IllegalArgumentException("Cannot have a die with <1 faces");
-		}
-		this.faces = faces;
-	}
-
-	/**
-	 * Roll the die. Returns a random value between 1 and faces (including).
-	 */
-	public int roll() {
-		return number.nextInt(faces) + 1;
-	}
-
-}
+package com.javafx.mejn.strategy;

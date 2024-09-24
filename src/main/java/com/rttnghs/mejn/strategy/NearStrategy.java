@@ -26,7 +26,7 @@ import com.rttnghs.mejn.Move;
  * Always selects the pawn that is nearest to the start, the least far
  * along.
  * <p>
- * Note that when players are allowed to strike themselves, this is a really bad
+ * Note that when players are allowed to strike themselves, this is a terrible
  * strategy.
  */
 public class NearStrategy extends BaseStrategy implements Strategy {

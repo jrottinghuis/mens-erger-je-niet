@@ -19,6 +19,7 @@ package com.javafx.mejn;
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Position;
 import javafx.beans.property.*;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
@@ -40,9 +41,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import static com.javafx.mejn.MainApp.BORDER_OFFSET;
-import static com.javafx.mejn.MainApp.debugItem;
+import static com.javafx.mejn.MainApp.*;
 
 /**
  * The BoardView class is responsible for creating the board view. It creates the board, the positions, the dice, and the play control buttons.
@@ -64,6 +65,9 @@ public class BoardView {
     final BooleanProperty isPlaying = new SimpleBooleanProperty(false);
     private final Controller controller;
 
+    // Keep this private with access through public methods so that the observable object can be dropped and re-created in order to drop the attached listeners from manual strategies create for users that might later change along the way. Otherwise this would lead to memory leaks.
+    private SimpleObjectProperty<Position> selectedPosition = new SimpleObjectProperty<>();
+
     /**
      * The constructor for the BoardView class. It creates
      * the board, the positions, the dice, and the play control buttons.
@@ -80,7 +84,6 @@ public class BoardView {
 
             positions = new ArrayList<>(4);
             beginPositions.add(positions);
-            playerStrategies.add(new SimpleStringProperty("Strategy-" + i));
         }
 
         Pane boardPane = new Pane();
@@ -366,7 +369,13 @@ public class BoardView {
         stackPane.setRotate(rotation);
 
         Tooltip tooltip = new Tooltip();
-        tooltip.textProperty().bind(playerStrategies.get(playerIndex));
+        //tooltip.textProperty().bind(playerStrategies.get(playerIndex));
+        // bind hte tooltop text property to strategySelections for the corresponding playerIndex
+        //tooltip.textProperty().bind(strategySelections.get(playerIndex));
+        strategySelections.addListener((ListChangeListener.Change<? extends String> c) -> {
+            tooltip.setText(strategySelections.get(playerIndex));
+        });
+
         tooltip.setShowDelay(Duration.seconds(0.5));
         tooltip.setShowDuration(Duration.seconds(10));
         Tooltip.install(stackPane, tooltip);
@@ -428,7 +437,7 @@ public class BoardView {
      * @param y           the y coordinate in terms of cellWidth
      */
     private void addDice(Pane boardPane, int playerIndex, double x, double y) {
-        for (int i = 1; i < 7; i++) {
+        for (int i = 0; i < 7; i++) {
             StackPane diePane = createDie(playerIndex, i, x, y);
             boardPane.getChildren().add(diePane);
         }
@@ -516,4 +525,41 @@ public class BoardView {
     }
 
 
+    /**
+     * Register a handler for the selected position.
+     *
+     * @param positionCompletableFuture
+     * @param playerIndex
+     */
+    public void setChoice(CompletableFuture<Position> positionCompletableFuture, int playerIndex) {
+        selectedPosition.addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                // Shift the selected position to the perspective of the player's strategy
+                positionCompletableFuture.complete(newValue.move(playerIndex * 10).normalize(40));
+            }
+        });
+    }
+
+    /**
+     * Set the selected position.
+     *
+     * @param position the selected position
+     */
+    public void setSelectedPosition(Position position) {
+        selectedPosition.set(position);
+    }
+
+    /**
+     * Get the selected position.
+     */
+    public Position getSelectedPosition() {
+        return selectedPosition.get();
+    }
+
+    /**
+     * Reset the selected position.
+     */
+    public void resetSelectedPosition() {
+        selectedPosition = new SimpleObjectProperty<>();
+    }
 }

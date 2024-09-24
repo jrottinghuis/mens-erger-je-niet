@@ -18,6 +18,11 @@
 			<parameters>null</parameters>
 		</strategy>
 		<strategy>
+			<name>ManualStrategy</name>
+			<class>com.javafx.mejn.strategy.ManualStrategy</class>
+			<parameters>null</parameters>
+		</strategy>
+		<strategy>
 			<name>RankingStrategy</name>
 			<class>com.rttnghs.mejn.strategy.ranking.SomeRankingStrategy</class>
 			<parameters>-90,20,80,-5,10,0</parameters>
