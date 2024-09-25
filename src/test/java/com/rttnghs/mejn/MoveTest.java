@@ -176,4 +176,22 @@ class MoveTest {
 		assertEquals(expected, shifted);
 	}
 
+	@Test
+	void testFrom() {
+		Position fromPosition = new Position(Layer.BEGIN, 0);
+		Position toPosition = new Position(Layer.EVENT, 10);
+		Move move = new Move(fromPosition, toPosition);
+
+		assertEquals(fromPosition, move.from(), "The from() method should return the correct from position.");
+	}
+
+	@Test
+	void testTo() {
+		Position fromPosition = new Position(Layer.BEGIN, 0);
+		Position toPosition = new Position(Layer.EVENT, 10);
+		Move move = new Move(fromPosition, toPosition);
+
+		assertEquals(toPosition, move.to(), "The to() method should return the correct to position.");
+	}
+
 }

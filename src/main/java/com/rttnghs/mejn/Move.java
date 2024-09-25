@@ -103,4 +103,20 @@ public record Move(Position from, Position to) implements Comparable<Move> {
 		return (move) -> move.shift(spots, boardSize);
 	}
 
+	/**
+	 * @return the from position of the move.
+	 */
+	@Override
+	public Position from() {
+		return from;
+	}
+
+	/**
+	 * @return the to position of the move.
+	 */
+	@Override
+	public Position to() {
+		return to;
+	}
+
 }

@@ -128,9 +128,9 @@ public class Game {
 
 		Move strike = board.getStrikeMove(choice);
 		if (strike != null) {
-			int player = board.getBoardState().getPlayer(choice.to());
-			strikes.increment(currentPlayer, player);
-            logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, player, choice, strike);
+			int struckPlayer = board.getBoardState().getPlayer(choice.to());
+			strikes.increment(currentPlayer, struckPlayer);
+            logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, struckPlayer, choice, strike);
 			move(strike);
 		}
 		move(choice);

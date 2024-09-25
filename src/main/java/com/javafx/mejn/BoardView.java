@@ -66,7 +66,7 @@ public class BoardView {
     private final Controller controller;
 
     // Keep this private with access through public methods so that the observable object can be dropped and re-created in order to drop the attached listeners from manual strategies create for users that might later change along the way. Otherwise this would lead to memory leaks.
-    private SimpleObjectProperty<Position> selectedPosition = new SimpleObjectProperty<>();
+    private SimpleObjectProperty<Position> selectedPosition = new SimpleObjectProperty<>(null);
 
     /**
      * The constructor for the BoardView class. It creates
@@ -326,7 +326,7 @@ public class BoardView {
      */
     private PositionView getPositionView(int spot, Layer layer, int x, int y, Pane boardPane) {
         Position position = new Position(layer, spot);
-        return new PositionView(position, x, y, boardPane, cellWidth, strokeWidth, currentPlayerIndex);
+        return new PositionView(position, x, y, boardPane, cellWidth, strokeWidth, currentPlayerIndex, this::setSelectedPosition);
     }
 
     /**

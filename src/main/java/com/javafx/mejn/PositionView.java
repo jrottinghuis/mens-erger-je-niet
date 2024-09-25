@@ -3,8 +3,6 @@ package com.javafx.mejn;
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Position;
 import javafx.beans.property.*;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -15,7 +13,8 @@ import javafx.scene.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static com.javafx.mejn.MainApp.debugItem;
+import java.util.function.Consumer;
+
 import static com.javafx.mejn.MainApp.showPositionNumbers;
 
 public class PositionView {
@@ -26,6 +25,8 @@ public class PositionView {
 
     // Indicate if this field is a choice for the BoardView.PLAYER_INDEX and set border accordingly
     private final BooleanProperty isChoice = new SimpleBooleanProperty(false);
+
+    private final BooleanProperty isSelected = new SimpleBooleanProperty(false);
 
     // The player index occupying this property. Any other value indicates, not occupied.
     private final IntegerProperty occupiedBy = new SimpleIntegerProperty(-1);
@@ -44,7 +45,7 @@ public class PositionView {
      * @param strokeWidth        the width of the stroke
      * @param currentPlayerIndex
      */
-    public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, IntegerProperty currentPlayerIndex) {
+    public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, IntegerProperty currentPlayerIndex, Consumer<Position> selectedPositionSetter) {
         this.position = position;
 
         // A cell on a real board is 2.5mm. All other sizes are derived from this.
@@ -66,7 +67,7 @@ public class PositionView {
 
         setFill(position, circle);
 
-        // Set the appropriate stroke Dash Array and color
+        // Set the appropriate stroke Dash Array and color if this position is an option for a valid move
         isChoice.addListener((_, _, newValue) -> {
             if (newValue) {
                 circle.getStrokeDashArray().addAll(5d, 10d);
@@ -77,6 +78,19 @@ public class PositionView {
                 circle.setStroke(Color.BLACK);
             }
         });
+
+        // Set the appropriate stroke color if this position is the selected option for a move.
+        isSelected.addListener((_, _, newValue) -> {
+            if (newValue) {
+                circle.getStrokeDashArray().clear();
+                circle.setStroke(PlayerView.getColor(currentPlayerIndex));
+            } else {
+                // Remove the stroke dash array
+                circle.getStrokeDashArray().clear();
+                circle.setStroke(Color.BLACK);
+            }
+        });
+
         StackPane stackPane = new StackPane();
         stackPane.getChildren().add(circle);
 
@@ -114,14 +128,29 @@ public class PositionView {
         stackPane.layoutYProperty().bind(cellWidth.multiply(y).subtract(circle.radiusProperty()));
         stackPane.prefWidthProperty().bind(circle.radiusProperty());
         rotateStackPane(stackPane);
+
+        stackPane.setOnMouseClicked(event -> {
+            if (isChoice.get()) {
+                logger.error("Clicked on position: " + position);
+                selectedPositionSetter.accept(position);
+            } else {
+                logger.error("Clicked on position while not a choice: " + position);
+            }
+        });
+
         boardPane.getChildren().add(stackPane);
     }
+
 
     /**
      * Get the isChoice property of this position to be used by Board
      */
     BooleanProperty isChoiceProperty() {
         return isChoice;
+    }
+
+    BooleanProperty isSelectedProperty() {
+        return isSelected;
     }
 
     /**
