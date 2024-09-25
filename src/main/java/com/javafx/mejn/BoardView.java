@@ -124,12 +124,18 @@ public class BoardView {
         List<Button> buttons = new ArrayList<>();
 
         Button stepButton = new Button("Step");
+        stepButton.setDefaultButton(true);
+        stepButton.setOnAction(event -> controller.step());
         ButtonBar.setButtonData(stepButton, ButtonBar.ButtonData.NEXT_FORWARD);
 
         Button nextPlayer = new Button("Next Player");
+        // TODO: implement the proper logic in the controller
+        nextPlayer.setDisable(true);
         ButtonBar.setButtonData(nextPlayer, ButtonBar.ButtonData.NEXT_FORWARD);
 
         Button playButton = new Button("Play");
+        // TODO: implement the proper logic in the controller
+        playButton.setDisable(true);
         ButtonBar.setButtonData(playButton, ButtonBar.ButtonData.NEXT_FORWARD);
 
         Button pauseButton = new Button("Pause");
@@ -506,6 +512,13 @@ public class BoardView {
         return diePane;
     }
 
+    /**
+     * Add a dot to the diePane at the given x and y coordinates.
+     *
+     * @param diePane the StackPane to which the dot is added
+     * @param x       the x coordinate in terms of cellWidth
+     * @param y       the y coordinate in terms of cellWidth
+     */
     private void addDot(StackPane diePane, double x, double y) {
         Circle dot = new Circle();
         dot.radiusProperty().bind(cellWidth.multiply(0.05));
@@ -531,13 +544,61 @@ public class BoardView {
      * @param positionCompletableFuture
      * @param playerIndex
      */
-    public void setChoice(CompletableFuture<Position> positionCompletableFuture, int playerIndex) {
+    public void setChoiceHandler(CompletableFuture<Position> positionCompletableFuture, int playerIndex) {
         selectedPosition.addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 // Shift the selected position to the perspective of the player's strategy
                 positionCompletableFuture.complete(newValue.move(playerIndex * 10).normalize(40));
             }
         });
+    }
+
+    /**
+     * Get the PositionView for the given position.
+     *
+     * @param position        the position
+     * @param playerIndex     the index of the player
+     * @param isBeginOccupied counting from the last begin position, return the first one that is occupied (true) or counting from the beginning return the first position not occupied (false)
+     * @return the PositionView
+     */
+    public PositionView getPositionView(Position position, int playerIndex, boolean isBeginOccupied) {
+
+        switch (position.layer()) {
+            case EVENT -> {
+                return boardView.eventPositions.get(position.spot());
+            }
+            case HOME -> {
+
+                for (int homePositionIndex = 0; homePositionIndex < 4; homePositionIndex++) {
+                    PositionView homePosition = boardView.homePositions.get(playerIndex).get(homePositionIndex);
+                    if (position.equals(homePosition.getPosition())) {
+                        return homePosition;
+                    }
+                }
+                // We should not get here, but return a sensible value
+                logger.error("Could not find home position for player {} at home position {}", playerIndex, position);
+                return boardView.homePositions.get(playerIndex).get(0);
+            }
+            case BEGIN -> {
+                if (isBeginOccupied) {
+                    for (int i = 3; i >= 0; i--) {
+                        if (boardView.beginPositions.get(playerIndex).get(i).occupiedProperty().get() == playerIndex) {
+                            return boardView.beginPositions.get(playerIndex).get(i);
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < 4; i++) {
+                        if (boardView.beginPositions.get(playerIndex).get(i).occupiedProperty().get() != playerIndex) {
+                            return boardView.beginPositions.get(playerIndex).get(i);
+                        }
+                    }
+                    // This should not happen, but return a sensible value
+                    logger.error("Could not find home position for player {} at begin position {}", playerIndex, position);
+                    return boardView.beginPositions.get(playerIndex).get(4);
+                }
+            }
+        }
+        return null;
     }
 
     /**

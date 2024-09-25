@@ -102,7 +102,7 @@ public class Controller {
                 // If strategy is instanceOf ManualStrategy, then set the choice handler
                 if (strategy instanceof ManualStrategy manualStrategy) {
                     int finalPlayerIndex = playerIndex;
-                    manualStrategy.setChoiceHandler(positionCompletableFuture -> boardView.setChoice(positionCompletableFuture, finalPlayerIndex));
+                    manualStrategy.setChoiceHandler(positionCompletableFuture -> boardView.setChoiceHandler(positionCompletableFuture, finalPlayerIndex));
                 }
 
                 players.add(playerIndex, new Player(strategy, playerIndex, 40));
@@ -163,6 +163,11 @@ public class Controller {
                 options();
                 break;
             case OPTIONS:
+                if ((choice == null) && allowedMoves.size() == 1) {
+                    // If there is only one choice, just select it when step is called.
+                    choice = allowedMoves.get(0);
+                }
+                // Move to the next step only if a choice has been made.
                 if (choice != null) {
                     selection();
                 }
@@ -221,10 +226,9 @@ public class Controller {
 
         // Iterate through the allowedMoves and set the isChoiceProperty to true for the corresponding position in BoardView
         allowedMoves.forEach(move -> {
-            boardView.homePositions.get(board.getCurrentPlayer()).get(move.to().spot()).isChoiceProperty().set(true);
-            boardView.eventPositions.get(move.to().spot()).isChoiceProperty().set(true);
+            PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
+            toPosition.isChoiceProperty().set(true);
         });
-
 
         // Make a copy of allowedMoves in a final variable to pass to the Task
         final List<Move> finalAllowedMoves = List.copyOf(allowedMoves);
@@ -237,11 +241,15 @@ public class Controller {
 
         chooseTask.setOnSucceeded(event -> {
             choice = chooseTask.getValue();
-            // Update the UI with the choice
+            // Step only if the strategy is the ManualStrategy
+            if (MainApp.strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
+                step();
+            }
         });
 
         new Thread(chooseTask).start();
         currentStep = TurnStep.OPTIONS;
+
     }
 
     /**
@@ -260,24 +268,10 @@ public class Controller {
         // loop over allowedMoves with an iterator to be able to remove each move from the list after setting boardView.isChoiceProperty to false
         for (Iterator<Move> iterator = allowedMoves.iterator(); iterator.hasNext(); ) {
             Move move = iterator.next();
+            PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
+            toPosition.isChoiceProperty().set(false);
             if (move.equals(choice)) {
-                boardView.homePositions.get(board.getCurrentPlayer()).get(move.to().spot()).isChoiceProperty().set(false);
-                boardView.eventPositions.get(move.to().spot()).isChoiceProperty().set(false);
-            }
-
-            switch (move.to().layer()) {
-                case EVENT -> {
-                    boardView.eventPositions.get(move.to().spot()).isChoiceProperty().set(false);
-                    if (move.equals(choice)) {
-                        boardView.eventPositions.get(move.to().spot()).isSelectedProperty().set(true);
-                    }
-                }
-                case HOME -> {
-                    boardView.homePositions.get(board.getCurrentPlayer()).get(move.to().spot()).isChoiceProperty().set(false);
-                    if (move.equals(choice)) {
-                        boardView.homePositions.get(board.getCurrentPlayer()).get(move.to().spot()).isSelectedProperty().set(true);
-                    }
-                }
+                toPosition.isSelectedProperty().set(true);
             }
             iterator.remove();
         }
@@ -311,36 +305,14 @@ public class Controller {
         }
         history.add(move);
 
-        switch (move.from().layer()) {
-            case EVENT -> {
-                boardView.eventPositions.get(move.from().spot()).occupiedProperty().set(-1);
-            }
-            case HOME -> {
-                // TODO: validate the occupied property is set correctly. Do we need to map the spot to the proper item in the list?
-                // Or do we enumerate through the home spots until the position is found??
-                boardView.homePositions.get(board.getCurrentPlayer()).get(move.from().spot()).occupiedProperty().set(-1);
-            }
-            case BEGIN -> {
-                // Count how many pawns are in the begin position, and set the appropriate one
-            }
-        }
+        PositionView fromPosition = boardView.getPositionView(move.from(), board.getCurrentPlayer(), true);
+        fromPosition.occupiedProperty().set(-1);
 
-        switch (move.to().layer()) {
-            case EVENT -> {
-                boardView.eventPositions.get(move.to().spot()).isChoiceProperty().set(false);
-                boardView.eventPositions.get(move.to().spot()).occupiedProperty().set(board.getCurrentPlayer());
-            }
-            case HOME -> {
-                // TODO: validate the occupied property is set correctly. Do we need to map the spot to the proper item in the list?
-                // Or do we enumerate through the home spots until the position is found??
-                boardView.homePositions.get(board.getCurrentPlayer()).get(move.to().spot()).isChoiceProperty().set(false);
-                boardView.homePositions.get(board.getCurrentPlayer()).get(move.to().spot()).occupiedProperty().set(board.getCurrentPlayer());
-            }
-            case BEGIN -> {
-                // Count how many pawns are in the begin position, and set the appropriate one
-            }
-        }
+        PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
+        toPosition.occupiedProperty().set(board.getCurrentPlayer());
+        toPosition.isSelectedProperty().set(false);
     }
+
 
     private void finish() {
         boardView.currentPlayerIndex.set(-1);

@@ -240,5 +240,11 @@ public class PositionView {
         }
     }
 
+    /**
+     * @return the position of this PositionView
+     */
+    public Position getPosition() {
+        return position;
+    }
 
 }
