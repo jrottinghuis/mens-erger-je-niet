@@ -289,15 +289,16 @@ public class Controller {
                 int struckPlayer = board.getBoardState().getPlayer(choice.to());
                 strikes.increment(board.getCurrentPlayer(), struckPlayer);
                 logger.debug("Player {} strikes {} with {} forcing {}", board.getCurrentPlayer(), struckPlayer, choice, strike);
-                applyMove(strike);
+                // Note that we're moving the struck player from the choice.to() position to their respective 'begin' position
+                applyMove(strike, struckPlayer);
             }
-            applyMove(choice);
+            applyMove(choice, board.getCurrentPlayer());
         }
 
         currentStep = TurnStep.MOVE;
     }
 
-    private void applyMove(Move move) {
+    private void applyMove(Move move, int playerIndex) {
         int finishedPlayer = board.move(move);
         if (finishedPlayer != -1) {
             logger.debug("Finished: {}", finishedPlayer);
@@ -305,11 +306,11 @@ public class Controller {
         }
         history.add(move);
 
-        PositionView fromPosition = boardView.getPositionView(move.from(), board.getCurrentPlayer(), true);
+        PositionView fromPosition = boardView.getPositionView(move.from(), playerIndex, true);
         fromPosition.occupiedProperty().set(-1);
 
-        PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
-        toPosition.occupiedProperty().set(board.getCurrentPlayer());
+        PositionView toPosition = boardView.getPositionView(move.to(), playerIndex, false);
+        toPosition.occupiedProperty().set(playerIndex);
         toPosition.isSelectedProperty().set(false);
     }
 

@@ -23,6 +23,9 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventDispatchChain;
+import javafx.event.EventDispatcher;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
@@ -63,6 +66,19 @@ public class MainApp extends Application {
 
         MenuBar menuBar = createMenuBar(primaryStage, controller);
         TabPane tabPane = createTabPane(controller);
+
+        tabPane.setEventDispatcher(new EventDispatcher() {
+            @Override
+            public Event dispatchEvent(Event event, EventDispatchChain tail) {
+                try {
+                    return tail.dispatchEvent(event);
+                } catch (final Exception e) {
+                    logger.error("Error in event dispatching", e);
+                    return null;
+                }
+            }
+        });
+
 
         VBox vBox = new VBox(menuBar, tabPane);
         VBox.setVgrow(tabPane, Priority.ALWAYS);

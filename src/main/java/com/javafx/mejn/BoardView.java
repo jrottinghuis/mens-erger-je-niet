@@ -128,11 +128,6 @@ public class BoardView {
         stepButton.setOnAction(event -> controller.step());
         ButtonBar.setButtonData(stepButton, ButtonBar.ButtonData.NEXT_FORWARD);
 
-        Button nextPlayer = new Button("Next Player");
-        // TODO: implement the proper logic in the controller
-        nextPlayer.setDisable(true);
-        ButtonBar.setButtonData(nextPlayer, ButtonBar.ButtonData.NEXT_FORWARD);
-
         Button playButton = new Button("Play");
         // TODO: implement the proper logic in the controller
         playButton.setDisable(true);
@@ -146,15 +141,13 @@ public class BoardView {
         isPlaying.addListener((_, _, newValue) -> {
             playButton.setDisable(newValue);
             stepButton.setDisable(newValue);
-            nextPlayer.setDisable(newValue);
             pauseButton.setDisable(!newValue);
         });
         ButtonBar.setButtonData(pauseButton, ButtonBar.ButtonData.CANCEL_CLOSE);
 
-        ButtonBar.setButtonUniformSize(nextPlayer, false);
+        //ButtonBar.setButtonUniformSize(nextPlayer, false);
 
         buttons.add(stepButton);
-        buttons.add(nextPlayer);
         buttons.add(playButton);
         buttons.add(pauseButton);
 
@@ -594,7 +587,7 @@ public class BoardView {
                     }
                     // This should not happen, but return a sensible value
                     logger.error("Could not find home position for player {} at begin position {}", playerIndex, position);
-                    return boardView.beginPositions.get(playerIndex).get(4);
+                    return boardView.beginPositions.get(playerIndex).get(3);
                 }
             }
         }

@@ -37,13 +37,14 @@ public class PositionView {
     /**
      * Create a new PositionView
      *
-     * @param position           the position to represent
-     * @param x                  the x coordinate of the position in terms of cellWidth
-     * @param y                  the y coordinate of the position in terms of cellWidth
-     * @param boardPane          the pane to add the position to
-     * @param cellWidth          the width of the cell
-     * @param strokeWidth        the width of the stroke
-     * @param currentPlayerIndex
+     * @param position               the position to represent
+     * @param x                      the x coordinate of the position in terms of cellWidth
+     * @param y                      the y coordinate of the position in terms of cellWidth
+     * @param boardPane              the pane to add the position to
+     * @param cellWidth              the width of the cell
+     * @param strokeWidth            the width of the stroke
+     * @param currentPlayerIndex     the index of the current player
+     * @param selectedPositionSetter the consumer to set the selected position
      */
     public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, IntegerProperty currentPlayerIndex, Consumer<Position> selectedPositionSetter) {
         this.position = position;
@@ -84,6 +85,7 @@ public class PositionView {
             if (newValue) {
                 circle.getStrokeDashArray().clear();
                 circle.setStroke(PlayerView.getColor(currentPlayerIndex));
+
             } else {
                 // Remove the stroke dash array
                 circle.getStrokeDashArray().clear();
@@ -140,7 +142,6 @@ public class PositionView {
 
         boardPane.getChildren().add(stackPane);
     }
-
 
     /**
      * Get the isChoice property of this position to be used by Board
