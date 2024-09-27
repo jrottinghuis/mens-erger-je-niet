@@ -32,7 +32,6 @@ public class SomeRankingStrategy extends RankingStrategy {
 	public SomeRankingStrategy(String name, List<Integer> parameters) {
 		// Pass a reference to the valuate method, which takes a move and a board state supplier and returns an integer.
 		super(new SomeMoveValuator(parameters), name, parameters);
-        logger.debug("New {}", SomeRankingStrategy.class.getSimpleName());
 	}
 
 	@Override

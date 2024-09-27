@@ -46,7 +46,7 @@ public class PositionView {
      * @param currentPlayerIndex     the index of the current player
      * @param selectedPositionSetter the consumer to set the selected position
      */
-    public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, IntegerProperty currentPlayerIndex, Consumer<Position> selectedPositionSetter) {
+    public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, ReadOnlyIntegerProperty currentPlayerIndex, Consumer<Position> selectedPositionSetter) {
         this.position = position;
 
         // A cell on a real board is 2.5mm. All other sizes are derived from this.
@@ -133,10 +133,10 @@ public class PositionView {
 
         stackPane.setOnMouseClicked(event -> {
             if (isChoice.get()) {
-                logger.error("Clicked on position: " + position);
+                logger.debug("Clicked on position: " + position);
                 selectedPositionSetter.accept(position);
             } else {
-                logger.error("Clicked on position while not a choice: " + position);
+                logger.debug("Clicked on position while not a choice: " + position);
             }
         });
 

@@ -26,9 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -69,7 +67,7 @@ public class ManualStrategy extends BaseStrategy implements Strategy {
         while (true) {
 
             try {
-                Position choice = choiceFuture.get();
+                Position choice = choiceFuture.get(100, TimeUnit.MILLISECONDS);
                 // Find the move that corresponds to the choice
                 for (Move move : choices) {
                     if (move.to().equals(choice)) {
@@ -79,16 +77,25 @@ public class ManualStrategy extends BaseStrategy implements Strategy {
                 // We did not find a move that corresponds to the choice, so we'll wait again
                 choiceFuture = new CompletableFuture<>();
                 choiceHandler.accept(choiceFuture);
-            } catch (InterruptedException e) {
-                logger.error("Interrupted while waiting for choice", e);
+            } catch (InterruptedException ie) {
+                logger.warn("Interrupted while waiting for choice", ie);
                 Thread.currentThread().interrupt();
                 // Yield to caller
                 return null;
-            } catch (ExecutionException e) {
-                logger.error("Error while waiting for choice", e);
-                throw new RuntimeException(e);
+            } catch (ExecutionException ee) {
+                logger.error("Error while waiting for choice", ee);
+                throw new RuntimeException(ee);
+            } catch (CancellationException ce) {
+                logger.warn("Cancelled while waiting for choice", ce);
+                // Yield to caller
+                return null;
+            } catch (TimeoutException te) {
+                if (choiceFuture.isCancelled()) {
+                    logger.warn("Cancelled while waiting for choice", te);
+                    // Yield to caller
+                    return null;
+                }
             }
-
 
             // Step 1: call pause on the Controller, so we can wait for the UI to make a choice
             // Step 2: Register a handler for the choice

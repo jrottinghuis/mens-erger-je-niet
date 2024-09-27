@@ -59,10 +59,10 @@ public class BoardView {
 
     private final DoubleProperty cellWidth = new SimpleDoubleProperty(44.0);
     private final DoubleProperty strokeWidth = new SimpleDoubleProperty();
-    final IntegerProperty currentPlayerIndex = new SimpleIntegerProperty(-1);
+    private final ReadOnlyIntegerWrapper currentPlayerIndex = new ReadOnlyIntegerWrapper(-1);
     final IntegerProperty currentDieValue = new SimpleIntegerProperty(6);
 
-    final BooleanProperty isPlaying = new SimpleBooleanProperty(false);
+    final BooleanProperty isPaused = new SimpleBooleanProperty(true);
     private final Controller controller;
 
     // Keep this private with access through public methods so that the observable object can be dropped and re-created in order to drop the attached listeners from manual strategies create for users that might later change along the way. Otherwise this would lead to memory leaks.
@@ -123,30 +123,37 @@ public class BoardView {
     private void addButtons(ButtonBar buttonBar) {
         List<Button> buttons = new ArrayList<>();
 
+        // Add a "Reset" button to the buttonBar
+        Button resetButton = new Button("Reset");
+        resetButton.setOnAction(event -> controller.reset());
+        ButtonBar.setButtonData(resetButton, ButtonBar.ButtonData.LEFT);
+
+
         Button stepButton = new Button("Step");
         stepButton.setDefaultButton(true);
         stepButton.setOnAction(event -> controller.step());
         ButtonBar.setButtonData(stepButton, ButtonBar.ButtonData.NEXT_FORWARD);
 
         Button playButton = new Button("Play");
-        // TODO: implement the proper logic in the controller
-        playButton.setDisable(true);
+        playButton.setOnAction(event -> controller.play());
         ButtonBar.setButtonData(playButton, ButtonBar.ButtonData.NEXT_FORWARD);
 
         Button pauseButton = new Button("Pause");
         pauseButton.setCancelButton(true);
         pauseButton.setDisable(true);
+        pauseButton.setOnAction(event -> controller.pause());
 
-        // TODO: Adjust for then the game is waiting for a user input
-        isPlaying.addListener((_, _, newValue) -> {
-            playButton.setDisable(newValue);
-            stepButton.setDisable(newValue);
-            pauseButton.setDisable(!newValue);
+        isPaused.addListener((_, _, newValue) -> {
+            resetButton.setDisable(!newValue);
+            playButton.setDisable(!newValue);
+            stepButton.setDisable(!newValue);
+            pauseButton.setDisable(newValue);
         });
         ButtonBar.setButtonData(pauseButton, ButtonBar.ButtonData.CANCEL_CLOSE);
 
         //ButtonBar.setButtonUniformSize(nextPlayer, false);
 
+        buttons.add(resetButton);
         buttons.add(stepButton);
         buttons.add(playButton);
         buttons.add(pauseButton);
@@ -325,7 +332,7 @@ public class BoardView {
      */
     private PositionView getPositionView(int spot, Layer layer, int x, int y, Pane boardPane) {
         Position position = new Position(layer, spot);
-        return new PositionView(position, x, y, boardPane, cellWidth, strokeWidth, currentPlayerIndex, this::setSelectedPosition);
+        return new PositionView(position, x, y, boardPane, cellWidth, strokeWidth, currentPlayerIndex.getReadOnlyProperty(), this::setSelectedPosition);
     }
 
     /**
@@ -372,7 +379,9 @@ public class BoardView {
         // bind hte tooltop text property to strategySelections for the corresponding playerIndex
         //tooltip.textProperty().bind(strategySelections.get(playerIndex));
         strategySelections.addListener((ListChangeListener.Change<? extends String> c) -> {
-            tooltip.setText(strategySelections.get(playerIndex));
+            if (0 < playerIndex && playerIndex < strategySelections.size()) {
+                tooltip.setText(strategySelections.get(playerIndex));
+            }
         });
 
         tooltip.setShowDelay(Duration.seconds(0.5));
@@ -523,11 +532,13 @@ public class BoardView {
 
     private void addDebugAction() {
         // TODO: Remove after debugging
+        /*
         debugItem.setOnAction(e -> {
-            logger.error("Current Die Value: {}", currentDieValue.get());
-            logger.error("Current Player Index: {}", currentPlayerIndex.get());
-            logger.error("Playback Speed: {}", MainApp.playbackSpeed);
+            logger.debug("Current Die Value: {}", currentDieValue.get());
+            logger.debug("Current Player Index: {}", currentPlayerIndex.get());
+            logger.debug("Playback Speed: {}", MainApp.playbackSpeed);
         });
+         */
     }
 
 
@@ -615,5 +626,26 @@ public class BoardView {
      */
     public void resetSelectedPosition() {
         selectedPosition = new SimpleObjectProperty<>();
+    }
+
+    /**
+     * Sets the current player index and returns the previous value.
+     *
+     * @param currentPlayerIndex the new currentPlayerIndex to set.
+     * @return previous value of currentPlayerIndex
+     */
+    public int setCurrentPlayerIndex(int currentPlayerIndex) {
+        int previousPlayerIndex = this.currentPlayerIndex.get();
+        this.currentPlayerIndex.set(currentPlayerIndex);
+        return previousPlayerIndex;
+    }
+
+    /**
+     * Get the current player index.
+     *
+     * @return the current player index
+     */
+    public int getCurrentPlayerIndex() {
+        return currentPlayerIndex.get();
     }
 }

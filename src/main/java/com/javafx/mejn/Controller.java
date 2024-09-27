@@ -12,7 +12,10 @@ import com.rttnghs.mejn.strategy.BaseStrategyFactory;
 import com.rttnghs.mejn.strategy.RandomStrategy;
 import com.rttnghs.mejn.strategy.Strategy;
 import com.rttnghs.mejn.strategy.StrategyFactory;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.concurrent.Task;
+import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,14 +26,14 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static com.javafx.mejn.MainApp.boardView;
+import static com.javafx.mejn.MainApp.debugItem;
 
 public class Controller {
     private static final Logger logger = LogManager.getLogger(Controller.class);
 
     private final StrategyFactory strategyFactory;
-    private boolean isInitialized = false;
     private Board board;
-    private TurnStep currentStep = TurnStep.NEXT;
+    private TurnStep currentStep = null;
     private BaseHistory<Move> history = new BaseHistory<>(512);
     private List<String> finished = new ArrayList<>(4);
 
@@ -52,6 +55,7 @@ public class Controller {
 
     private Task<Move> chooseTask;
     private Move choice;
+    Timeline timeline = new Timeline();
 
     private enum TurnStep {
         NEXT, // show the next player through an empty die
@@ -66,60 +70,86 @@ public class Controller {
     public Controller() {
         strategyFactory = new BaseStrategyFactory();
         board = new Board(4);
+        addDebugAction();
+    }
+
+    private void addDebugAction() {
+        // TODO: Remove after debugging
+        debugItem.setOnAction(e -> {
+            logger.debug("Debugging");
+            logger.debug("Current step: {}", currentStep);
+            logger.debug("board.player: {}", board.getCurrentPlayer());
+            logger.debug("boardview.currentPlayerIndex: {}", boardView.getCurrentPlayerIndex());
+            logger.debug("Current die value: {}", board.getCurrentDieValue());
+            logger.debug("Finished players: {}", finished);
+            logger.debug("Strikes: {}", strikes);
+            logger.debug("Finish counts: {}", finishCounts);
+            logger.debug("History: {}", history);
+            logger.debug("Players: {}", players);
+            logger.debug("Allowed moves: {}", allowedMoves);
+            logger.debug("Choice: {}", choice);
+        });
     }
 
     /**
      * Initialize the controller.
      */
     public synchronized void initialize() {
-        logger.debug("isInitialized: " + isInitialized);
-        if (!isInitialized) {
-            MainApp.strategyOptions.clear();
-            MainApp.strategyOptions.setAll(strategyFactory.listStrategies());
-
-            String strategySelectionAttribute = Config.configuration.getString("gui[@strategies]");
-            MainApp.strategySelections.clear();
-            List<String> strategyNames = new ArrayList<>(Arrays.asList(strategySelectionAttribute.split(",", -1)));
-            MainApp.strategySelections.addAll(strategyNames);
-
-            resetBoardView();
-            next();
-
-            // Reset the selected position in BoardView so that previously set listeners are dropped.
-            MainApp.boardView.resetSelectedPosition();
-
-            history = new BaseHistory<>(512);
-            finished = new ArrayList<>(4);
-            strikes = new EventCounter<>();
-            finishCounts = new EventCounter<>();
-
-            for (int playerIndex = 0; playerIndex < 4; playerIndex++) {
-                // Rotate perspective counter clockwise
-                int rotation = Player.rotation(playerIndex);
-                Supplier<History<Move>> shiftedHistorySupplier = history.getSupplier(Move.shifter(rotation, 40));
-                Strategy strategy = strategyFactory.getStrategy(strategyNames.get(playerIndex)).initialize(shiftedHistorySupplier);
-
-                // If strategy is instanceOf ManualStrategy, then set the choice handler
-                if (strategy instanceof ManualStrategy manualStrategy) {
-                    int finalPlayerIndex = playerIndex;
-                    manualStrategy.setChoiceHandler(positionCompletableFuture -> boardView.setChoiceHandler(positionCompletableFuture, finalPlayerIndex));
-                }
-
-                players.add(playerIndex, new Player(strategy, playerIndex, 40));
-            }
-
-            if (chooseTask != null) {
-                chooseTask.cancel();
-            }
-            // Reset any previous choice.
-            choice = null;
-
-            isInitialized = true;
+        logger.trace("Controller initializing");
+        if (chooseTask != null) {
+            chooseTask.cancel();
         }
+        pause();
+        MainApp.strategyOptions.clear();
+        MainApp.strategyOptions.setAll(strategyFactory.listStrategies());
+
+        String strategySelectionAttribute = Config.configuration.getString("gui[@strategies]");
+        MainApp.strategySelections.clear();
+        List<String> strategyNames = new ArrayList<>(Arrays.asList(strategySelectionAttribute.split(",", -1)));
+        MainApp.strategySelections.addAll(strategyNames);
+
+        resetBoardView();
+
+        // Reset the selected position in BoardView so that previously set listeners are dropped.
+        MainApp.boardView.resetSelectedPosition();
+
+        history = new BaseHistory<>(512);
+        finished = new ArrayList<>(4);
+        strikes = new EventCounter<>();
+        finishCounts = new EventCounter<>();
+
+        for (int playerIndex = 0; playerIndex < 4; playerIndex++) {
+            // Rotate perspective counter clockwise
+            int rotation = Player.rotation(playerIndex);
+            Supplier<History<Move>> shiftedHistorySupplier = history.getSupplier(Move.shifter(rotation, 40));
+            Strategy strategy = strategyFactory.getStrategy(strategyNames.get(playerIndex)).initialize(shiftedHistorySupplier);
+
+            // If strategy is instanceOf ManualStrategy, then set the choice handler
+            if (strategy instanceof ManualStrategy manualStrategy) {
+                int finalPlayerIndex = playerIndex;
+                manualStrategy.setChoiceHandler(positionCompletableFuture -> boardView.setChoiceHandler(positionCompletableFuture, finalPlayerIndex));
+            }
+
+            players.add(playerIndex, new Player(strategy, playerIndex, 40));
+        }
+
+        // Reset any previous choice.
+        choice = null;
+        currentStep = null;
+
+        // if timeline was previously created, stop it and create a new one
+        if (timeline != null) {
+            timeline.stop();
+        }
+        timeline = new Timeline();
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        KeyFrame keyFrame = new KeyFrame(Duration.millis(100), event -> step());
+        timeline.getKeyFrames().add(keyFrame);
     }
 
     public void resetBoardView() {
         board = new Board(4);
+        boardView.setCurrentPlayerIndex(-1);
 
         // Reset all home and event positions in BoardView
         boardView.homePositions.forEach(player -> {
@@ -145,16 +175,27 @@ public class Controller {
             });
         }
 
-        // Set isPlaying to false
-        boardView.isPlaying.set(false);
-
-        boardView.currentPlayerIndex.set(board.getCurrentPlayer());
         boardView.currentDieValue.set(0);
+    }
+
+    /**
+     * Wrap things up in preparation for shut-down
+     */
+    public void stop() {
+        if (chooseTask != null) {
+            chooseTask.cancel();
+        }
+        pause();
+        boardView.setCurrentPlayerIndex(-1);
     }
 
 
     // Create a method step that will be called from the UI and that has a switch statement to handle the currentStep
     public void step() {
+        if (currentStep == null) {
+            next();
+            return;
+        }
         switch (currentStep) {
             case NEXT:
                 roll();
@@ -180,6 +221,9 @@ public class Controller {
                 break;
             case FINISHED:
                 break;
+            default:
+                logger.error("Unknown step: {}", currentStep);
+                next();
         }
     }
 
@@ -187,6 +231,7 @@ public class Controller {
      * Sets the current step to NEXT
      */
     private void next() {
+        boardView.setSelectedPosition(null);
         int nextPlayer = board.nextPlayer();
 
         if (nextPlayer < 0) {
@@ -194,7 +239,7 @@ public class Controller {
             return;
         }
 
-        boardView.currentPlayerIndex.set(board.getCurrentPlayer());
+        boardView.setCurrentPlayerIndex(board.getCurrentPlayer());
         // Die location indicates who's move it is next, but hide the value for now
         boardView.currentDieValue.set(0);
 
@@ -247,9 +292,18 @@ public class Controller {
             }
         });
 
-        new Thread(chooseTask).start();
-        currentStep = TurnStep.OPTIONS;
+        if (allowedMoves.size() > 1) {
+            logger.debug("Player {} has {} choices: {}", board.getCurrentPlayer(), allowedMoves.size(), allowedMoves);
+        }
 
+        new Thread(chooseTask).start();
+
+        // If strategy is manual, and allowedMoves.length > 1 then pause
+        if (MainApp.strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy") && allowedMoves.size() > 1) {
+            pause();
+        }
+
+        currentStep = TurnStep.OPTIONS;
     }
 
     /**
@@ -293,6 +347,9 @@ public class Controller {
                 applyMove(strike, struckPlayer);
             }
             applyMove(choice, board.getCurrentPlayer());
+            // Reset the choice
+            choice = null;
+            boardView.resetSelectedPosition();
         }
 
         currentStep = TurnStep.MOVE;
@@ -314,11 +371,30 @@ public class Controller {
         toPosition.isSelectedProperty().set(false);
     }
 
-
+    /**
+     * The game is over
+     */
     private void finish() {
-        boardView.currentPlayerIndex.set(-1);
-        boardView.isPlaying.set(false);
+        boardView.setCurrentPlayerIndex(-1);
+        pause();
         currentStep = TurnStep.FINISHED;
+    }
+
+
+    public void reset() {
+        initialize();
+    }
+
+    public void play() {
+        boardView.isPaused.set(false);
+        timeline.play();
+    }
+
+    public void pause() {
+        boardView.isPaused.set(true);
+        if (timeline != null) {
+            timeline.stop();
+        }
     }
 }
 

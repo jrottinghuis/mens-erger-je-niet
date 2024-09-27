@@ -52,6 +52,7 @@ public class MainApp extends Application {
     static final ObservableList<String> strategySelections = FXCollections.observableArrayList();
 
     private Stage primaryStage;
+    Controller controller;
 
     /**
      * @param primaryStage the primary stage for the application
@@ -93,6 +94,14 @@ public class MainApp extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    @Override
+    public void stop() {
+        logger.info("Application is closing");
+        if (controller != null) {
+            controller.stop();
+        }
     }
 
     /**

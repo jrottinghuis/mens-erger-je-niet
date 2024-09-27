@@ -16,6 +16,7 @@
  */
 package com.javafx.mejn;
 
+import javafx.beans.binding.IntegerExpression;
 import javafx.beans.property.IntegerProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -46,7 +47,7 @@ public class PlayerView {
      * @param playerIndex the index of the player
      * @return the color for the player
      */
-    public static Color getColor(IntegerProperty playerIndex) {
+    public static Color getColor(IntegerExpression playerIndex) {
         return getColor(playerIndex.get());
     }
 
@@ -70,7 +71,7 @@ public class PlayerView {
         );
     }
 
-    public static RadialGradient getGradient(IntegerProperty playerIndex) {
+    public static RadialGradient getGradient(IntegerExpression playerIndex) {
         return getGradient(playerIndex.get());
     }
 }
