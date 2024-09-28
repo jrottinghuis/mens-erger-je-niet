@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.javafx.mejn;
 
 import com.javafx.mejn.strategy.ManualStrategy;
@@ -15,6 +31,7 @@ import com.rttnghs.mejn.strategy.StrategyFactory;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.concurrent.Task;
+import javafx.scene.Scene;
 import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,6 +73,7 @@ public class Controller {
     private Task<Move> chooseTask;
     private Move choice;
     Timeline timeline = new Timeline();
+    private KeyFrame keyFrame;
 
     private enum TurnStep {
         NEXT, // show the next player through an empty die
@@ -94,8 +112,9 @@ public class Controller {
     /**
      * Initialize the controller.
      */
-    public synchronized void initialize() {
+    public synchronized void initialize(Scene scene) {
         logger.trace("Controller initializing");
+        boardView.addAccelerators(scene);
         if (chooseTask != null) {
             chooseTask.cancel();
         }
@@ -109,9 +128,6 @@ public class Controller {
         MainApp.strategySelections.addAll(strategyNames);
 
         resetBoardView();
-
-        // Reset the selected position in BoardView so that previously set listeners are dropped.
-        MainApp.boardView.resetSelectedPosition();
 
         history = new BaseHistory<>(512);
         finished = new ArrayList<>(4);
@@ -143,13 +159,19 @@ public class Controller {
         }
         timeline = new Timeline();
         timeline.setCycleCount(Timeline.INDEFINITE);
-        KeyFrame keyFrame = new KeyFrame(Duration.millis(100), event -> step());
+
+        KeyFrame keyFrame = new KeyFrame(Duration.millis(5000), event -> step());
         timeline.getKeyFrames().add(keyFrame);
+
+        timeline.rateProperty().bind(MainApp.playbackSpeed);
     }
 
-    public void resetBoardView() {
+    private void resetBoardView() {
         board = new Board(4);
         boardView.setCurrentPlayerIndex(-1);
+
+        // Reset the selected position in BoardView so that previously set listeners are dropped.
+        MainApp.boardView.resetSelectedPosition();
 
         // Reset all home and event positions in BoardView
         boardView.homePositions.forEach(player -> {
@@ -204,13 +226,17 @@ public class Controller {
                 options();
                 break;
             case OPTIONS:
-                if ((choice == null) && allowedMoves.size() == 1) {
-                    // If there is only one choice, just select it when step is called.
-                    choice = allowedMoves.get(0);
-                }
-                // Move to the next step only if a choice has been made.
                 if (choice != null) {
                     selection();
+                } else if (allowedMoves.isEmpty()) {
+                    // If there are no choices, move to the next player
+                    next();
+                } else if (allowedMoves.size() == 1) {
+                    // If there is only one choice, just select it when step is called.
+                    // Make sure we set the selected position in BoardView so that the selection listeners can unroll properly
+                    boardView.setSelectedPosition(allowedMoves.get(0).to(), true);
+                } else if (MainApp.strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
+                    pause();
                 }
                 break;
             case SELECTION:
@@ -231,7 +257,7 @@ public class Controller {
      * Sets the current step to NEXT
      */
     private void next() {
-        boardView.setSelectedPosition(null);
+        boardView.setSelectedPosition(null, true);
         int nextPlayer = board.nextPlayer();
 
         if (nextPlayer < 0) {
@@ -284,6 +310,7 @@ public class Controller {
             }
         };
 
+        // Set the choice to the value returned by the Task
         chooseTask.setOnSucceeded(event -> {
             choice = chooseTask.getValue();
             // Step only if the strategy is the ManualStrategy
@@ -291,10 +318,6 @@ public class Controller {
                 step();
             }
         });
-
-        if (allowedMoves.size() > 1) {
-            logger.debug("Player {} has {} choices: {}", board.getCurrentPlayer(), allowedMoves.size(), allowedMoves);
-        }
 
         new Thread(chooseTask).start();
 
@@ -342,14 +365,14 @@ public class Controller {
             if (strike != null) {
                 int struckPlayer = board.getBoardState().getPlayer(choice.to());
                 strikes.increment(board.getCurrentPlayer(), struckPlayer);
-                logger.debug("Player {} strikes {} with {} forcing {}", board.getCurrentPlayer(), struckPlayer, choice, strike);
+                logger.trace("Player {} strikes {} with {} forcing {}", board.getCurrentPlayer(), struckPlayer, choice, strike);
                 // Note that we're moving the struck player from the choice.to() position to their respective 'begin' position
                 applyMove(strike, struckPlayer);
             }
             applyMove(choice, board.getCurrentPlayer());
             // Reset the choice
             choice = null;
-            boardView.resetSelectedPosition();
+            boardView.setSelectedPosition(null, true);
         }
 
         currentStep = TurnStep.MOVE;
@@ -382,7 +405,7 @@ public class Controller {
 
 
     public void reset() {
-        initialize();
+        initialize(null);
     }
 
     public void play() {
@@ -394,6 +417,14 @@ public class Controller {
         boardView.isPaused.set(true);
         if (timeline != null) {
             timeline.stop();
+        }
+    }
+
+    public void playOrPause() {
+        if (boardView.isPaused.get()) {
+            play();
+        } else {
+            pause();
         }
     }
 }

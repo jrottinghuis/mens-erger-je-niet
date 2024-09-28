@@ -133,7 +133,6 @@ public class PositionView {
 
         stackPane.setOnMouseClicked(event -> {
             if (isChoice.get()) {
-                logger.debug("Clicked on position: " + position);
                 selectedPositionSetter.accept(position);
             } else {
                 logger.debug("Clicked on position while not a choice: " + position);

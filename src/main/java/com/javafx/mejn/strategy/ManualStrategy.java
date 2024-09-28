@@ -65,7 +65,6 @@ public class ManualStrategy extends BaseStrategy implements Strategy {
         choiceHandler.accept(choiceFuture);
 
         while (true) {
-
             try {
                 Position choice = choiceFuture.get(100, TimeUnit.MILLISECONDS);
                 // Find the move that corresponds to the choice
@@ -78,6 +77,7 @@ public class ManualStrategy extends BaseStrategy implements Strategy {
                 choiceFuture = new CompletableFuture<>();
                 choiceHandler.accept(choiceFuture);
             } catch (InterruptedException ie) {
+                choiceFuture.cancel(true);
                 logger.warn("Interrupted while waiting for choice", ie);
                 Thread.currentThread().interrupt();
                 // Yield to caller
@@ -95,6 +95,7 @@ public class ManualStrategy extends BaseStrategy implements Strategy {
                     // Yield to caller
                     return null;
                 }
+                continue;
             }
 
             // Step 1: call pause on the Controller, so we can wait for the UI to make a choice

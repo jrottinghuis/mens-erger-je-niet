@@ -21,9 +21,13 @@ import com.rttnghs.mejn.Position;
 import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -51,6 +55,12 @@ import static com.javafx.mejn.MainApp.*;
 public class BoardView {
     private static final Logger logger = LogManager.getLogger(BoardView.class);
     static final int BOARD_SIZE = 40;
+
+    private Button resetButton = new Button("Reset");
+    private Button stepButton = new Button("_Step");
+    private Button playButton = new Button("Play");
+    private Button pauseButton = new Button("Pause");
+
     final List<PositionView> eventPositions = new ArrayList<>(BOARD_SIZE);
 
     final List<List<PositionView>> homePositions = new ArrayList<>(4);
@@ -113,7 +123,40 @@ public class BoardView {
 
         addDebugAction();
     }
+    void addAccelerators(Scene scene) {
+        if (scene != null) {
+            // Accelerators can be added only after the buttons are tied to a scene
+            scene.getAccelerators().put(
+                    new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            stepButton.fire();
+                        }
+                    }
+            );
+            scene.getAccelerators().put(
+                    new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            resetButton.fire();
+                        }
+                    }
+            );
+            scene.getAccelerators().put(
+                    new KeyCodeCombination(KeyCode.P, KeyCombination.SHORTCUT_DOWN),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            controller.playOrPause();
+                        }
+                    }
+            );
+        }
 
+
+    }
 
     /**
      * Add the play control buttons to the buttonBar.
@@ -124,21 +167,23 @@ public class BoardView {
         List<Button> buttons = new ArrayList<>();
 
         // Add a "Reset" button to the buttonBar
-        Button resetButton = new Button("Reset");
+        resetButton = new Button("Reset");
         resetButton.setOnAction(event -> controller.reset());
         ButtonBar.setButtonData(resetButton, ButtonBar.ButtonData.LEFT);
+        buttons.add(resetButton);
 
-
-        Button stepButton = new Button("Step");
+        stepButton = new Button("_Step");
         stepButton.setDefaultButton(true);
         stepButton.setOnAction(event -> controller.step());
         ButtonBar.setButtonData(stepButton, ButtonBar.ButtonData.NEXT_FORWARD);
+        buttons.add(stepButton);
 
-        Button playButton = new Button("Play");
+        playButton = new Button("Play");
         playButton.setOnAction(event -> controller.play());
         ButtonBar.setButtonData(playButton, ButtonBar.ButtonData.NEXT_FORWARD);
+        buttons.add(playButton);
 
-        Button pauseButton = new Button("Pause");
+        pauseButton = new Button("Pause");
         pauseButton.setCancelButton(true);
         pauseButton.setDisable(true);
         pauseButton.setOnAction(event -> controller.pause());
@@ -150,12 +195,6 @@ public class BoardView {
             pauseButton.setDisable(newValue);
         });
         ButtonBar.setButtonData(pauseButton, ButtonBar.ButtonData.CANCEL_CLOSE);
-
-        //ButtonBar.setButtonUniformSize(nextPlayer, false);
-
-        buttons.add(resetButton);
-        buttons.add(stepButton);
-        buttons.add(playButton);
         buttons.add(pauseButton);
 
         buttonBar.getButtons().addAll(buttons);
@@ -609,9 +648,25 @@ public class BoardView {
      * Set the selected position.
      *
      * @param position the selected position
+     * @param force    if true, the position is set even if the current player is not a manual strategy player
+     */
+    public void setSelectedPosition(Position position, boolean force) {
+        if (force) {
+            selectedPosition.set(position);
+        } else if (currentPlayerIndex.get() != -1 && MainApp.strategySelections.get(currentPlayerIndex.get()).equals("ManualStrategy")) {
+            selectedPosition.set(position);
+        } else {
+            logger.warn("Selected position ignored because the current player is not a manual strategy player.");
+        }
+    }
+
+    /**
+     * Set the selected position, but only if the current player is a manual strategy player.
+     *
+     * @param position the selected position
      */
     public void setSelectedPosition(Position position) {
-        selectedPosition.set(position);
+        setSelectedPosition(position, false);
     }
 
     /**
@@ -621,10 +676,13 @@ public class BoardView {
         return selectedPosition.get();
     }
 
+
     /**
-     * Reset the selected position.
+     * Reset the selected position by dropping the Observable object and creating a new one.
+     * <p>
+     * Caution: make sure that selection listeners are added again after calling this method.
      */
-    public void resetSelectedPosition() {
+    void resetSelectedPosition() {
         selectedPosition = new SimpleObjectProperty<>();
     }
 

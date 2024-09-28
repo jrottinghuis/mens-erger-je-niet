@@ -46,7 +46,7 @@ public class MainApp extends Application {
 
     final static MenuItem debugItem = new MenuItem("Capture");
     final static BooleanProperty showPositionNumbers = new SimpleBooleanProperty(false);
-    final static DoubleProperty playbackSpeed = new SimpleDoubleProperty(25);
+    final static DoubleProperty playbackSpeed = new SimpleDoubleProperty(10);
     static BoardView boardView;
     final static ObservableList<String> strategyOptions = FXCollections.observableArrayList();
     static final ObservableList<String> strategySelections = FXCollections.observableArrayList();
@@ -87,7 +87,7 @@ public class MainApp extends Application {
 
         primaryStage.setScene(scene);
 
-        controller.initialize();
+        controller.initialize(scene);
 
         primaryStage.show();
     }
@@ -114,7 +114,7 @@ public class MainApp extends Application {
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("File");
         MenuItem exitItem = new MenuItem("Exit");
-        exitItem.setAccelerator(KeyCombination.keyCombination("Ctrl+X"));
+        exitItem.setAccelerator(KeyCombination.keyCombination("Shortcut+X"));
         // TODO: Cancel all background tasks and stop all background (daemon) threads.
         exitItem.setOnAction(_ -> primaryStage.close());
         menuFile.getItems().add(exitItem);
@@ -126,12 +126,12 @@ public class MainApp extends Application {
         // Create console sub-menu
         Menu menuConsole = new Menu("Console");
         CheckMenuItem enableConsoleCheckMenuItem = new CheckMenuItem("Enable Console");
-        enableConsoleCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+E"));
+        enableConsoleCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Shortcut+E"));
         enableConsoleCheckMenuItem.setSelected(true);
         TextAreaAppender.setTextArea(consoleTextArea, enableConsoleCheckMenuItem.selectedProperty());
 
         MenuItem clearConsoleItem = new MenuItem("Clear Console");
-        clearConsoleItem.setAccelerator(KeyCombination.keyCombination("Ctrl+C"));
+        clearConsoleItem.setAccelerator(KeyCombination.keyCombination("Shortcut+C"));
         clearConsoleItem.setOnAction(_ -> consoleTextArea.clear());
 
         menuConsole.getItems().addAll(enableConsoleCheckMenuItem, clearConsoleItem);
@@ -154,9 +154,9 @@ public class MainApp extends Application {
 
         // TODO: Remove after debugging
         Menu menuDebug = new Menu("Debug");
-        debugItem.setAccelerator(KeyCombination.keyCombination("Ctrl+D"));
+        debugItem.setAccelerator(KeyCombination.keyCombination("Shortcut+D"));
         CheckMenuItem showPositionNumbersCheckMenuItem = new CheckMenuItem("Show Position Numbers");
-        showPositionNumbersCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
+        showPositionNumbersCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Shortcut+N"));
         showPositionNumbers.bind(showPositionNumbersCheckMenuItem.selectedProperty());
         showPositionNumbersCheckMenuItem.setSelected(false);
         menuDebug.getItems().addAll(debugItem, showPositionNumbersCheckMenuItem);
