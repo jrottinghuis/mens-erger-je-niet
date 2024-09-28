@@ -23,7 +23,7 @@ import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.RadialGradient;
 import javafx.scene.paint.Stop;
 
-public class PlayerView {
+class PlayerView {
 
     /**
      * Get the color for the player with the given index.
@@ -31,7 +31,7 @@ public class PlayerView {
      * @param playerIndex the index of the player
      * @return the color for the player
      */
-    public static Color getColor(int playerIndex) {
+    static Color getColor(int playerIndex) {
         return switch (playerIndex) {
             case 0 -> Color.DODGERBLUE;
             case 1 -> Color.GOLD;
@@ -47,7 +47,7 @@ public class PlayerView {
      * @param playerIndex the index of the player
      * @return the color for the player
      */
-    public static Color getColor(IntegerExpression playerIndex) {
+    static Color getColor(IntegerExpression playerIndex) {
         return getColor(playerIndex.get());
     }
 
@@ -57,7 +57,7 @@ public class PlayerView {
      * @param playerIndex the index of the player
      * @return the radial gradient for the player
      */
-    public static RadialGradient getGradient(int playerIndex) {
+    static RadialGradient getGradient(int playerIndex) {
         return new RadialGradient(
                 0, // focusAngle
                 0.0, // focusDistance
@@ -71,7 +71,7 @@ public class PlayerView {
         );
     }
 
-    public static RadialGradient getGradient(IntegerExpression playerIndex) {
+    static RadialGradient getGradient(IntegerExpression playerIndex) {
         return getGradient(playerIndex.get());
     }
 }

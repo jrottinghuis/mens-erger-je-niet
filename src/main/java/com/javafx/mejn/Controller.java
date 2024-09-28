@@ -42,10 +42,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.javafx.mejn.MainApp.boardView;
-import static com.javafx.mejn.MainApp.debugItem;
+import static com.javafx.mejn.MainApp.*;
 
-public class Controller {
+class Controller {
     private static final Logger logger = LogManager.getLogger(Controller.class);
 
     private final StrategyFactory strategyFactory;
@@ -65,8 +64,6 @@ public class Controller {
      * event is the 0-based position they finished in.
      */
     private EventCounter<String, Integer> finishCounts = new EventCounter<>();
-
-    List<Player> players = new ArrayList<>(4);
 
     private List<Move> allowedMoves = new ArrayList<>();
 
@@ -89,6 +86,7 @@ public class Controller {
         strategyFactory = new BaseStrategyFactory();
         board = new Board(4);
         addDebugAction();
+
     }
 
     private void addDebugAction() {
@@ -103,7 +101,7 @@ public class Controller {
             logger.debug("Strikes: {}", strikes);
             logger.debug("Finish counts: {}", finishCounts);
             logger.debug("History: {}", history);
-            logger.debug("Players: {}", players);
+            logger.debug("Players: {}", MainApp.players);
             logger.debug("Allowed moves: {}", allowedMoves);
             logger.debug("Choice: {}", choice);
         });
@@ -111,21 +109,31 @@ public class Controller {
 
     /**
      * Initialize the controller.
+     *
+     * @param scene the scene to add accelerators to. If null, no accelerators are added.
      */
-    public synchronized void initialize(Scene scene) {
+    synchronized void initialize(Scene scene) {
         logger.trace("Controller initializing");
-        boardView.addAccelerators(scene);
+
+        // Happens only the first time from the MainApp
+        if (scene != null) {
+            // Load from configuration only once during construction, not during initialization.
+            // That would wipe out user selection of strategies on reset.
+            MainApp.strategyOptions.clear();
+            MainApp.strategyOptions.setAll(strategyFactory.listStrategies());
+
+            String strategySelectionAttribute = Config.configuration.getString("gui[@strategies]");
+            strategySelections.clear();
+            List<String> strategyNames = new ArrayList<>(Arrays.asList(strategySelectionAttribute.split(",", -1)));
+            strategySelections.addAll(strategyNames);
+            boardView.addAccelerators(scene);
+
+        }
+
         if (chooseTask != null) {
             chooseTask.cancel();
         }
         pause();
-        MainApp.strategyOptions.clear();
-        MainApp.strategyOptions.setAll(strategyFactory.listStrategies());
-
-        String strategySelectionAttribute = Config.configuration.getString("gui[@strategies]");
-        MainApp.strategySelections.clear();
-        List<String> strategyNames = new ArrayList<>(Arrays.asList(strategySelectionAttribute.split(",", -1)));
-        MainApp.strategySelections.addAll(strategyNames);
 
         resetBoardView();
 
@@ -138,7 +146,7 @@ public class Controller {
             // Rotate perspective counter clockwise
             int rotation = Player.rotation(playerIndex);
             Supplier<History<Move>> shiftedHistorySupplier = history.getSupplier(Move.shifter(rotation, 40));
-            Strategy strategy = strategyFactory.getStrategy(strategyNames.get(playerIndex)).initialize(shiftedHistorySupplier);
+            Strategy strategy = strategyFactory.getStrategy(strategySelections.get(playerIndex)).initialize(shiftedHistorySupplier);
 
             // If strategy is instanceOf ManualStrategy, then set the choice handler
             if (strategy instanceof ManualStrategy manualStrategy) {
@@ -146,7 +154,7 @@ public class Controller {
                 manualStrategy.setChoiceHandler(positionCompletableFuture -> boardView.setChoiceHandler(positionCompletableFuture, finalPlayerIndex));
             }
 
-            players.add(playerIndex, new Player(strategy, playerIndex, 40));
+            MainApp.players.add(playerIndex, new Player(strategy, playerIndex, 40));
         }
 
         // Reset any previous choice.
@@ -203,7 +211,7 @@ public class Controller {
     /**
      * Wrap things up in preparation for shut-down
      */
-    public void stop() {
+    void stop() {
         if (chooseTask != null) {
             chooseTask.cancel();
         }
@@ -213,7 +221,7 @@ public class Controller {
 
 
     // Create a method step that will be called from the UI and that has a switch statement to handle the currentStep
-    public void step() {
+    void step() {
         if (currentStep == null) {
             next();
             return;
@@ -235,7 +243,7 @@ public class Controller {
                     // If there is only one choice, just select it when step is called.
                     // Make sure we set the selected position in BoardView so that the selection listeners can unroll properly
                     boardView.setSelectedPosition(allowedMoves.get(0).to(), true);
-                } else if (MainApp.strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
+                } else if (strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
                     pause();
                 }
                 break;
@@ -306,7 +314,7 @@ public class Controller {
         chooseTask = new Task<>() {
             @Override
             protected Move call() throws Exception {
-                return players.get(board.getCurrentPlayer()).choose(finalAllowedMoves, board.getBoardState());
+                return MainApp.players.get(board.getCurrentPlayer()).choose(finalAllowedMoves, board.getBoardState());
             }
         };
 
@@ -314,15 +322,17 @@ public class Controller {
         chooseTask.setOnSucceeded(event -> {
             choice = chooseTask.getValue();
             // Step only if the strategy is the ManualStrategy
-            if (MainApp.strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
+            if (strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
                 step();
             }
         });
 
-        new Thread(chooseTask).start();
+        Thread thread = new Thread(chooseTask);
+        thread.setDaemon(true);
+        thread.start();
 
         // If strategy is manual, and allowedMoves.length > 1 then pause
-        if (MainApp.strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy") && allowedMoves.size() > 1) {
+        if (strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy") && allowedMoves.size() > 1) {
             pause();
         }
 
@@ -382,7 +392,8 @@ public class Controller {
         int finishedPlayer = board.move(move);
         if (finishedPlayer != -1) {
             logger.debug("Finished: {}", finishedPlayer);
-            finished.add(players.get(finishedPlayer).getName());
+            finished.add(MainApp.players.get(finishedPlayer).getName());
+            // JoepJoep
         }
         history.add(move);
 
@@ -404,23 +415,23 @@ public class Controller {
     }
 
 
-    public void reset() {
+    void reset() {
         initialize(null);
     }
 
-    public void play() {
+    void play() {
         boardView.isPaused.set(false);
         timeline.play();
     }
 
-    public void pause() {
+    void pause() {
         boardView.isPaused.set(true);
         if (timeline != null) {
             timeline.stop();
         }
     }
 
-    public void playOrPause() {
+    void playOrPause() {
         if (boardView.isPaused.get()) {
             play();
         } else {

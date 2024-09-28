@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.javafx.mejn;
 
 import com.rttnghs.mejn.Layer;
@@ -17,7 +33,7 @@ import java.util.function.Consumer;
 
 import static com.javafx.mejn.MainApp.showPositionNumbers;
 
-public class PositionView {
+class PositionView {
 
     private static final Logger logger = LogManager.getLogger(PositionView.class);
 
@@ -46,7 +62,7 @@ public class PositionView {
      * @param currentPlayerIndex     the index of the current player
      * @param selectedPositionSetter the consumer to set the selected position
      */
-    public PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, ReadOnlyIntegerProperty currentPlayerIndex, Consumer<Position> selectedPositionSetter) {
+    PositionView(Position position, int x, int y, Pane boardPane, DoubleProperty cellWidth, DoubleProperty strokeWidth, ReadOnlyIntegerProperty currentPlayerIndex, Consumer<Position> selectedPositionSetter) {
         this.position = position;
 
         // A cell on a real board is 2.5mm. All other sizes are derived from this.
@@ -243,7 +259,7 @@ public class PositionView {
     /**
      * @return the position of this PositionView
      */
-    public Position getPosition() {
+    Position getPosition() {
         return position;
     }
 

@@ -16,6 +16,7 @@
  */
 package com.javafx.mejn;
 
+import com.rttnghs.mejn.Player;
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
@@ -50,6 +51,8 @@ public class MainApp extends Application {
     static BoardView boardView;
     final static ObservableList<String> strategyOptions = FXCollections.observableArrayList();
     static final ObservableList<String> strategySelections = FXCollections.observableArrayList();
+    static final ObservableList<Player> players = FXCollections.observableArrayList();
+
 
     private Stage primaryStage;
     Controller controller;
@@ -115,7 +118,6 @@ public class MainApp extends Application {
         Menu menuFile = new Menu("File");
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.setAccelerator(KeyCombination.keyCombination("Shortcut+X"));
-        // TODO: Cancel all background tasks and stop all background (daemon) threads.
         exitItem.setOnAction(_ -> primaryStage.close());
         menuFile.getItems().add(exitItem);
         menuBar.getMenus().add(menuFile);
@@ -168,64 +170,73 @@ public class MainApp extends Application {
     /**
      * Create a dialog to configure the game strategies
      */
-   private void getConfigureGameStrategies() {
-    Dialog<Void> dialog = new Dialog<>();
-    dialog.setTitle("Game Strategies");
+    private void getConfigureGameStrategies() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Game Strategies");
 
-    // Set the button types
-    ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-    ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-    dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
+        // Set the button types
+        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
 
-    // Create the ComboBoxes and pre-set their values
-    ComboBox<String> comboBox0 = new ComboBox<>(strategyOptions);
-    comboBox0.setEditable(false);
-    comboBox0.setValue(strategySelections.get(0));
+        // Create the ComboBoxes and pre-set their values
+        ComboBox<String> comboBox0 = new ComboBox<>(strategyOptions);
+        comboBox0.setEditable(false);
+        comboBox0.setValue(strategySelections.get(0));
 
-    ComboBox<String> comboBox1 = new ComboBox<>(strategyOptions);
-    comboBox1.setEditable(false);
-    comboBox1.setValue(strategySelections.get(1));
+        ComboBox<String> comboBox1 = new ComboBox<>(strategyOptions);
+        comboBox1.setEditable(false);
+        comboBox1.setValue(strategySelections.get(1));
 
-    ComboBox<String> comboBox2 = new ComboBox<>(strategyOptions);
-    comboBox2.setEditable(false);
-    comboBox2.setValue(strategySelections.get(2));
+        ComboBox<String> comboBox2 = new ComboBox<>(strategyOptions);
+        comboBox2.setEditable(false);
+        comboBox2.setValue(strategySelections.get(2));
 
-    ComboBox<String> comboBox3 = new ComboBox<>(strategyOptions);
-    comboBox3.setEditable(false);
-    comboBox3.setValue(strategySelections.get(3));
+        ComboBox<String> comboBox3 = new ComboBox<>(strategyOptions);
+        comboBox3.setEditable(false);
+        comboBox3.setValue(strategySelections.get(3));
 
-    // Create a layout and add the HBoxes
-    VBox vbox = new VBox(10, createPlayerHBox(0, comboBox0), createPlayerHBox(1, comboBox1), createPlayerHBox(2, comboBox2), createPlayerHBox(3, comboBox3));
-    dialog.getDialogPane().setContent(vbox);
+        // Create a layout and add the HBoxes
+        VBox vbox = new VBox(10, createPlayerHBox(0, comboBox0), createPlayerHBox(1, comboBox1), createPlayerHBox(2, comboBox2), createPlayerHBox(3, comboBox3));
+        dialog.getDialogPane().setContent(vbox);
 
-    // Set result converter to update strategySelections when OK is pressed
-    dialog.setResultConverter(buttonType -> {
-        if (buttonType == okButtonType) {
-            strategySelections.set(0, comboBox0.getValue());
-            strategySelections.set(1, comboBox1.getValue());
-            strategySelections.set(2, comboBox2.getValue());
-            strategySelections.set(3, comboBox3.getValue());
+        // Set result converter to update strategySelections when OK is pressed
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == okButtonType) {
+                updateStrategySelection(0, comboBox0.getValue());
+                updateStrategySelection(1, comboBox1.getValue());
+                updateStrategySelection(2, comboBox2.getValue());
+                updateStrategySelection(3, comboBox3.getValue());
+            }
+            return null;
+        });
+
+        // Make sure that the dialog is centered on the primaryStage
+        dialog.initOwner(primaryStage);
+
+        // Show the dialog and wait for the result
+        dialog.showAndWait();
+    }
+
+    private void updateStrategySelection(int index, String newValue) {
+        String currentValue = strategySelections.get(index);
+        if (!currentValue.equals(newValue)) {
+            logger.warn("Strategy for player {} has changed from {} to {}. The game needs to be reset for this change to take effect.", index, currentValue, newValue);
+            strategySelections.set(index, newValue);
         }
-        return null;
-    });
+    }
 
-    // Make sure that the dialog is centered on the primaryStage
-    dialog.initOwner(primaryStage);
+    private HBox createPlayerHBox(int playerIndex, ComboBox<String> comboBox) {
+        // Create the Circle (pawn) for the ComboBox
+        Circle pawn = new Circle(12, PlayerView.getColor(playerIndex));
+        pawn.setStrokeWidth(1);
+        pawn.setStroke(Color.BLACK);
+        pawn.setFill(PlayerView.getGradient(playerIndex));
 
-    // Show the dialog and wait for the result
-    dialog.showAndWait();
-}
+        // Create an HBox to hold the Circle and ComboBox
+        return new HBox(12, pawn, comboBox);
+    }
 
-private HBox createPlayerHBox(int playerIndex, ComboBox<String> comboBox) {
-    // Create the Circle (pawn) for the ComboBox
-    Circle pawn = new Circle(12, PlayerView.getColor(playerIndex));
-    pawn.setStrokeWidth(1);
-    pawn.setStroke(Color.BLACK);
-    pawn.setFill(PlayerView.getGradient(playerIndex));
-
-    // Create an HBox to hold the Circle and ComboBox
-    return new HBox(12, pawn, comboBox);
-}
     /**
      * Create a dialog to configure the game playback speed
      */

@@ -17,6 +17,7 @@
 package com.javafx.mejn;
 
 import com.rttnghs.mejn.Layer;
+import com.rttnghs.mejn.Player;
 import com.rttnghs.mejn.Position;
 import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
@@ -52,7 +53,7 @@ import static com.javafx.mejn.MainApp.*;
 /**
  * The BoardView class is responsible for creating the board view. It creates the board, the positions, the dice, and the play control buttons.
  */
-public class BoardView {
+class BoardView {
     private static final Logger logger = LogManager.getLogger(BoardView.class);
     static final int BOARD_SIZE = 40;
 
@@ -75,7 +76,7 @@ public class BoardView {
     final BooleanProperty isPaused = new SimpleBooleanProperty(true);
     private final Controller controller;
 
-    // Keep this private with access through public methods so that the observable object can be dropped and re-created in order to drop the attached listeners from manual strategies create for users that might later change along the way. Otherwise this would lead to memory leaks.
+    // Keep this private with access through package private methods so that the observable object can be dropped and re-created in order to drop the attached listeners from manual strategies create for users that might later change along the way. Otherwise this would lead to memory leaks.
     private SimpleObjectProperty<Position> selectedPosition = new SimpleObjectProperty<>(null);
 
     /**
@@ -85,7 +86,7 @@ public class BoardView {
      * @param borderPane the BorderPane to which the board is added
      * @param controller
      */
-    public BoardView(BorderPane borderPane, Controller controller) {
+    BoardView(BorderPane borderPane, Controller controller) {
         this.controller = controller;
 
         for (int i = 0; i < 4; i++) {
@@ -123,6 +124,7 @@ public class BoardView {
 
         addDebugAction();
     }
+
     void addAccelerators(Scene scene) {
         if (scene != null) {
             // Accelerators can be added only after the buttons are tied to a scene
@@ -414,12 +416,10 @@ public class BoardView {
         stackPane.setRotate(rotation);
 
         Tooltip tooltip = new Tooltip();
-        //tooltip.textProperty().bind(playerStrategies.get(playerIndex));
-        // bind hte tooltop text property to strategySelections for the corresponding playerIndex
-        //tooltip.textProperty().bind(strategySelections.get(playerIndex));
-        strategySelections.addListener((ListChangeListener.Change<? extends String> c) -> {
-            if (0 < playerIndex && playerIndex < strategySelections.size()) {
-                tooltip.setText(strategySelections.get(playerIndex));
+
+        players.addListener((ListChangeListener.Change<? extends Player> c) -> {
+            if (0 <= playerIndex && playerIndex < players.size()) {
+                tooltip.setText(players.get(playerIndex).getName());
             }
         });
 
@@ -584,10 +584,10 @@ public class BoardView {
     /**
      * Register a handler for the selected position.
      *
-     * @param positionCompletableFuture
-     * @param playerIndex
+     * @param positionCompletableFuture the CompletableFuture to complete with the selected position
+     * @param playerIndex               the index of the player
      */
-    public void setChoiceHandler(CompletableFuture<Position> positionCompletableFuture, int playerIndex) {
+    void setChoiceHandler(CompletableFuture<Position> positionCompletableFuture, int playerIndex) {
         selectedPosition.addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 // Shift the selected position to the perspective of the player's strategy
@@ -604,7 +604,7 @@ public class BoardView {
      * @param isBeginOccupied counting from the last begin position, return the first one that is occupied (true) or counting from the beginning return the first position not occupied (false)
      * @return the PositionView
      */
-    public PositionView getPositionView(Position position, int playerIndex, boolean isBeginOccupied) {
+    PositionView getPositionView(Position position, int playerIndex, boolean isBeginOccupied) {
 
         switch (position.layer()) {
             case EVENT -> {
@@ -650,7 +650,7 @@ public class BoardView {
      * @param position the selected position
      * @param force    if true, the position is set even if the current player is not a manual strategy player
      */
-    public void setSelectedPosition(Position position, boolean force) {
+    void setSelectedPosition(Position position, boolean force) {
         if (force) {
             selectedPosition.set(position);
         } else if (currentPlayerIndex.get() != -1 && MainApp.strategySelections.get(currentPlayerIndex.get()).equals("ManualStrategy")) {
@@ -665,14 +665,14 @@ public class BoardView {
      *
      * @param position the selected position
      */
-    public void setSelectedPosition(Position position) {
+    void setSelectedPosition(Position position) {
         setSelectedPosition(position, false);
     }
 
     /**
      * Get the selected position.
      */
-    public Position getSelectedPosition() {
+    Position getSelectedPosition() {
         return selectedPosition.get();
     }
 
@@ -692,7 +692,7 @@ public class BoardView {
      * @param currentPlayerIndex the new currentPlayerIndex to set.
      * @return previous value of currentPlayerIndex
      */
-    public int setCurrentPlayerIndex(int currentPlayerIndex) {
+    int setCurrentPlayerIndex(int currentPlayerIndex) {
         int previousPlayerIndex = this.currentPlayerIndex.get();
         this.currentPlayerIndex.set(currentPlayerIndex);
         return previousPlayerIndex;
@@ -703,7 +703,7 @@ public class BoardView {
      *
      * @return the current player index
      */
-    public int getCurrentPlayerIndex() {
+    int getCurrentPlayerIndex() {
         return currentPlayerIndex.get();
     }
 }
