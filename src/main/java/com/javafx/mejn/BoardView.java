@@ -48,7 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.javafx.mejn.MainApp.*;
+import static com.javafx.mejn.MainApplication.*;
 
 /**
  * The BoardView class is responsible for creating the board view. It creates the board, the positions, the dice, and the play control buttons.
@@ -625,13 +625,13 @@ class BoardView {
             case BEGIN -> {
                 if (isBeginOccupied) {
                     for (int i = 3; i >= 0; i--) {
-                        if (boardView.beginPositions.get(playerIndex).get(i).occupiedProperty().get() == playerIndex) {
+                        if (boardView.beginPositions.get(playerIndex).get(i).getOccupiedBy() == playerIndex) {
                             return boardView.beginPositions.get(playerIndex).get(i);
                         }
                     }
                 } else {
                     for (int i = 0; i < 4; i++) {
-                        if (boardView.beginPositions.get(playerIndex).get(i).occupiedProperty().get() != playerIndex) {
+                        if (boardView.beginPositions.get(playerIndex).get(i).getOccupiedBy() != playerIndex) {
                             return boardView.beginPositions.get(playerIndex).get(i);
                         }
                     }
@@ -653,7 +653,7 @@ class BoardView {
     void setSelectedPosition(Position position, boolean force) {
         if (force) {
             selectedPosition.set(position);
-        } else if (currentPlayerIndex.get() != -1 && MainApp.strategySelections.get(currentPlayerIndex.get()).equals("ManualStrategy")) {
+        } else if (currentPlayerIndex.get() != -1 && MainApplication.strategySelections.get(currentPlayerIndex.get()).equals("ManualStrategy")) {
             selectedPosition.set(position);
         } else {
             logger.warn("Selected position ignored because the current player is not a manual strategy player.");

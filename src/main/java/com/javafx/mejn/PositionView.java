@@ -26,12 +26,13 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextBoundsType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.function.Consumer;
 
-import static com.javafx.mejn.MainApp.showPositionNumbers;
+import static com.javafx.mejn.MainApplication.showPositionNumbers;
 
 class PositionView {
 
@@ -47,8 +48,8 @@ class PositionView {
     // The player index occupying this property. Any other value indicates, not occupied.
     private final IntegerProperty occupiedBy = new SimpleIntegerProperty(-1);
 
+    private final IntegerProperty finishOrder = new SimpleIntegerProperty(-1);
 
-    // Add javadoc
 
     /**
      * Create a new PositionView
@@ -139,7 +140,11 @@ class PositionView {
             }
         });
 
-        stackPane.getChildren().add(pawn);
+        Text finishPositionText = new Text();
+        finishPositionText.textProperty().bind(finishOrder.asString());
+        finishPositionText.visibleProperty().bind(finishOrder.greaterThan(-1));
+        finishPositionText.setBoundsType(TextBoundsType.VISUAL);
+        stackPane.getChildren().addAll(pawn, finishPositionText);
 
         // Position the stackPane in the right place
         stackPane.layoutXProperty().bind(cellWidth.multiply(x).subtract(circle.radiusProperty()));
@@ -159,23 +164,57 @@ class PositionView {
     }
 
     /**
-     * Get the isChoice property of this position to be used by Board
+     * @return whether this position is a choice for a move for the current player
      */
-    BooleanProperty isChoiceProperty() {
-        return isChoice;
-    }
-
-    BooleanProperty isSelectedProperty() {
-        return isSelected;
+    Boolean isChoice() {
+        return isChoice.get();
     }
 
     /**
-     * Get the occupiedBy property of this position to be used by Board
+     * @param choice indicates whether this position is a choice for a move for the current player
      */
-    IntegerProperty occupiedProperty() {
-        return occupiedBy;
+    void setChoice(boolean choice) {
+        isChoice.set(choice);
     }
 
+    /**
+     * @return whether this position is selected
+     */
+    Boolean isSelected() {
+        return isSelected.get();
+    }
+
+    /*
+     * Set the selected property of this position
+     */
+    void setSelected(boolean selected) {
+        isSelected.set(selected);
+    }
+
+    /**
+     * set the occupiedBy property to the given index
+     */
+    void setOccupiedBy(int playerIndex) {
+        occupiedBy.set(playerIndex);
+    }
+
+    /**
+     * get the occupiedBy value of this position
+     */
+    int getOccupiedBy() {
+        return occupiedBy.get();
+    }
+
+    /**
+     * set the 1-based finishOrder property to the given order
+     */
+    void setFinishOrder(int order) {
+        if (0 < order && order < 5) {
+            finishOrder.set(order);
+        } else {
+            finishOrder.set(-1);
+        }
+    }
 
     /**
      * Rotate the stackPane based on the position which indicated the layer and spot of the position and hence the player orientation

@@ -30,6 +30,8 @@ import com.rttnghs.mejn.strategy.Strategy;
 import com.rttnghs.mejn.strategy.StrategyFactory;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.util.Duration;
@@ -42,16 +44,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.javafx.mejn.MainApp.*;
+import static com.javafx.mejn.MainApplication.*;
 
 class Controller {
     private static final Logger logger = LogManager.getLogger(Controller.class);
+    private static final String MANUAL_STRATEGY = "ManualStrategy";
 
     private final StrategyFactory strategyFactory;
+    final BooleanProperty autoSelectSingleChoice = new SimpleBooleanProperty(true);
     private Board board;
     private TurnStep currentStep = null;
     private BaseHistory<Move> history = new BaseHistory<>(512);
-    private List<String> finished = new ArrayList<>(4);
+    private final List<String> finished = new ArrayList<>(4);
 
     /**
      * Agent=player that strikes other player off the board. Event is index of other
@@ -63,7 +67,6 @@ class Controller {
      * For the finishes EventCounter, the agent is the name of the strategy, and the
      * event is the 0-based position they finished in.
      */
-    private EventCounter<String, Integer> finishCounts = new EventCounter<>();
 
     private List<Move> allowedMoves = new ArrayList<>();
 
@@ -91,7 +94,7 @@ class Controller {
 
     private void addDebugAction() {
         // TODO: Remove after debugging
-        debugItem.setOnAction(e -> {
+        captureDebugItem.setOnAction(e -> {
             logger.debug("Debugging");
             logger.debug("Current step: {}", currentStep);
             logger.debug("board.player: {}", board.getCurrentPlayer());
@@ -99,9 +102,8 @@ class Controller {
             logger.debug("Current die value: {}", board.getCurrentDieValue());
             logger.debug("Finished players: {}", finished);
             logger.debug("Strikes: {}", strikes);
-            logger.debug("Finish counts: {}", finishCounts);
             logger.debug("History: {}", history);
-            logger.debug("Players: {}", MainApp.players);
+            logger.debug("Players: {}", MainApplication.players);
             logger.debug("Allowed moves: {}", allowedMoves);
             logger.debug("Choice: {}", choice);
         });
@@ -119,8 +121,8 @@ class Controller {
         if (scene != null) {
             // Load from configuration only once during construction, not during initialization.
             // That would wipe out user selection of strategies on reset.
-            MainApp.strategyOptions.clear();
-            MainApp.strategyOptions.setAll(strategyFactory.listStrategies());
+            MainApplication.strategyOptions.clear();
+            MainApplication.strategyOptions.setAll(strategyFactory.listStrategies());
 
             String strategySelectionAttribute = Config.configuration.getString("gui[@strategies]");
             strategySelections.clear();
@@ -138,9 +140,8 @@ class Controller {
         resetBoardView();
 
         history = new BaseHistory<>(512);
-        finished = new ArrayList<>(4);
+        finished.clear();
         strikes = new EventCounter<>();
-        finishCounts = new EventCounter<>();
 
         for (int playerIndex = 0; playerIndex < 4; playerIndex++) {
             // Rotate perspective counter clockwise
@@ -154,7 +155,7 @@ class Controller {
                 manualStrategy.setChoiceHandler(positionCompletableFuture -> boardView.setChoiceHandler(positionCompletableFuture, finalPlayerIndex));
             }
 
-            MainApp.players.add(playerIndex, new Player(strategy, playerIndex, 40));
+            MainApplication.players.add(playerIndex, new Player(strategy, playerIndex, 40));
         }
 
         // Reset any previous choice.
@@ -171,7 +172,7 @@ class Controller {
         KeyFrame keyFrame = new KeyFrame(Duration.millis(5000), event -> step());
         timeline.getKeyFrames().add(keyFrame);
 
-        timeline.rateProperty().bind(MainApp.playbackSpeed);
+        timeline.rateProperty().bind(MainApplication.playbackSpeed);
     }
 
     private void resetBoardView() {
@@ -179,29 +180,30 @@ class Controller {
         boardView.setCurrentPlayerIndex(-1);
 
         // Reset the selected position in BoardView so that previously set listeners are dropped.
-        MainApp.boardView.resetSelectedPosition();
+        MainApplication.boardView.resetSelectedPosition();
 
         // Reset all home and event positions in BoardView
         boardView.homePositions.forEach(player -> {
             player.forEach(position -> {
-                position.isChoiceProperty().set(false);
-                position.isSelectedProperty().set(false);
-                position.occupiedProperty().set(-1);
+                position.setChoice(false);
+                position.setSelected(false);
+                position.setOccupiedBy(-1);
+                position.setFinishOrder(-1);
             });
         });
         boardView.eventPositions.forEach(position -> {
-            position.isChoiceProperty().set(false);
-            position.isSelectedProperty().set(false);
-            position.occupiedProperty().set(-1);
+            position.setChoice(false);
+            position.setSelected(false);
+            position.setOccupiedBy(-1);
         });
 
         // Reset begin positions in BoardView
         for (int player = 0; player < boardView.beginPositions.size(); player++) {
             int finalPlayer = player;
             boardView.beginPositions.get(player).forEach(position -> {
-                position.occupiedProperty().set(finalPlayer);
-                position.isChoiceProperty().set(false);
-                position.isSelectedProperty().set(false);
+                position.setOccupiedBy(finalPlayer);
+                position.setChoice(false);
+                position.setSelected(false);
             });
         }
 
@@ -239,11 +241,11 @@ class Controller {
                 } else if (allowedMoves.isEmpty()) {
                     // If there are no choices, move to the next player
                     next();
-                } else if (allowedMoves.size() == 1) {
+                } else if (allowedMoves.size() == 1 && autoSelectSingleChoice.get()) {
                     // If there is only one choice, just select it when step is called.
                     // Make sure we set the selected position in BoardView so that the selection listeners can unroll properly
                     boardView.setSelectedPosition(allowedMoves.get(0).to(), true);
-                } else if (strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
+                } else if (strategySelections.get(board.getCurrentPlayer()).equals(MANUAL_STRATEGY)) {
                     pause();
                 }
                 break;
@@ -306,7 +308,7 @@ class Controller {
         // Iterate through the allowedMoves and set the isChoiceProperty to true for the corresponding position in BoardView
         allowedMoves.forEach(move -> {
             PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
-            toPosition.isChoiceProperty().set(true);
+            toPosition.setChoice(true);
         });
 
         // Make a copy of allowedMoves in a final variable to pass to the Task
@@ -314,7 +316,7 @@ class Controller {
         chooseTask = new Task<>() {
             @Override
             protected Move call() throws Exception {
-                return MainApp.players.get(board.getCurrentPlayer()).choose(finalAllowedMoves, board.getBoardState());
+                return MainApplication.players.get(board.getCurrentPlayer()).choose(finalAllowedMoves, board.getBoardState());
             }
         };
 
@@ -322,7 +324,7 @@ class Controller {
         chooseTask.setOnSucceeded(event -> {
             choice = chooseTask.getValue();
             // Step only if the strategy is the ManualStrategy
-            if (strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy")) {
+            if (strategySelections.get(board.getCurrentPlayer()).equals(MANUAL_STRATEGY)) {
                 step();
             }
         });
@@ -332,8 +334,12 @@ class Controller {
         thread.start();
 
         // If strategy is manual, and allowedMoves.length > 1 then pause
-        if (strategySelections.get(board.getCurrentPlayer()).equals("ManualStrategy") && allowedMoves.size() > 1) {
-            pause();
+        if (strategySelections.get(board.getCurrentPlayer()).equals(MANUAL_STRATEGY)) {
+            if (allowedMoves.size() == 1 && !autoSelectSingleChoice.get()) {
+                pause();
+            } else if (allowedMoves.size() > 1 ) {
+                pause();
+            }
         }
 
         currentStep = TurnStep.OPTIONS;
@@ -356,9 +362,9 @@ class Controller {
         for (Iterator<Move> iterator = allowedMoves.iterator(); iterator.hasNext(); ) {
             Move move = iterator.next();
             PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
-            toPosition.isChoiceProperty().set(false);
+            toPosition.setChoice(false);
             if (move.equals(choice)) {
-                toPosition.isSelectedProperty().set(true);
+                toPosition.setSelected(true);
             }
             iterator.remove();
         }
@@ -392,17 +398,19 @@ class Controller {
         int finishedPlayer = board.move(move);
         if (finishedPlayer != -1) {
             logger.debug("Finished: {}", finishedPlayer);
-            finished.add(MainApp.players.get(finishedPlayer).getName());
-            // JoepJoep
+            finished.add(MainApplication.players.get(finishedPlayer).getName());
+            for (int i = 0; i < 4; i++) {
+                boardView.homePositions.get(finishedPlayer).get(i).setFinishOrder(finished.size());
+            }
         }
         history.add(move);
 
         PositionView fromPosition = boardView.getPositionView(move.from(), playerIndex, true);
-        fromPosition.occupiedProperty().set(-1);
+        fromPosition.setOccupiedBy(-1);
 
         PositionView toPosition = boardView.getPositionView(move.to(), playerIndex, false);
-        toPosition.occupiedProperty().set(playerIndex);
-        toPosition.isSelectedProperty().set(false);
+        toPosition.setOccupiedBy(playerIndex);
+        toPosition.setSelected(false);
     }
 
     /**

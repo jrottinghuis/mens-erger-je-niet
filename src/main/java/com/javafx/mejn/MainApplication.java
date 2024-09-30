@@ -37,18 +37,21 @@ import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class MainApp extends Application {
+import java.util.Optional;
 
-    private static final Logger logger = LogManager.getLogger(MainApp.class);
+public class MainApplication extends Application {
+
+    private static final Logger logger = LogManager.getLogger(MainApplication.class);
     private final TextArea consoleTextArea = new TextArea();
 
     // Number of pixels between the border of the board and the border of the window
     public final static Double BORDER_OFFSET = 5.0;
 
-    final static MenuItem debugItem = new MenuItem("Capture");
+    final static MenuItem captureDebugItem = new MenuItem("Capture");
     final static BooleanProperty showPositionNumbers = new SimpleBooleanProperty(false);
     final static DoubleProperty playbackSpeed = new SimpleDoubleProperty(10);
     static BoardView boardView;
+    private final MenuItem strategyItem = new MenuItem("Strategies");
     final static ObservableList<String> strategyOptions = FXCollections.observableArrayList();
     static final ObservableList<String> strategySelections = FXCollections.observableArrayList();
     static final ObservableList<Player> players = FXCollections.observableArrayList();
@@ -91,10 +94,16 @@ public class MainApp extends Application {
         primaryStage.setScene(scene);
 
         controller.initialize(scene);
+        // Initialize the strategy options and selections after the controller is initialized
+        strategyItem.setOnAction((event) -> getConfigureGameStrategies(controller));
 
         primaryStage.show();
     }
 
+
+    /**
+     * @param args the command line arguments
+     */
     public static void main(String[] args) {
         launch(args);
     }
@@ -141,14 +150,26 @@ public class MainApp extends Application {
 
         // Create Game sub-menu
         Menu menuGame = new Menu("Game");
-        MenuItem strategyItem = new MenuItem("Strategies");
-        menuGame.getItems().add(strategyItem);
-        //strategyItem.setOnAction(_ -> getConfigureGameStrategies());
-        strategyItem.setOnAction((event) -> getConfigureGameStrategies());
+
+        CheckMenuItem autoSelectSingleChoiceCheckMenuItem = new CheckMenuItem("Auto Select Single Choice");
+        autoSelectSingleChoiceCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Shortcut+A"));
+        autoSelectSingleChoiceCheckMenuItem.setSelected(true);
+        controller.autoSelectSingleChoice.bind(autoSelectSingleChoiceCheckMenuItem.selectedProperty());
+        menuGame.getItems().add(autoSelectSingleChoiceCheckMenuItem);
 
         MenuItem playbackSpeedItem = new MenuItem("Playback Speed");
-        menuGame.getItems().add(playbackSpeedItem);
         playbackSpeedItem.setOnAction(_ -> getPlaybackSpeedItem());
+
+        menuGame.getItems().add(playbackSpeedItem);
+
+        CheckMenuItem showPositionNumbersCheckMenuItem = new CheckMenuItem("Show Position Numbers");
+        showPositionNumbersCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Shortcut+N"));
+        showPositionNumbers.bind(showPositionNumbersCheckMenuItem.selectedProperty());
+        showPositionNumbersCheckMenuItem.setSelected(false);
+        menuGame.getItems().add(showPositionNumbersCheckMenuItem);
+
+        menuGame.getItems().add(strategyItem);
+
 
         menuConfigure.getItems().addAll(menuConsole, menuGame);
         menuBar.getMenus().add(menuConfigure);
@@ -156,12 +177,9 @@ public class MainApp extends Application {
 
         // TODO: Remove after debugging
         Menu menuDebug = new Menu("Debug");
-        debugItem.setAccelerator(KeyCombination.keyCombination("Shortcut+D"));
-        CheckMenuItem showPositionNumbersCheckMenuItem = new CheckMenuItem("Show Position Numbers");
-        showPositionNumbersCheckMenuItem.setAccelerator(KeyCombination.keyCombination("Shortcut+N"));
-        showPositionNumbers.bind(showPositionNumbersCheckMenuItem.selectedProperty());
-        showPositionNumbersCheckMenuItem.setSelected(false);
-        menuDebug.getItems().addAll(debugItem, showPositionNumbersCheckMenuItem);
+        captureDebugItem.setAccelerator(KeyCombination.keyCombination("Shortcut+D"));
+
+        menuDebug.getItems().addAll(captureDebugItem);
         menuBar.getMenus().add(menuDebug);
 
         return menuBar;
@@ -170,14 +188,14 @@ public class MainApp extends Application {
     /**
      * Create a dialog to configure the game strategies
      */
-    private void getConfigureGameStrategies() {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Game Strategies");
+    private void getConfigureGameStrategies(Controller initializedController) {
+        Dialog<Void> gameStrateyConfigDialog = new Dialog<>();
+        gameStrateyConfigDialog.setTitle("Game Strategies");
 
         // Set the button types
         ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
         ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
+        gameStrateyConfigDialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
 
         // Create the ComboBoxes and pre-set their values
         ComboBox<String> comboBox0 = new ComboBox<>(strategyOptions);
@@ -198,28 +216,55 @@ public class MainApp extends Application {
 
         // Create a layout and add the HBoxes
         VBox vbox = new VBox(10, createPlayerHBox(0, comboBox0), createPlayerHBox(1, comboBox1), createPlayerHBox(2, comboBox2), createPlayerHBox(3, comboBox3));
-        dialog.getDialogPane().setContent(vbox);
+        gameStrateyConfigDialog.getDialogPane().setContent(vbox);
+
+        // Make sure that the dialog is centered on the primaryStage
+        gameStrateyConfigDialog.initOwner(primaryStage);
 
         // Set result converter to update strategySelections when OK is pressed
-        dialog.setResultConverter(buttonType -> {
+        gameStrateyConfigDialog.setResultConverter(buttonType -> {
             if (buttonType == okButtonType) {
-                updateStrategySelection(0, comboBox0.getValue());
-                updateStrategySelection(1, comboBox1.getValue());
-                updateStrategySelection(2, comboBox2.getValue());
-                updateStrategySelection(3, comboBox3.getValue());
+                boolean hasChanged = !comboBox0.getValue().equals(strategySelections.get(0)) ||
+                        !comboBox1.getValue().equals(strategySelections.get(1)) ||
+                        !comboBox2.getValue().equals(strategySelections.get(2)) ||
+                        !comboBox3.getValue().equals(strategySelections.get(3));
+
+                if (hasChanged) {
+                    boolean confirmed = showConfirmationDialog(primaryStage);
+                    if (confirmed) {
+                        updateStrategySelection(0, comboBox0.getValue());
+                        updateStrategySelection(1, comboBox1.getValue());
+                        updateStrategySelection(2, comboBox2.getValue());
+                        updateStrategySelection(3, comboBox3.getValue());
+                        initializedController.reset();
+                    }
+                }
             }
             return null;
         });
 
-        // Make sure that the dialog is centered on the primaryStage
-        dialog.initOwner(primaryStage);
-
         // Show the dialog and wait for the result
-        dialog.showAndWait();
+        gameStrateyConfigDialog.showAndWait();
+    }
+
+    private boolean showConfirmationDialog(Stage primaryStage) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Strategy Change");
+        alert.setHeaderText(null);
+        alert.setContentText("Changing strategies will reset the game.");
+
+        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(okButtonType, cancelButtonType);
+
+        alert.initOwner(primaryStage);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == okButtonType;
     }
 
     private void updateStrategySelection(int index, String newValue) {
         String currentValue = strategySelections.get(index);
+        // TODO: add an additional pop-up that will warn the user that this will reset the game.
         if (!currentValue.equals(newValue)) {
             logger.warn("Strategy for player {} has changed from {} to {}. The game needs to be reset for this change to take effect.", index, currentValue, newValue);
             strategySelections.set(index, newValue);
@@ -279,7 +324,6 @@ public class MainApp extends Application {
     private TabPane createTabPane(Controller controller) {
 
         BorderPane borderPane = new BorderPane();
-
         boardView = new BoardView(borderPane, controller);
 
         Tab tab2 = getConsoleTab();
@@ -315,4 +359,5 @@ public class MainApp extends Application {
 
         return new Tab("Console", consoleAnchorPane);
     }
+
 }

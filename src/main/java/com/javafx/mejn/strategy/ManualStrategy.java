@@ -16,7 +16,6 @@
  */
 package com.javafx.mejn.strategy;
 
-import com.javafx.mejn.MainApp;
 import com.rttnghs.mejn.BoardState;
 import com.rttnghs.mejn.Move;
 import com.rttnghs.mejn.Position;
