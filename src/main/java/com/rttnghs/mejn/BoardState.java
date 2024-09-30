@@ -70,8 +70,9 @@ public class BoardState {
 
 	/**
 	 * For private use only.
-	 * 
-	 * @param state to start this new board state with. Each sub-list
+	 *
+	 * @param boardSize  The number of spots in the Event layer of the board.
+	 * @param otherState to start this new board state with. Each sub-list
 	 *              (playerPositions) must have the same length.
 	 */
 	protected BoardState(int boardSize, List<List<Position>> otherState) {

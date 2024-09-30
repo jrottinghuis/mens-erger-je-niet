@@ -57,7 +57,6 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
 	 * Normalize the position given the modulo where the board wraps.
 	 * 
 	 * @param boardSize the number of positions on the board until the board wraps.
-	 * @param position  given position. Cannot be null.
 	 * @return new position (or the same one) with layer the same and position
 	 *         modulo boardSize. Except when position is 0, then layer is always
 	 *         EVENT.
@@ -99,8 +98,8 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
 	}
 
 	/**
-	 * @param min
-	 * @param max
+	 * @param min the minimum position
+	 * @param max the maximum position
 	 * @return if min < this <= max, or null if any argument is null.
 	 */
 	public boolean isBetween(Position min, Position max) {

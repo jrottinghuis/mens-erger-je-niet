@@ -16,17 +16,17 @@
  */
 package com.rttnghs.mejn.internal;
 
+import com.rttnghs.mejn.History;
+
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import com.rttnghs.mejn.History;
-
 public interface HistorySupplier<E> {
 
-	/**
-	 * @return a {@code Supplier} if histories with the operator applied to the
-	 *         elements.
-	 */
-	public Supplier<History<E>> getSupplier(UnaryOperator<E> operator);
+    /**
+     * @return a {@code Supplier} if histories with the operator applied to the
+     * elements.
+     */
+    Supplier<History<E>> getSupplier(UnaryOperator<E> operator);
 
 }

@@ -48,6 +48,13 @@ public class BaseStrategyFactory implements StrategyFactory {
 		strategyParametersList = Config.configuration.getList(String.class, "strategies.strategy.parameters");
 	}
 
+	// Implement listStrategies() method and return a non-modifiable list of strategyNames
+	@Override
+	public List<String> listStrategies() {
+		return List.copyOf(strategyNames);
+	}
+
+
 	@Override
 	public Strategy getStrategy(String strategyName) {
 		int index = strategyNames.indexOf(strategyName);

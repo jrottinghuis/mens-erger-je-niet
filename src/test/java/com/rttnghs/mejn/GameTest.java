@@ -36,7 +36,7 @@ class GameTest {
 	@Test
 	final void testGame() {
 		Instant start = Instant.now();
-		logger.info("Starting game: ");
+		logger.info("Starting test game: ");
 		Game game = new Game(new BaseStrategyFactory(), Arrays.asList("RandomStrategy", "RankingStrategy"));
 
 		EventCounter<String, Integer> results = game.play();
@@ -45,13 +45,13 @@ class GameTest {
 
 		Instant end = Instant.now();
 		Duration interval = Duration.between(start, end);
-        logger.info("Game took {} millis", interval.toMillis());
+        logger.info("Test game took {} millis", interval.toMillis());
 	}
 
 	@Test
 	final void testAnotherGame() {
 		Instant start = Instant.now();
-		logger.info("Starting game: ");
+		logger.info("Starting another test game: ");
 		Game game = new Game(new BaseStrategyFactory(),
 				Arrays.asList("FarStrategy", "RandomStrategy", "NearStrategy"));
 
@@ -60,7 +60,7 @@ class GameTest {
 
 		Instant end = Instant.now();
 		Duration interval = Duration.between(start, end);
-		logger.info("Game took {} millis", interval.toMillis());
+		logger.info("Another test game took {} millis", interval.toMillis());
 	}
 
 	@Test

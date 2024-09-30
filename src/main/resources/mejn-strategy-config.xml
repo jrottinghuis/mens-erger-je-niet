@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 <?xml-model href="mejn-strategy-config.xsd"?>
 <config>
 	<strategies>
@@ -18,6 +34,11 @@
 			<parameters>null</parameters>
 		</strategy>
 		<strategy>
+			<name>ManualStrategy</name>
+			<class>com.javafx.mejn.strategy.ManualStrategy</class>
+			<parameters>null</parameters>
+		</strategy>
+		<strategy>
 			<name>RankingStrategy</name>
 			<class>com.rttnghs.mejn.strategy.ranking.SomeRankingStrategy</class>
 			<parameters>-90,20,80,-5,10,0</parameters>
@@ -29,13 +50,14 @@
 		</strategy>
 	</strategies>
 	<!-- Strategies listed in the brackets attribute list refer to the strategy names defined above. -->
-	<brackets strategies="RandomStrategy,FarStrategy,NearStrategy,RankingStrategy,OtherRankingStrategy">
+	<tournamentBrackets strategies="RandomStrategy,FarStrategy,NearStrategy,RankingStrategy,OtherRankingStrategy">
 		<!-- The length of the strategies attribute list must match the length of the brackets.-->
 		<!-- Brackets are 0-based indexes from the list of strategies in brackets.-->
 		<bracket>1,0,2,0</bracket>
 		<bracket>3,0,4,0</bracket>
 		<bracket>1,0,3,0</bracket>
 		<bracket>2,0,4,0</bracket>
-		<bracket>1,2,3,4</bracket>	
-	</brackets>
+		<bracket>1,2,3,4</bracket>
+	</tournamentBrackets>
+	<gui strategies="ManualStrategy,RandomStrategy,FarStrategy,RankingStrategy"/>
 </config>

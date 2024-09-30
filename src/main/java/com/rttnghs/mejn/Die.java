@@ -43,7 +43,7 @@ public class Die {
 	}
 
 	/**
-	 * Roll the die. Returns a random value between 1 and faces.
+	 * Roll the die. Returns a random value between 1 and faces (including).
 	 */
 	public int roll() {
 		return number.nextInt(faces) + 1;

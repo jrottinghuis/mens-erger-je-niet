@@ -111,8 +111,6 @@ public class Game {
 
 		if ((allowedMoves == null) || (allowedMoves.isEmpty())) {
 			// No valid moves to make by the player, continue to next player.
-			// logger.trace(() -> "No valid moves to choose from: " +
-			// board.getBoardState());
 			return;
 		}
 		// There was a valid choice, but the strategy didn't pick it.
@@ -128,9 +126,9 @@ public class Game {
 
 		Move strike = board.getStrikeMove(choice);
 		if (strike != null) {
-			int player = board.getBoardState().getPlayer(choice.to());
-			strikes.increment(currentPlayer, player);
-            logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, player, choice, strike);
+			int struckPlayer = board.getBoardState().getPlayer(choice.to());
+			strikes.increment(currentPlayer, struckPlayer);
+            logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, struckPlayer, choice, strike);
 			move(strike);
 		}
 		move(choice);

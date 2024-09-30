@@ -134,11 +134,6 @@ class MoveTest {
 		Position bMin6 = new Position(BEGIN, -6);
 		Position b0 = new Position(BEGIN, 0);
 		Position e0 = new Position(EVENT, 0);
-		// Position e10 = new Position(EVENT, 10);
-		// Position e17 = new Position(EVENT, 17);
-		// Position h1 = new Position(HOME, 1);
-		// Position h11 = new Position(HOME, 11);
-		// Position h13 = Position.of(HOME, 13);
 
 		Move move1 = new Move(bMin6, b0);
 		Move move2 = new Move(b0, e0);
@@ -156,11 +151,17 @@ class MoveTest {
 		Move move = new Move(e0, e3);
 		Move shifted = move.shift(-10, 40);
 		assertEquals(move, shifted.shift(10, 40));
-
 		Position e30 = new Position(EVENT, 30);
 		Position e33 = new Position(EVENT, 33);
 		Move expected = new Move(e30, e33);
 		assertEquals(expected, shifted);
+
+		shifted = move.shift(7, 40);
+		assertEquals(move, shifted.shift(-7, 40));
+
+		move = new Move(b34, e0);
+		shifted = move.shift(-5, 40);
+		assertEquals(move, shifted.shift(5, 40));
 
 		move = new Move(b34, e0);
 		shifted = move.shift(-10, 40);
@@ -168,6 +169,24 @@ class MoveTest {
 
 		expected = new Move(b24, e30);
 		assertEquals(expected, shifted);
+	}
+
+	@Test
+	void testFrom() {
+		Position fromPosition = new Position(Layer.BEGIN, 0);
+		Position toPosition = new Position(Layer.EVENT, 10);
+		Move move = new Move(fromPosition, toPosition);
+
+		assertEquals(fromPosition, move.from(), "The from() method should return the correct from position.");
+	}
+
+	@Test
+	void testTo() {
+		Position fromPosition = new Position(Layer.BEGIN, 0);
+		Position toPosition = new Position(Layer.EVENT, 10);
+		Move move = new Move(fromPosition, toPosition);
+
+		assertEquals(toPosition, move.to(), "The to() method should return the correct to position.");
 	}
 
 }

@@ -33,7 +33,7 @@ public record Config(int dieFaces, int pawnsPerPlayer, int dotsPerPlayer) {
 	private static final Logger logger = LogManager.getLogger(Config.class);
 
 	private static final String CONFIG_FILENAME = "mejn-config.xml";
-	public static Configuration configuration;
+	public static final Configuration configuration;
 
 	static {
 		Parameters params = new Parameters();

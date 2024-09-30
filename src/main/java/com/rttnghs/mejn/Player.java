@@ -63,12 +63,11 @@ public class Player {
 	}
 
 	/**
-	 * @param config
-	 * @param playerIndex
+	 * @param playerIndex zero based index where along the board this player sits.
 	 * @return how many spots the Moves of a board need to be rotated to put the
 	 *         current player start from 0;
 	 */
-	private static int rotation(int playerIndex) {
+	public static int rotation(int playerIndex) {
 		return playerIndex * Config.value.dotsPerPlayer() * -1;
 	}
 
@@ -84,25 +83,33 @@ public class Player {
 	 * @param strategy        used to choose moves
 	 * @param playerIndex     zero based index where along the board this player
 	 *                        sits.
-	 * @param historySupplier used to get to history with moves shifted to our
-	 *                        position.
+	 * @param boardSize       number of spots on the board.
 	 */
-	private Player(Strategy strategy, int playerIndex, int boardSize) {
+	public Player(Strategy strategy, int playerIndex, int boardSize) {
 		this.strategy = strategy;
 		this.boardSize = boardSize;
 		this.playerIndex = playerIndex;
 	}
 
 	/**
-	 * For public use, see {@link Player.playersOf}
+	 * @return how many spots the Moves of a board need to be rotated to put the
+	 *         current player start from 0;
+	 */
+	public int rotation() {
+		return rotation(playerIndex);
+	}
+
+	/**
+	 * Have the player choose a move from the list of choices.
+	 * This method will rotate the board to the perspective of the player.
 	 * 
-	 * @param state    of the board
-	 * @param choices. Could be empty to indicate that there are no choices.
-	 * @return the move the from list. Could be null if there were no choices.
+	 * @param choices Could be empty to indicate that there are no choices.
+	 * @param state   the state of the board.
+	 * @return the move the choices list. Could be null if there were no choices.
 	 */
 	public Move choose(List<Move> choices, BoardState state) {
 		// Rotate perspective counter clockwise
-		Supplier<BoardState> bsProvider = new ShiftingBoardStateSupplier(state, playerIndex, rotation(playerIndex));
+		Supplier<BoardState> bsProvider = new ShiftingBoardStateSupplier(state, playerIndex, rotation());
 
 		if (choices == null) {
 			// this should not happen.
@@ -110,14 +117,14 @@ public class Player {
 		}
 		// Shift the move to the perspective where strategy thinks it is player 0;
 
-		List<Move> shiftedChoices = choices.stream().map(Move.shifter(rotation(playerIndex), boardSize))
+		List<Move> shiftedChoices = choices.stream().map(Move.shifter(rotation(), boardSize))
 				.collect(Collectors.toList());
 
 		Move choice = strategy.choose(shiftedChoices, bsProvider);
 
 		// Shift perspective back, moving board clockwise
 		if (choice != null) {
-			choice = choice.shift(rotation(playerIndex) * -1, boardSize);
+			choice = choice.shift(rotation() * -1, boardSize);
 		}
 		return choice;
 	}

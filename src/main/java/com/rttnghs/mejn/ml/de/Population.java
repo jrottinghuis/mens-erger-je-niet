@@ -40,7 +40,7 @@ public class Population {
 	 * Number of competitors that each individual should compete against.
 	 */
 	// TODO: Make configurable, and ensure this is <= populationSize.
-	private final int competionSize = 8;
+	private final int competitionSize = 8;
 
 	// TODO: Javadoc and make configurable
 	private final int scalingFactorPercent = 50;
@@ -84,17 +84,17 @@ public class Population {
 		for (int i = 0; i < populationSize; i++) {
 			// Exclude all selected random individuals to compete against selected so far,
 			// plus current individual.
-			Individual[] excluded = new Individual[competionSize + 1];
+			Individual[] excluded = new Individual[competitionSize + 1];
 			excluded[0] = population.get(i);
 			int cumulativeScore = 0;
-			for (int c = 0; c < competionSize; c++) {
+			for (int c = 0; c < competitionSize; c++) {
 				// Select a random individual
 				Individual opponent = selectRandomIndividual(excluded);
 				cumulativeScore += getScore(population.get(i), opponent);
 				excluded[c + 1] = opponent;
 			}
 			// Set the fitness to be the average score against the randomly chosen opponents
-			population.get(i).setFitness(cumulativeScore / competionSize);
+			population.get(i).setFitness(cumulativeScore / competitionSize);
 		}
 	}
 

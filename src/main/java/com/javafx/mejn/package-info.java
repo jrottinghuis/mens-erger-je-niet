@@ -14,31 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.rttnghs.mejn;
-
-import java.util.stream.Stream;
 
 /**
- * Used to track a sequential list of events.
- *
- * @param <E> type of elements to track
+ * This package contains classes related to the JavaFX application for the Mejn game.
+ * It includes custom components and utilities for the user interface.
  */
-public interface History<E> {
-
-    /**
-     * @return the number of elements in the history
-     */
-    int size();
-
-    /**
-     * @return a new sequential {@code Stream} of events from the history.
-     */
-    Stream<E> stream();
-
-    /**
-     * @return a new sequential {@code Stream} of events, in reverse order, from the
-     * history.
-     */
-    Stream<E> reverseStream();
-
-}
+package com.javafx.mejn;

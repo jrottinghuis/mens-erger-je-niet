@@ -41,9 +41,9 @@ public enum Layer {
 	public final int number;
 
 	/**
-	 * @param number used to indicate the number of the layer.
+	 * Constructor for the layer.
 	 */
-	private Layer() {
+    Layer() {
 		this.number = this.ordinal() - 1;
 	}
 

@@ -35,7 +35,7 @@ class BaseStrategyFactoryTest {
 
 		Strategy strategy;
 
-		String bracketStrategyNamesAttribute = Config.configuration.getString("brackets[@strategies]");
+		String bracketStrategyNamesAttribute = Config.configuration.getString("tournamentBrackets[@strategies]");
 		List<String> bracketStrategyNames = new ArrayList<>(
 				Arrays.asList(bracketStrategyNamesAttribute.split(",", -1)));
 

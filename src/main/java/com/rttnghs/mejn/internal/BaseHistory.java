@@ -19,7 +19,6 @@ package com.rttnghs.mejn.internal;
 import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.rttnghs.mejn.History;

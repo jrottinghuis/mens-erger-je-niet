@@ -16,12 +16,19 @@
  */
 package com.rttnghs.mejn.strategy;
 
-public interface StrategyFactory {	
-	
-	/**
-	 * @param strategyName to get.
-	 * @return uninitialized strategy for the given name.
-	 */
-	public Strategy getStrategy(String strategyName);
+import java.util.List;
+
+public interface StrategyFactory {
+
+    /**
+     * @return list of strategy names.
+     */
+    List<String> listStrategies();
+
+    /**
+     * @param strategyName to get.
+     * @return uninitialized strategy for the given name.
+     */
+    Strategy getStrategy(String strategyName);
 
 }

@@ -14,31 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.rttnghs.mejn;
-
-import java.util.stream.Stream;
+package com.javafx.mejn;
 
 /**
- * Used to track a sequential list of events.
- *
- * @param <E> type of elements to track
+ * The main class of the application, but one that doesn't extend from Application, in order to avoid
+ * "Error: JavaFX runtime components are missing" when running the application from the command line.
  */
-public interface History<E> {
+public class Main {
 
     /**
-     * @return the number of elements in the history
+     * @param args the command line arguments
      */
-    int size();
-
-    /**
-     * @return a new sequential {@code Stream} of events from the history.
-     */
-    Stream<E> stream();
-
-    /**
-     * @return a new sequential {@code Stream} of events, in reverse order, from the
-     * history.
-     */
-    Stream<E> reverseStream();
-
+    public static void main(String[] args) {
+        MainApplication.launch(MainApplication.class, args);
+    }
 }

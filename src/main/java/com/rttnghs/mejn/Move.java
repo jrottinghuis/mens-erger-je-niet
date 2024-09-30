@@ -69,7 +69,7 @@ public record Move(Position from, Position to) implements Comparable<Move> {
      */
     public Move {
         if ((from == null) || (to == null)) {
-            throw new IllegalArgumentException("Cannote create a move with a null Position");
+            throw new IllegalArgumentException("Cannotgrad create a move with a null Position");
         }
     }
 
@@ -101,6 +101,22 @@ public record Move(Position from, Position to) implements Comparable<Move> {
 	 */
 	public static UnaryOperator<Move> shifter(int spots, int boardSize) {
 		return (move) -> move.shift(spots, boardSize);
+	}
+
+	/**
+	 * @return the from position of the move.
+	 */
+	@Override
+	public Position from() {
+		return from;
+	}
+
+	/**
+	 * @return the to position of the move.
+	 */
+	@Override
+	public Position to() {
+		return to;
 	}
 
 }

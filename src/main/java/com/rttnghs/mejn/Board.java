@@ -37,7 +37,7 @@ public class Board {
 
 	private static final Logger logger = LogManager.getLogger(Board.class);
 
-	public final Die die;
+	private final Die die;
 	private final int boardSize;
 
 	/**
@@ -90,6 +90,8 @@ public class Board {
 
 		// Determine who goes first. Die are 1 based, players 0-based index.
 		currentPlayer = new Die(playerCount).roll() - 1;
+		// Do the first die roll for them
+		currentDieValue = die.roll();
 		activePlayerCount = playerCount;
 	}
 

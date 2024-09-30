@@ -1,12 +1,12 @@
 
-#Mens erger je niet!
+# Mens erger je niet!
 
 This is an implementation of the Dutch board game called [Mens erger je niet!](https://nl.wikipedia.org/wiki/Mens_erger_je_niet!) based on the German game [Mensch ärgere Dich nicht](https://en.wikipedia.org/wiki/Mensch_ärgere_Dich_nicht). This in turn is derived from the Indian game [Pachisi](https://en.wikipedia.org/wiki/Pachisi). English speakers know this game as [Ludo](https://en.wikipedia.org/wiki/Ludo) while other countries have similar flavors.
 
 This implementation is meant to make it easy to create and test a strategy, and to develop, train and have strategies compete. You might want to play around with machine learning algorithms, but find it boring to use a completely synthetic use-case.
 It is relatively easy to create a strategy that ranks possible moves and that is specified by a vector of integers. These can then be played against one another and tested for fitness.
 
-## Board
+# Board
 
 The game is played with two, or four players on the following board:
 
@@ -24,7 +24,7 @@ Two players play one another from opposite corners. The reverse side of the phys
   title="Six player board"
   style="display: inline-block; margin: 0 auto; max-width: 300px"/>
 
-## Rules
+# Rules
 
 Each player starts with four pawns in their respective corner, marked with B ("Begin"). Either youngest players starts, or regular 6-faced fair dice rolls can be used to determine who starts. Players take turns in a clock-wise fashion. The purpose of the game is to get all four pawns to the finish, or home, which are the four circles marked with their respective color in the center of the board, after completing a clockwise loop around the board.
 For each turn a player rolls the die. If the player rolls a six, they have to move a pawn from their beginning position to their first position on the board, marked with an "A" (for "Anfang", German word for "start"?). They get to roll the die again, and move forward for the number of positions that the die shows. Then the next player takes a turn.
@@ -37,11 +37,69 @@ If a player has their pawn right in front of the home ("a") position and would t
 
 Whether or not a player can strike their own pawn anywhere on the regular board should be agreed upon ahead of time. Even though players are unlikely to choose to strike themselves, there can be situations when this is the only option. Note that no pawn can be removed from a home position.
 
-## Implementation
+ # Graphical User Interface
+The Graphical User Interface (GUI) contains two tabs. The first tab is the game board for four players, each with a configurable strategy.
+If any of the strategies is the "ManualStrategy", the GUI will allow you to select a move by clicking on the board. 
+The second tab is a console log area that is used for debugging purposes. Any error messages or other information will be displayed here.
+
+ ## Game Board
+
+A die in the appears in the corner of the player whos turn it is.
+A dotted line in the color of the current player around a position indicates a option for a move for that player. For manual strategies, the user can click on this position to select it.
+A solid line in the color of that player indicated that this position has been chosen as the next move to make.
+For example, on the board below, the blue player (using a "ManualStrategy") threw a value of 2, has two options:
+1. move the pawn two positions forward from E6 to E8.
+2. move the pawn two positions forward from E24 to E26.
+  - In option 1, the blue player happens to strike the green player to send its pawn home.
+  - In option 2, the blue player would strike the yellow player.
+<img
+  src="src/main/resources/images/MensErgerJeNietOptions.png"
+  alt="Mens erger je niet game board options."
+  title="Game options"
+  style="display: inline-block; margin: 0 auto; max-width: 1200px">
+
+A few die rolls later, the green player rolls a 5, and has only one option, to move from E8 to E13. The player selected E13, which is indicated by a green solid line around that position.
+In this screen capture, the position numbers have been turned off. The mouse hoovers over the B in the green players begin section,
+showing that the green player is using the "FarStrategy" strategy.
+<img
+src="src/main/resources/images/MensErgerJeNietSelection.png"
+alt="Mens erger je niet game board move selection."
+title="Move selection"
+style="display: inline-block; margin: 0 auto; max-width: 1200px">
+
+ ## Configuration
+
+ ### Game
+The Configure->Game menu item has four sub-menu items:
+1. Auto Select Single Choice toggle. For a manual strategy players, if there is only one option, should it be auto-selected when the game in "Play" mode, or should it pause? 
+Note that if there is more than one option, the game will always pause.
+2. Playback Speed. This is where you can configure how fast the game will proceed in "Play" mode. Once the game is paused, you can proceed one step at a time.
+3. Show Position Numbers. This toggles the numbers on the board. This can be useful for debugging, or for learning the game.
+4. Strategies. This window allows users to select the strategies they want each player to use.
+By default the blue player in the bottom left is configured to be the "ManualStrategy" which allows the user to select a move by clicking on the board.
+By mousing-over the "B" in each players home area, the user can see the strategy that is currently configured for that player.
+
+<img
+src="src/main/resources/images/MensErgerJeNietStrategyConfiguration.png"
+alt="Mens erger je niet game board move selection."
+title="Move selection"
+style="display: inline-block; margin: 0 auto; max-width: 600px">
+
+When a player has all their pawns in the home area they are finished. A number in each of their pawns indicates the order in which they finished.
+In the example below, the red player won, followed by the blue player coming in second place. The yellow and green players are still playing.
+
+<img
+src="src/main/resources/images/MensErgerJeNietFinished.png"
+alt="Mens erger je niet game board move selection."
+title="Move selection"
+style="display: inline-block; margin: 0 auto; max-width: 1200px">
+
+
+ # Implementation
 
 When playing a physical board game, the location of the pawns on the board and hence the state of the game are clearly visible. For an implementation, we need an unambiguous way to refer to each position. In addition, it is convenient to choose an implementation that is easy to reason about.
 
-### Numbers, modulo and layers
+ ## Numbers, modulo and layers
 
 In order to reference an exact location on the board, let's take the perspective of the blue player in the bottom left hand corner. Given that there are ten spots for each player, and four players on this board, there are forty total spots, marked from 0 to 39.
 
@@ -87,7 +145,12 @@ Putting this all together we get the following complete board:
   title="Gameboard"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
 
- ### Classes
+ ## GUI
+The GUI is built using JavaFX. The Main class launches MainApplication, which contains the GUI. 
+MainApplication uses several View classes and a single Controller class that interacts with a Board object. The Board object is used to keep track of the game state and determine the legal moves for the current player. The GUI is updated based on the current state of the Board object.
+The board is laid out in several PositionViews, which re-position themselves based on the width of the window as it is re-sized.
+
+ ## Classes
 
  * __Layer__ : {BEGIN, EVENT, HOME}
  * __Position__ : Tuple of Layer and spot (number on the board).
@@ -105,14 +168,14 @@ Putting this all together we get the following complete board:
  * __Strategy__ : This is the thing to implement that determines what a player does during a game.
 
 
- ## Strategies
+ # Strategies
 
 In order to implement your own strategy, you need to implement the `Strategy` interface. Alternatively, you can extend the `BaseStrategy` implementation which takes care of choosing a move if only one (or even none) are allowed. This you have to bother to implement only the `multiChoose` method in which case you know for sure that there is actually something to choose (more than one option).
 If your method implements some mechanism to rank the list of moves by an integer value, you can opt to extend the `RankingStrategy`.
 A few example strategies that can be used as a benchmark have been included. According to Genugten & Das [[2]](#2) `FarStrategy` and `NearStrategy` (always move the pawn furthers along, or nearest the start) are simple strategies often used. They claim that `RandomStrategy`, which as you might expect makes a random selection out of the list of potential moves, is not often chosen because it is considered to be a "silly" strategy. It turns out that `FarStrategy` and `RandomStrategy` are actually reasonable benchmarks. `NearStrategy` performs particularly poorly when the game is configured to allow self-strikes.
 
 
- ## Configuration
+ # Configuration
 
 A user can provide a `mejn-user.properties` file on the classpath, or use the following [default properties](src/main/resources/mejn-default.properties):
 
@@ -142,7 +205,7 @@ Strategies for a tournament are a little more structured. See [src/main/resource
 
  ## Build
 
- The project is coded in Java (requires version 17+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
+ The project is coded in Java (requires version 22+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
 
      /mens-erger-je-niet% gradle test
 
@@ -154,6 +217,10 @@ and a tournament through:
 
      /mens-erger-je-niet% gradle runTournament
 
+You can launch the GUI through:
+
+     /mens-erger-je-niet% gradle run
+
 You can pass parameters to gradle as follows:
 
 	/mens-erger-je-niet% GRADLE_OPTS="-Xms1024m -Xmx2048m" time gradle runTournament
@@ -164,7 +231,7 @@ To import the project into Eclipse, use:
 
 For IntelliJ fans use:
 
-     /mens-erger-je-niet% gradle intelliJ
+     /mens-erger-je-niet% gradle idea
 
  ## Logging
 
@@ -183,7 +250,7 @@ Using reflection, or introspection to observe or manipulate other players' strat
 
 1. Add implementation for Differential Evolution to train ranking strategies
 2. Add implementation for Neural network and training of neural networks
-3. Add UI to allow interactive player or players against configured strategies
+3. Add UI to allow configured strategies to play in a tournament and show the results in a live graph
 
  ## License
 
