@@ -430,8 +430,7 @@ class Controller {
     }
 
     void play() {
-        if (boardView.isFinished()) {
-
+        if (!boardView.isFinished()) {
             boardView.isPaused(false);
             timeline.play();
         }
