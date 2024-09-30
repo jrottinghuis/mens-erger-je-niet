@@ -17,12 +17,14 @@
 package com.javafx.mejn;
 
 import javafx.beans.binding.IntegerExpression;
-import javafx.beans.property.IntegerProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.RadialGradient;
 import javafx.scene.paint.Stop;
 
+/**
+ * Utility class for player views.
+ */
 class PlayerView {
 
     /**

@@ -40,7 +40,7 @@ public class Population {
 	 * Number of competitors that each individual should compete against.
 	 */
 	// TODO: Make configurable, and ensure this is <= populationSize.
-	private final int competionSize = 8;
+	private final int competitionSize = 8;
 
 	// TODO: Javadoc and make configurable
 	private final int scalingFactorPercent = 50;

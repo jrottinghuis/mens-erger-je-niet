@@ -35,7 +35,7 @@ java {
 
 javafx {
     version = '22'
-    modules = [ 'javafx.controls', 'javafx.graphics' ]
+    modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics' ]
     // Build for current platform, or linux, linux-aarch64, mac, {win or windows}, {osx,mac, or macos}, {osx-aarch64, mac-aarch64, or macos-aarch64}
     //platform = 'win'
 }

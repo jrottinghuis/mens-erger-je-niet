@@ -69,7 +69,7 @@ public record Move(Position from, Position to) implements Comparable<Move> {
      */
     public Move {
         if ((from == null) || (to == null)) {
-            throw new IllegalArgumentException("Cannote create a move with a null Position");
+            throw new IllegalArgumentException("Cannot create a move with a null Position");
         }
     }
 

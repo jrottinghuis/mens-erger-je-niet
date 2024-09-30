@@ -20,15 +20,15 @@ import java.util.List;
 
 public interface StrategyFactory {
 
-	/**
-	 * @return list of strategy names.
-	 */
-	public List<String> listStrategies();
+    /**
+     * @return list of strategy names.
+     */
+    List<String> listStrategies();
 
-	/**
-	 * @param strategyName to get.
-	 * @return uninitialized strategy for the given name.
-	 */
-	public Strategy getStrategy(String strategyName);
+    /**
+     * @param strategyName to get.
+     * @return uninitialized strategy for the given name.
+     */
+    Strategy getStrategy(String strategyName);
 
 }

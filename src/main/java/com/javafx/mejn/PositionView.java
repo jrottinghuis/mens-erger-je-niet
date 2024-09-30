@@ -34,20 +34,25 @@ import java.util.function.Consumer;
 
 import static com.javafx.mejn.MainApplication.showPositionNumbers;
 
+/**
+ * Represents a view of a position on the board.
+ */
 class PositionView {
 
     private static final Logger logger = LogManager.getLogger(PositionView.class);
 
     private final Position position;
 
-    // Indicate if this field is a choice for the BoardView.PLAYER_INDEX and set border accordingly
+    // Whether this position is a choice for a move.to for the current player
     private final BooleanProperty isChoice = new SimpleBooleanProperty(false);
 
+    // Whether this position is selected as the move.to position
     private final BooleanProperty isSelected = new SimpleBooleanProperty(false);
 
     // The player index occupying this property. Any other value indicates, not occupied.
     private final IntegerProperty occupiedBy = new SimpleIntegerProperty(-1);
 
+    // The 1-based finish order of the player occupying this home position. -1 indicates not occupied.
     private final IntegerProperty finishOrder = new SimpleIntegerProperty(-1);
 
 
@@ -156,7 +161,7 @@ class PositionView {
             if (isChoice.get()) {
                 selectedPositionSetter.accept(position);
             } else {
-                logger.debug("Clicked on position while not a choice: " + position);
+                logger.debug("Clicked on position while not a choice: {}", position);
             }
         });
 
@@ -173,7 +178,7 @@ class PositionView {
     /**
      * @param choice indicates whether this position is a choice for a move for the current player
      */
-    void setChoice(boolean choice) {
+    void isChoice(boolean choice) {
         isChoice.set(choice);
     }
 

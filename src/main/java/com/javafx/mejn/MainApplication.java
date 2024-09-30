@@ -69,7 +69,7 @@ public class MainApplication extends Application {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("Mens erger je niet!");
 
-        Controller controller = new Controller();
+         controller = new Controller();
 
         MenuBar menuBar = createMenuBar(primaryStage, controller);
         TabPane tabPane = createTabPane(controller);

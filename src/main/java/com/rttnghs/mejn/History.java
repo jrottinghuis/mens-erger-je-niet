@@ -20,25 +20,25 @@ import java.util.stream.Stream;
 
 /**
  * Used to track a sequential list of events.
- * 
+ *
  * @param <E> type of elements to track
  */
 public interface History<E> {
 
-	/**
-	 * @return the number of elements in the history
-	 */
-	public int size();
+    /**
+     * @return the number of elements in the history
+     */
+    int size();
 
-	/**
-	 * @return a new sequential {@code Stream} of events from the history.
-	 */
-	public Stream<E> stream();
+    /**
+     * @return a new sequential {@code Stream} of events from the history.
+     */
+    Stream<E> stream();
 
-	/**
-	 * @return a new sequential {@code Stream} of events, in reverse order, from the
-	 *         history.
-	 */
-	public Stream<E> reverseStream();
+    /**
+     * @return a new sequential {@code Stream} of events, in reverse order, from the
+     * history.
+     */
+    Stream<E> reverseStream();
 
 }

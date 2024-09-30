@@ -111,8 +111,6 @@ public class Game {
 
 		if ((allowedMoves == null) || (allowedMoves.isEmpty())) {
 			// No valid moves to make by the player, continue to next player.
-			// logger.trace(() -> "No valid moves to choose from: " +
-			// board.getBoardState());
 			return;
 		}
 		// There was a valid choice, but the strategy didn't pick it.

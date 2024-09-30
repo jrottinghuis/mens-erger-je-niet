@@ -29,11 +29,14 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 
 import static org.apache.logging.log4j.core.layout.PatternLayout.createDefaultLayout;
 
+/**
+ * Log4j2 appender that appends log events to a JavaFX TextArea.
+ */
 @Plugin(name = "TextAreaAppender", category = "Core", elementType = "appender", printObject = true)
 public class TextAreaAppender extends AbstractAppender {
 
     private static TextArea textArea = null;
-    private static BooleanProperty isConsoleEnabled = null;
+    private static BooleanProperty isEnabled = null;
 
     private int maxCharacters = 1000;
 
@@ -42,9 +45,9 @@ public class TextAreaAppender extends AbstractAppender {
         this.maxCharacters = maxCharacters;
     }
 
-    public static void setTextArea(TextArea textArea, BooleanProperty isConsoleEnabled) {
+    public static void setTextArea(TextArea textArea, BooleanProperty isEnabled) {
         TextAreaAppender.textArea = textArea;
-        TextAreaAppender.isConsoleEnabled = isConsoleEnabled;
+        TextAreaAppender.isEnabled = isEnabled;
     }
 
     @SuppressWarnings("unused")
@@ -68,7 +71,7 @@ public class TextAreaAppender extends AbstractAppender {
     @Override
     public void append(org.apache.logging.log4j.core.LogEvent event) {
 
-        if (textArea == null || isConsoleEnabled == null || !isConsoleEnabled.get()) {
+        if (textArea == null || isEnabled == null || !isEnabled.get()) {
             return;
         }
 
@@ -84,8 +87,8 @@ public class TextAreaAppender extends AbstractAppender {
                 }
                 textArea.appendText(message);
             });
-        } catch (Throwable trowable) {
-            LOGGER.error("Error appending log event to TextArea in TextAreaAppender", trowable);
+        } catch (Throwable throwable) {
+            LOGGER.error("Error appending log event to TextArea in TextAreaAppender", throwable);
         }
     }
 }

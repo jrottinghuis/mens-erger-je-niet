@@ -40,6 +40,7 @@ Whether or not a player can strike their own pawn anywhere on the regular board 
  # Graphical User Interface
 The Graphical User Interface (GUI) contains two tabs. The first tab is the game board for four players, each with a configurable strategy.
 If any of the strategies is the "ManualStrategy", the GUI will allow you to select a move by clicking on the board. 
+The second tab is a console log area that is used for debugging purposes. Any error messages or other information will be displayed here.
 
  ## Game Board
 
@@ -47,27 +48,51 @@ A die in the appears in the corner of the player whos turn it is.
 A dotted line in the color of the current player around a position indicates a option for a move for that player. For manual strategies, the user can click on this position to select it.
 A solid line in the color of that player indicated that this position has been chosen as the next move to make.
 For example, on the board below, the blue player (using a "ManualStrategy") threw a value of 2, has two options:
-a) move the pawn two positions forward from E6 to E8.
-b) move the pawn two positions forward from E24 to E26.
-In option a) the blue player happens to strike the green player to send it's pawn home, and in option b) the blue player would strike the yellow player.
+1. move the pawn two positions forward from E6 to E8.
+2. move the pawn two positions forward from E24 to E26.
+  - In option 1, the blue player happens to strike the green player to send its pawn home.
+  - In option 2, the blue player would strike the yellow player.
 <img
   src="src/main/resources/images/MensErgerJeNietOptions.png"
   alt="Mens erger je niet game board options."
   title="Game options"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
 
+A few die rolls later, the green player rolls a 5, and has only one option, to move from E8 to E13. The player selected E13, which is indicated by a green solid line around that position.
+In this screen capture, the position numbers have been turned off. The mouse hoovers over the B in the green players begin section,
+showing that the green player is using the "FarStrategy" strategy.
+<img
+src="src/main/resources/images/MensErgerJeNietSelection.png"
+alt="Mens erger je niet game board move selection."
+title="Move selection"
+style="display: inline-block; margin: 0 auto; max-width: 1200px">
+
  ## Configuration
 
- ### Game Game
-The Configure->Game menu item has four sub-menu items.
-1 - Auto Select Single Choice toggle. For a manual strategy players, if there is only one option, should it be auto-selected when the game in "Play" mode, or should it pause? 
+ ### Game
+The Configure->Game menu item has four sub-menu items:
+1. Auto Select Single Choice toggle. For a manual strategy players, if there is only one option, should it be auto-selected when the game in "Play" mode, or should it pause? 
 Note that if there is more than one option, the game will always pause.
-2 - Playback Speed. This is where you can configure how fast the game will proceed in "Play" mode. Once the game is paused, you can proceed one step at a time.
-3 - Show Position Numbers. This toggles the numbers on the board. This can be useful for debugging, or for learning the game.
-4 - Stragegies configuration. This window allows users to select the strategies they want each player to use.
+2. Playback Speed. This is where you can configure how fast the game will proceed in "Play" mode. Once the game is paused, you can proceed one step at a time.
+3. Show Position Numbers. This toggles the numbers on the board. This can be useful for debugging, or for learning the game.
+4. Strategies. This window allows users to select the strategies they want each player to use.
 By default the blue player in the bottom left is configured to be the "ManualStrategy" which allows the user to select a move by clicking on the board.
 By mousing-over the "B" in each players home area, the user can see the strategy that is currently configured for that player.
 
+<img
+src="src/main/resources/images/MensErgerJeNietStrategyConfiguration.png"
+alt="Mens erger je niet game board move selection."
+title="Move selection"
+style="display: inline-block; margin: 0 auto; max-width: 600px">
+
+When a player has all their pawns in the home area they are finished. A number in each of their pawns indicates the order in which they finished.
+In the example below, the red player won, followed by the blue player coming in second place. The yellow and green players are still playing.
+
+<img
+src="src/main/resources/images/MensErgerJeNietFinished.png"
+alt="Mens erger je niet game board move selection."
+title="Move selection"
+style="display: inline-block; margin: 0 auto; max-width: 1200px">
 
 
  # Implementation

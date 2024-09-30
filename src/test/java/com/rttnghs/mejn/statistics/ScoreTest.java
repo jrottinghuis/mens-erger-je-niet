@@ -84,14 +84,6 @@ class ScoreTest {
 		Long beforeTooLong = Long.valueOf(4);
 		Long tooLong = Long.valueOf(5);
 		List<Long> aLongList = new ArrayList<>(Arrays.asList(beforeTooLong, tooLong));
-
-		// Now in a twist of irony, two will finish before one.
-		// seriousResults.finish(tooShort);
-//		seriousResults.finish(one);
-//		seriousResults.finish(notLongEnough);
-//		seriousResults.finishAll(aLongList);
-//		assertEquals(5, seriousResults.get().size());
-
 	}
 
 }

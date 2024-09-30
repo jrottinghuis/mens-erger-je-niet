@@ -73,7 +73,6 @@ class Controller {
     private Task<Move> chooseTask;
     private Move choice;
     Timeline timeline = new Timeline();
-    private KeyFrame keyFrame;
 
     private enum TurnStep {
         NEXT, // show the next player through an empty die
@@ -98,7 +97,7 @@ class Controller {
             logger.debug("Debugging");
             logger.debug("Current step: {}", currentStep);
             logger.debug("board.player: {}", board.getCurrentPlayer());
-            logger.debug("boardview.currentPlayerIndex: {}", boardView.getCurrentPlayerIndex());
+            logger.debug("Current Player Index in board view: {}", boardView.getCurrentPlayerIndex());
             logger.debug("Current die value: {}", board.getCurrentDieValue());
             logger.debug("Finished players: {}", finished);
             logger.debug("Strikes: {}", strikes);
@@ -185,14 +184,14 @@ class Controller {
         // Reset all home and event positions in BoardView
         boardView.homePositions.forEach(player -> {
             player.forEach(position -> {
-                position.setChoice(false);
+                position.isChoice(false);
                 position.setSelected(false);
                 position.setOccupiedBy(-1);
                 position.setFinishOrder(-1);
             });
         });
         boardView.eventPositions.forEach(position -> {
-            position.setChoice(false);
+            position.isChoice(false);
             position.setSelected(false);
             position.setOccupiedBy(-1);
         });
@@ -202,10 +201,12 @@ class Controller {
             int finalPlayer = player;
             boardView.beginPositions.get(player).forEach(position -> {
                 position.setOccupiedBy(finalPlayer);
-                position.setChoice(false);
+                position.isChoice(false);
                 position.setSelected(false);
             });
         }
+        boardView.isPaused(true);
+        boardView.isFinished(false);
 
         boardView.currentDieValue.set(0);
     }
@@ -308,7 +309,7 @@ class Controller {
         // Iterate through the allowedMoves and set the isChoiceProperty to true for the corresponding position in BoardView
         allowedMoves.forEach(move -> {
             PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
-            toPosition.setChoice(true);
+            toPosition.isChoice(true);
         });
 
         // Make a copy of allowedMoves in a final variable to pass to the Task
@@ -362,7 +363,7 @@ class Controller {
         for (Iterator<Move> iterator = allowedMoves.iterator(); iterator.hasNext(); ) {
             Move move = iterator.next();
             PositionView toPosition = boardView.getPositionView(move.to(), board.getCurrentPlayer(), false);
-            toPosition.setChoice(false);
+            toPosition.isChoice(false);
             if (move.equals(choice)) {
                 toPosition.setSelected(true);
             }
@@ -419,6 +420,7 @@ class Controller {
     private void finish() {
         boardView.setCurrentPlayerIndex(-1);
         pause();
+        boardView.isFinished(true);
         currentStep = TurnStep.FINISHED;
     }
 
@@ -428,19 +430,22 @@ class Controller {
     }
 
     void play() {
-        boardView.isPaused.set(false);
-        timeline.play();
+        if (boardView.isFinished()) {
+
+            boardView.isPaused(false);
+            timeline.play();
+        }
     }
 
     void pause() {
-        boardView.isPaused.set(true);
+        boardView.isPaused(true);
         if (timeline != null) {
             timeline.stop();
         }
     }
 
     void playOrPause() {
-        if (boardView.isPaused.get()) {
+        if (boardView.isPaused() && !boardView.isFinished()) {
             play();
         } else {
             pause();

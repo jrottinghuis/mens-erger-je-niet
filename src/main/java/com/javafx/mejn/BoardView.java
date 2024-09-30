@@ -73,7 +73,8 @@ class BoardView {
     private final ReadOnlyIntegerWrapper currentPlayerIndex = new ReadOnlyIntegerWrapper(-1);
     final IntegerProperty currentDieValue = new SimpleIntegerProperty(6);
 
-    final BooleanProperty isPaused = new SimpleBooleanProperty(true);
+    private final BooleanProperty isPaused = new SimpleBooleanProperty(true);
+    private final BooleanProperty isFinished = new SimpleBooleanProperty(false);
     private final Controller controller;
 
     // Keep this private with access through package private methods so that the observable object can be dropped and re-created in order to drop the attached listeners from manual strategies create for users that might later change along the way. Otherwise this would lead to memory leaks.
@@ -191,17 +192,34 @@ class BoardView {
         pauseButton.setOnAction(event -> controller.pause());
 
         isPaused.addListener((_, _, newValue) -> {
-            resetButton.setDisable(!newValue);
-            playButton.setDisable(!newValue);
-            stepButton.setDisable(!newValue);
-            pauseButton.setDisable(newValue);
+            if (isFinished.get()) {
+                resetButton.setDisable(false);
+                playButton.setDisable(true);
+                stepButton.setDisable(true);
+                pauseButton.setDisable(true);
+            } else {
+                resetButton.setDisable(!newValue);
+                playButton.setDisable(!newValue);
+                stepButton.setDisable(!newValue);
+                pauseButton.setDisable(newValue);
+            }
         });
+
+        isFinished.addListener((_, _, newValue) -> {
+            if (newValue) {
+                resetButton.setDisable(false);
+                playButton.setDisable(true);
+                stepButton.setDisable(true);
+                pauseButton.setDisable(true);
+            }
+        });
+
+
         ButtonBar.setButtonData(pauseButton, ButtonBar.ButtonData.CANCEL_CLOSE);
         buttons.add(pauseButton);
 
         buttonBar.getButtons().addAll(buttons);
     }
-
 
     /**
      * Add an outside and a black inside border to the boardPane.
@@ -569,18 +587,6 @@ class BoardView {
         dot.translateYProperty().bind(cellWidth.multiply(0.6).multiply(y - 0.5));
     }
 
-    private void addDebugAction() {
-        // TODO: Remove after debugging
-        /*
-        debugItem.setOnAction(e -> {
-            logger.debug("Current Die Value: {}", currentDieValue.get());
-            logger.debug("Current Player Index: {}", currentPlayerIndex.get());
-            logger.debug("Playback Speed: {}", MainApp.playbackSpeed);
-        });
-         */
-    }
-
-
     /**
      * Register a handler for the selected position.
      *
@@ -642,6 +648,34 @@ class BoardView {
             }
         }
         return null;
+    }
+
+    /**
+     * @return the value of the IsPaused property
+     */
+    boolean isPaused() {
+        return isPaused.get();
+    }
+
+    /**
+     * Set the value of the IsPaused property.
+     */
+    void isPaused(boolean isPaused) {
+        this.isPaused.set(isPaused);
+    }
+
+    /**
+     * @return the value of the IsPaused property
+     */
+    boolean isFinished() {
+        return isFinished.get();
+    }
+
+    /**
+     * Set the value of the IsPaused property.
+     */
+    void isFinished(boolean isFinished) {
+        this.isFinished.set(isFinished);
     }
 
     /**

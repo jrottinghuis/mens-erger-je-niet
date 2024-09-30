@@ -134,11 +134,6 @@ class MoveTest {
 		Position bMin6 = new Position(BEGIN, -6);
 		Position b0 = new Position(BEGIN, 0);
 		Position e0 = new Position(EVENT, 0);
-		// Position e10 = new Position(EVENT, 10);
-		// Position e17 = new Position(EVENT, 17);
-		// Position h1 = new Position(HOME, 1);
-		// Position h11 = new Position(HOME, 11);
-		// Position h13 = Position.of(HOME, 13);
 
 		Move move1 = new Move(bMin6, b0);
 		Move move2 = new Move(b0, e0);
