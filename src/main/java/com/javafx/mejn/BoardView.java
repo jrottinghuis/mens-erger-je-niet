@@ -122,8 +122,6 @@ class BoardView {
         addText(boardPane);
 
         addDice(boardPane);
-
-        addDebugAction();
     }
 
     void addAccelerators(Scene scene) {
