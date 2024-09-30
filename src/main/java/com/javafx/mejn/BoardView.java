@@ -209,6 +209,11 @@ class BoardView {
                 playButton.setDisable(true);
                 stepButton.setDisable(true);
                 pauseButton.setDisable(true);
+            } else {
+                resetButton.setDisable(!isPaused.get());
+                playButton.setDisable(!isPaused.get());
+                stepButton.setDisable(!isPaused.get());
+                pauseButton.setDisable(isPaused.get());
             }
         });
 
