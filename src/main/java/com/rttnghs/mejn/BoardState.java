@@ -20,8 +20,6 @@ import static com.rttnghs.mejn.Layer.HOME;
 
 import java.util.*;
 
-import javax.annotation.concurrent.Immutable;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,17 +27,16 @@ import org.apache.logging.log4j.Logger;
  * A board state is essentially a list of positions for each player. The list of
  * positions will be kept in order.
  * <p>
- * Note that this class is marked as immutable. This means that the state can be
+ * Note that this class is immutable. This means that the state can be
  * passed around without the risk of modifications having a side-effect on
  * others using the same state.
  */
-@Immutable
 public class BoardState {
 
 	private static final Logger logger = LogManager.getLogger(BoardState.class);
 
 	/**
-	 * This state is meant to be immutable (not marked as final
+	 * This state is meant to be immutable and should not be modified.
 	 */
 	private final List<List<Position>> state;
 	private final int boardSize;
@@ -271,7 +268,7 @@ public class BoardState {
 	}
 
 	/**
-	 * @param playerIndex
+	 * @param playerIndex index of the player to shift the perspective for.
 	 * @param shift       how many spots this board state should be shifted by.
 	 * @return shifted perspective of the board.
 	 */
@@ -299,7 +296,7 @@ public class BoardState {
 	}
 
 	/**
-	 * @param non-null collection with positions.
+	 * @param player non-null collection with positions.
 	 * @return true if all Positions in the collection are in the HOME layer.
 	 */
 	public boolean isFinished(int player) {

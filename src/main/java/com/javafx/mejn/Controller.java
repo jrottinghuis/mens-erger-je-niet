@@ -142,6 +142,9 @@ class Controller {
         finished.clear();
         strikes = new EventCounter<>();
 
+        // Clear the players list
+        MainApplication.players.clear();
+
         for (int playerIndex = 0; playerIndex < 4; playerIndex++) {
             // Rotate perspective counter clockwise
             int rotation = Player.rotation(playerIndex);

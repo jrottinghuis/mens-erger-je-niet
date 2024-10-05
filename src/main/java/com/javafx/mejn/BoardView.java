@@ -19,6 +19,7 @@ package com.javafx.mejn;
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Player;
 import com.rttnghs.mejn.Position;
+import com.rttnghs.mejn.configuration.Config;
 import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -56,6 +57,7 @@ import static com.javafx.mejn.MainApplication.*;
 class BoardView {
     private static final Logger logger = LogManager.getLogger(BoardView.class);
     static final int BOARD_SIZE = 40;
+    static final int DOTS_PER_PLAYER = BOARD_SIZE/4;
 
     private Button resetButton = new Button("Reset");
     private Button stepButton = new Button("_Step");
@@ -355,13 +357,13 @@ class BoardView {
             homePositions.get(0).add(j, getPositionView(j, Layer.HOME, 6, 10 - j, boardPane));
         }
         for (int j = 0; j < 4; j++) {
-            homePositions.get(1).add(j, getPositionView(10 + j, Layer.HOME, 2 + j, 6, boardPane));
+            homePositions.get(1).add(j, getPositionView(DOTS_PER_PLAYER + j, Layer.HOME, 2 + j, 6, boardPane));
         }
         for (int j = 0; j < 4; j++) {
-            homePositions.get(2).add(j, getPositionView(20 + j, Layer.HOME, 6, 2 + j, boardPane));
+            homePositions.get(2).add(j, getPositionView(2*DOTS_PER_PLAYER + j, Layer.HOME, 6, 2 + j, boardPane));
         }
         for (int j = 0; j < 4; j++) {
-            homePositions.get(3).add(j, getPositionView(30 + j, Layer.HOME, 10 - j, 6, boardPane));
+            homePositions.get(3).add(j, getPositionView(3*DOTS_PER_PLAYER + j, Layer.HOME, 10 - j, 6, boardPane));
         }
 
         beginPositions.get(0).add(0, getPositionView(34, Layer.BEGIN, 1, 11, boardPane));
@@ -600,7 +602,7 @@ class BoardView {
         selectedPosition.addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 // Shift the selected position to the perspective of the player's strategy
-                positionCompletableFuture.complete(newValue.move(playerIndex * 10).normalize(40));
+                positionCompletableFuture.complete(newValue.move(playerIndex * Config.value.dotsPerPlayer() * -1).normalize(BOARD_SIZE));
             }
         });
     }
