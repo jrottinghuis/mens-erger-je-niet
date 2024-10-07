@@ -31,7 +31,7 @@ public class TestBoardState extends BoardState {
 	 * @return new Test Board State
 	 */
 	protected static BoardState of(String boardStateString) {
-		String regex = "^\\((\\d+)\\)\\[(.*)\\]";
+		String regex = "^\\((\\d+)\\)\\[(.*)]";
 
 		Pattern pattern = Pattern.compile(regex); // "a{1,}" matches at least one a.
 		Matcher matcher = pattern.matcher(boardStateString);
@@ -46,7 +46,7 @@ public class TestBoardState extends BoardState {
 
 		ArrayList<List<Position>> newState = new ArrayList<>(playerStates.size());
 
-		Pattern playerStatePattern = Pattern.compile("P(\\d+)=\\{(.*)\\}");
+		Pattern playerStatePattern = Pattern.compile("P(\\d+)=\\{(.*)}");
 		Matcher playterStateMatcher = null;
 
 		for (String playerStateString : playerStates) {

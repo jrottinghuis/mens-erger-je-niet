@@ -131,7 +131,7 @@ public class BoardState {
 	/**
 	 * Return (unmodifiable) list of positions for the given player.
 	 * 
-	 * @param player
+	 * @param player index of player in the state
 	 * @return the list of positions for the given player, or null if there is no
 	 *         such player.
 	 */

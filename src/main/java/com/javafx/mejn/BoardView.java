@@ -67,7 +67,6 @@ class BoardView {
 
     final List<List<PositionView>> homePositions = new ArrayList<>(4);
     final List<List<PositionView>> beginPositions = new ArrayList<>(4);
-    final List<StringProperty> playerStrategies = new ArrayList<>(4);
 
     private final DoubleProperty cellWidth = new SimpleDoubleProperty(44.0);
     private final DoubleProperty strokeWidth = new SimpleDoubleProperty();
@@ -130,30 +129,15 @@ class BoardView {
             // Accelerators can be added only after the buttons are tied to a scene
             scene.getAccelerators().put(
                     new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN),
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            stepButton.fire();
-                        }
-                    }
+                    () -> stepButton.fire()
             );
             scene.getAccelerators().put(
                     new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN),
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            resetButton.fire();
-                        }
-                    }
+                    () -> resetButton.fire()
             );
             scene.getAccelerators().put(
                     new KeyCodeCombination(KeyCode.P, KeyCombination.SHORTCUT_DOWN),
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            controller.playOrPause();
-                        }
-                    }
+                    () -> controller.playOrPause()
             );
         }
 
@@ -170,25 +154,25 @@ class BoardView {
 
         // Add a "Reset" button to the buttonBar
         resetButton = new Button("Reset");
-        resetButton.setOnAction(event -> controller.reset());
+        resetButton.setOnAction(_ -> controller.reset());
         ButtonBar.setButtonData(resetButton, ButtonBar.ButtonData.LEFT);
         buttons.add(resetButton);
 
         stepButton = new Button("_Step");
         stepButton.setDefaultButton(true);
-        stepButton.setOnAction(event -> controller.step());
+        stepButton.setOnAction(_ -> controller.step());
         ButtonBar.setButtonData(stepButton, ButtonBar.ButtonData.NEXT_FORWARD);
         buttons.add(stepButton);
 
         playButton = new Button("Play");
-        playButton.setOnAction(event -> controller.play());
+        playButton.setOnAction(_ -> controller.play());
         ButtonBar.setButtonData(playButton, ButtonBar.ButtonData.NEXT_FORWARD);
         buttons.add(playButton);
 
         pauseButton = new Button("Pause");
         pauseButton.setCancelButton(true);
         pauseButton.setDisable(true);
-        pauseButton.setOnAction(event -> controller.pause());
+        pauseButton.setOnAction(_ -> controller.pause());
 
         isPaused.addListener((_, _, newValue) -> {
             if (isFinished.get()) {
@@ -439,7 +423,7 @@ class BoardView {
 
         Tooltip tooltip = new Tooltip();
 
-        players.addListener((ListChangeListener.Change<? extends Player> c) -> {
+        players.addListener((ListChangeListener.Change<? extends Player> _) -> {
             if (0 <= playerIndex && playerIndex < players.size()) {
                 tooltip.setText(players.get(playerIndex).getName());
             }
@@ -598,7 +582,7 @@ class BoardView {
      * @param playerIndex               the index of the player
      */
     void setChoiceHandler(CompletableFuture<Position> positionCompletableFuture, int playerIndex) {
-        selectedPosition.addListener((observable, oldValue, newValue) -> {
+        selectedPosition.addListener((_, _, newValue) -> {
             if (newValue != null) {
                 // Shift the selected position to the perspective of the player's strategy
                 positionCompletableFuture.complete(newValue.move(playerIndex * DOTS_PER_PLAYER * -1).normalize(BOARD_SIZE));

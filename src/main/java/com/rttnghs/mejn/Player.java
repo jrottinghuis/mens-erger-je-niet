@@ -51,7 +51,7 @@ public class Player {
 		int boardSize = strategyNames.size() * Config.value.dotsPerPlayer();
 
 		for (int playerIndex = 0; playerIndex < strategyNames.size(); playerIndex++) {
-			Player player = null;
+			Player player;
 			if (strategyNames.get(playerIndex) == null) {
 				player = new NullPlayer(playerIndex, boardSize);
 			} else {

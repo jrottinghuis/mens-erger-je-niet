@@ -61,7 +61,6 @@ public class Game {
 	 *                        player. Null names indicates there is no player at this position.
 	 */
 	public Game(StrategyFactory strategyFactory, List<String> strategyNames) {
-		// TODO: Joep ensure that we test for null players where this is used.
 		players = Player.playersOf(strategyFactory, strategyNames, history);
 		finished = new ArrayList<>(players.size());
 		board = new Board(strategyNames);
