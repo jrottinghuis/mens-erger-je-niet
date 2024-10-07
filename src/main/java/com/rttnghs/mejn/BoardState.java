@@ -40,12 +40,13 @@ public class BoardState {
 	 */
 	private final List<List<Position>> state;
 	private final int boardSize;
+	private final int pawnsPerPlayer;
 
 	/**
 	 * @param boardSize      The number of spots in the Event layer of the board.
 	 * @param pawnsPerPlayer how many pawns each player should have. Should be >0;
-	 * @param beginPositions The begin state for each player with the length of
-	 *                       number of players. Cannot be null;
+	 * @param beginPositions List of  begin positions for each player with the length of
+	 *                       number of players. Cannot be null; If the list of a player is empty, the player is considered finished.
 	 */
 	public BoardState(int boardSize, int pawnsPerPlayer, List<Position> beginPositions) {
 		if ((beginPositions == null) || beginPositions.isEmpty() || pawnsPerPlayer < 1) {
@@ -53,12 +54,16 @@ public class BoardState {
 					"Cannot create BoardState with empty/null beginpositions or < 1 pawns per player");
 		}
 		this.boardSize = boardSize;
+		this.pawnsPerPlayer = pawnsPerPlayer;
 		List<List<Position>> newState = new ArrayList<>(beginPositions.size());
 		// Iterate over player begin positions and expand them to the pawnsPerPlayer
 		for (int i = 0; i < beginPositions.size(); i++) {
 			ArrayList<Position> playerState = new ArrayList<>(pawnsPerPlayer);
-			for (int j = 0; j < pawnsPerPlayer; j++) {
-				playerState.add(j, beginPositions.get(i));
+			Position beginPosition = beginPositions.get(i);
+			if (beginPosition != null) {
+				for (int j = 0; j < pawnsPerPlayer; j++) {
+					playerState.add(j, beginPosition);
+				}
 			}
 			newState.add(i, Collections.unmodifiableList(playerState));
 		}
@@ -72,8 +77,9 @@ public class BoardState {
 	 * @param otherState to start this new board state with. Each sub-list
 	 *              (playerPositions) must have the same length.
 	 */
-	protected BoardState(int boardSize, List<List<Position>> otherState) {
+	protected BoardState(List<List<Position>> otherState, int boardSize, int pawnsPerPlayer) {
 		this.boardSize = boardSize;
+		this.pawnsPerPlayer = pawnsPerPlayer;
 		List<List<Position>> newStateCopy = new ArrayList<>(otherState.size());
         for (List<Position> positions : otherState) {
             List<Position> playerState = new ArrayList<>(positions);
@@ -125,7 +131,7 @@ public class BoardState {
 	/**
 	 * Return (unmodifiable) list of positions for the given player.
 	 * 
-	 * @param player
+	 * @param player index of player in the state
 	 * @return the list of positions for the given player, or null if there is no
 	 *         such player.
 	 */
@@ -247,7 +253,7 @@ public class BoardState {
 				newState.add(new ArrayList<>(newPlayerState));
 			}
 		}
-		return new BoardState(boardSize, newState);
+		return new BoardState(newState, boardSize, pawnsPerPlayer);
 	}
 
 	private static List<Position> getPositions(Move move, List<Position> oldPlayerState) {
@@ -292,16 +298,26 @@ public class BoardState {
 			newState.add(newPlayerState);
 			p = (p + 1) % state.size();
 		}
-		return new BoardState(boardSize, newState);
+		return new BoardState(newState, boardSize, pawnsPerPlayer);
 	}
 
 	/**
 	 * @param player non-null collection with positions.
-	 * @return true if all Positions in the collection are in the HOME layer.
+	 * @return true if all Positions in the collection are in the HOME layer or the player has no pawns. Non-existing players are also considered finished.
 	 */
 	public boolean isFinished(int player) {
-		// Assuming all players have the same # pawns.
-		int pawnsPerPlayer = state.getFirst().size();
+		// Consider non-existing players as finished.
+		if ((player < 0) || (state.get(player).isEmpty())) {
+			return true;
+		}
+
+		// Either player has zero pawn, or pawnsPerPlayer
+		if (state.get(player).size() != pawnsPerPlayer) {
+			throw new RuntimeException("Player " + player + " has " + state.get(player).size() + " pawns, but should have " + pawnsPerPlayer);
+		}
+
+
+		// Check if all pawns are in the HOME layer, return result on the first one that is not.
 		for (int i = 0; i < pawnsPerPlayer; i++) {
 			if (getPosition(player, i).layer() != HOME) {
 				return false;

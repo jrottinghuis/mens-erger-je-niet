@@ -20,45 +20,36 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 class BoardTest {
 
 	@Test
 	public final void testBoard() {
-		Board board = new Board(2);
+		// Make up two randon names for the strategies.
+		Board board = new Board(Arrays.asList("strategy1", "strategy2"));
 		assertNotNull(board.getBoardState());
-	}
 
-	@Test
-	public final void testPotentialMove() {
-		Board board = new Board(4);
+		board = new Board(Arrays.asList("null", "strategy2"));
+		assertNotNull(board.getBoardState());
 
-		/*
-		 * Move move = board.potentialMove(0, 0, 0); assertEquals(Position.of(BEGIN,
-		 * 34), move.to());
-		 * 
-		 * move = board.potentialMove(0, 0, 1); assertEquals(Position.of(BEGIN, 35),
-		 * move.to());
-		 * 
-		 * move = board.potentialMove(0, 0, 5); assertEquals(Position.of(BEGIN, 39),
-		 * move.to());
-		 * 
-		 * move = board.potentialMove(0, 0, 6); assertEquals(Position.of(EVENT, 0),
-		 * move.to());
-		 * 
-		 * move = board.potentialMove(0, 0, 7); assertEquals(Position.of(EVENT, 1),
-		 * move.to());
-		 * 
-		 * move = board.potentialMove(1, 2, 7); assertEquals(Position.of(EVENT, 11),
-		 * move.to());
-		 * 
-		 * move = board.potentialMove(2, 1, 6); assertEquals(Position.of(EVENT, 20),
-		 * move.to());
-		 * 
-		 * move = board.potentialMove(3, 3, 8); assertEquals(Position.of(EVENT, 32),
-		 * move.to());
-		 * 
-		 * logger.trace(move);
-		 */
+		board = new Board(Arrays.asList("strategy1", "null"));
+		assertNotNull(board.getBoardState());
+
+		board = new Board(Arrays.asList("strategy1", "strategy2", "strategy3", "strategy4"));
+		assertNotNull(board.getBoardState());
+
+		board = new Board(Arrays.asList("strategy1", "strategy2", "strategy3", "null"));
+		assertNotNull(board.getBoardState());
+
+		board = new Board(Arrays.asList("strategy1", "strategy2", "null", "strategy4"));
+		assertNotNull(board.getBoardState());
+
+		board = new Board(Arrays.asList("strategy1", "null", "strategy3", "null"));
+		assertNotNull(board.getBoardState());
+
+		board = new Board(Arrays.asList("null", "strategy2", "strategy3", "strategy4"));
+		assertNotNull(board.getBoardState());
 	}
 
 }

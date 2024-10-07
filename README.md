@@ -67,6 +67,16 @@ alt="Mens erger je niet game board move selection."
 title="Move selection"
 style="display: inline-block; margin: 0 auto; max-width: 1200px">
 
+
+When a player has all their pawns in the home area they are finished. A number in each of their pawns indicates the order in which they finished.
+In the example below, the red player won, followed by the blue player coming in second place. The yellow and green players are still playing.
+
+<img
+src="src/main/resources/images/MensErgerJeNietFinished.png"
+alt="Mens erger je niet game board move selection."
+title="Move selection"
+style="display: inline-block; margin: 0 auto; max-width: 1200px">
+
  ## Configuration
 
  ### Game
@@ -85,15 +95,14 @@ alt="Mens erger je niet game board move selection."
 title="Move selection"
 style="display: inline-block; margin: 0 auto; max-width: 600px">
 
-When a player has all their pawns in the home area they are finished. A number in each of their pawns indicates the order in which they finished.
-In the example below, the red player won, followed by the blue player coming in second place. The yellow and green players are still playing.
+If you would like to play with fewer than four players, for example two manual players, you can uncheck the strategies for the other players. The game will proceed as normal, but the strategies for the unchecked players will not be used.
+In the example below, only the blue and green players are playing one another.
 
 <img
-src="src/main/resources/images/MensErgerJeNietFinished.png"
+src="src/main/resources/images/MensErgerJeNietStrategyManualOnlyConfiguration.png"
 alt="Mens erger je niet game board move selection."
 title="Move selection"
-style="display: inline-block; margin: 0 auto; max-width: 1200px">
-
+style="display: inline-block; margin: 0 auto; max-width: 600px">
 
  # Implementation
 
