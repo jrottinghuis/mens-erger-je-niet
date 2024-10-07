@@ -63,19 +63,25 @@ public class Board {
 	private int activePlayerCount;
 
 	/**
-	 * @param playerCount the number of players in this game.
+	 * @param strategyNames listing the players to be used on this board. Names can contain nulls, but the list itself must not be null.
 	 */
-	public Board(int playerCount) {
-		this.playerCount = playerCount;
+	public Board(List<String> strategyNames) {
+		this.playerCount = strategyNames.size();
 		die = new Die(Config.value.dieFaces());
 		boardSize = playerCount * Config.value.dotsPerPlayer();
 		// hang on to begin positions, they are used throughout the game.
 		beginPositions = new ArrayList<>(playerCount);
+		activePlayerCount = 0;
 		for (int i = 0; i < playerCount; i++) {
-			// Player 0 begins at -dieFaces. Then player 1 begins dots per player
-			// further along on the board.
-			int beginIndex = (-1 * Config.value.dieFaces()) + (i * Config.value.dotsPerPlayer());
-			beginPositions.add(i, new Position(BEGIN, beginIndex).normalize(boardSize));
+			Position  beginPosition = null;
+			if (strategyNames.get(i) != null) {
+				// Player 0 begins at -dieFaces. Then player 1 begins dots per player
+				// further along on the board.
+				int beginIndex = (-1 * Config.value.dieFaces()) + (i * Config.value.dotsPerPlayer());
+				beginPosition = new Position(BEGIN, beginIndex).normalize(boardSize);
+				activePlayerCount++;
+			}
+			beginPositions.add(i, beginPosition);
 		}
 		// Hang on to start positions, they are used throughout the game.
 		startPositions = new ArrayList<>(playerCount);
@@ -92,7 +98,6 @@ public class Board {
 		currentPlayer = new Die(playerCount).roll() - 1;
 		// Do the first die roll for them
 		currentDieValue = die.roll();
-		activePlayerCount = playerCount;
 	}
 
 	/**

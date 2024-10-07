@@ -51,13 +51,19 @@ public class Player {
 		int boardSize = strategyNames.size() * Config.value.dotsPerPlayer();
 
 		for (int playerIndex = 0; playerIndex < strategyNames.size(); playerIndex++) {
-			// Rotate perspective counter clockwise
-			int rotation = rotation(playerIndex);
-			Supplier<History<Move>> shiftedHistorySupplier = historySupplier.getSupplier(Move.shifter(rotation, boardSize));
-			Strategy strategy = strategyFactory.getStrategy(strategyNames.get(playerIndex)).initialize(shiftedHistorySupplier);
+			Player player = null;
+			if (strategyNames.get(playerIndex) == null) {
+				player = new NullPlayer(playerIndex, boardSize);
+			} else {
 
-			players.add(playerIndex, new Player(strategy, playerIndex, boardSize));
-            logger.debug("Player {} strategy {}", playerIndex, strategy.getName());
+				// Rotate perspective counter clockwise
+				int rotation = rotation(playerIndex);
+				Supplier<History<Move>> shiftedHistorySupplier = historySupplier.getSupplier(Move.shifter(rotation, boardSize));
+				Strategy strategy = strategyFactory.getStrategy(strategyNames.get(playerIndex)).initialize(shiftedHistorySupplier);
+				player = new Player(strategy, playerIndex, boardSize);
+			}
+			players.add(playerIndex, player);
+            logger.debug("Player {} strategy {}", playerIndex, player.getName());
 		}
 		return players;
 	}
@@ -139,6 +145,9 @@ public class Player {
 		logger.debug(() -> strategy.getName() + " position " + position);
 	}
 
+	/**
+	 * @return the name of the strategy this player is using.
+	 */
 	public String getName() {
 		return strategy.getName();
 	}

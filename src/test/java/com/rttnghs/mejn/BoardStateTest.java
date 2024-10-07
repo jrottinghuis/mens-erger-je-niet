@@ -20,11 +20,7 @@ import static com.rttnghs.mejn.Layer.BEGIN;
 import static com.rttnghs.mejn.Layer.EVENT;
 import static com.rttnghs.mejn.Layer.HOME;
 import static com.rttnghs.mejn.TestBoardState.getMove;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,6 +97,76 @@ class BoardStateTest {
 	}
 
 	@Test
+	final void testBoardStateWithFewerPlayers() {
+
+		List<Position> beginPositions = new ArrayList<>(4);
+
+		beginPositions.add(null);
+		beginPositions.add(new Position(BEGIN, 4));
+		beginPositions.add(new Position(BEGIN, 14));
+		beginPositions.add(new Position(BEGIN, 24));
+		BoardState boardState = new BoardState(40, 4, beginPositions);
+
+		beginPositions.clear();
+		beginPositions.add(new Position(BEGIN, 34));
+		beginPositions.add(null);
+		beginPositions.add(new Position(BEGIN, 14));
+		beginPositions.add(new Position(BEGIN, 24));
+		boardState = new BoardState(40, 4, beginPositions);
+
+		beginPositions.clear();
+		beginPositions.add(new Position(BEGIN, 34));
+		beginPositions.add(new Position(BEGIN, 4));
+		beginPositions.add(null);
+		beginPositions.add(new Position(BEGIN, 24));
+		boardState = new BoardState(40, 4, beginPositions);
+
+
+		beginPositions.clear();
+		beginPositions.add(new Position(BEGIN, 34));
+		beginPositions.add(new Position(BEGIN, 4));
+		beginPositions.add(new Position(BEGIN, 14));
+		beginPositions.add(null);
+		boardState = new BoardState(40, 4, beginPositions);
+
+		beginPositions.clear();
+		beginPositions.add(null);
+		beginPositions.add(null);
+		beginPositions.add(new Position(BEGIN, 14));
+		beginPositions.add(new Position(BEGIN, 24));
+		boardState = new BoardState(40, 4, beginPositions);
+
+		beginPositions.clear();
+		beginPositions.add(new Position(BEGIN, 34));
+		beginPositions.add(null);
+		beginPositions.add(null);
+		beginPositions.add(new Position(BEGIN, 24));
+		boardState = new BoardState(40, 4, beginPositions);
+
+		beginPositions.clear();
+		beginPositions.add(new Position(BEGIN, 34));
+		beginPositions.add(new Position(BEGIN, 4));
+		beginPositions.add(null);
+		beginPositions.add(null);
+		boardState = new BoardState(40, 4, beginPositions);
+
+		beginPositions.clear();
+		beginPositions.add(new Position(BEGIN, 34));
+		beginPositions.add(null);
+		beginPositions.add(new Position(BEGIN, 14));
+		beginPositions.add(null);
+		boardState = new BoardState(40, 4, beginPositions);
+
+		beginPositions.clear();
+		beginPositions.add(new Position(BEGIN, 34));
+		beginPositions.add(new Position(BEGIN, 4));
+		beginPositions.add(new Position(BEGIN, 14));
+		beginPositions.add(new Position(BEGIN, 24));
+		boardState = new BoardState(40, 4, beginPositions);
+
+	}
+
+	@Test
 	final void testGetters() {
 		List<Position> beginPositionsFour = new ArrayList<>(4);
 		beginPositionsFour.add(new Position(BEGIN, 34));
@@ -116,7 +182,7 @@ class BoardStateTest {
 		assertEquals(40, boardState.getBoardSize());
 
 		// Test that if we mess with the original input list, that doesn't affect the
-		// previously created state. Ignote the incorrect begin position for this test.
+		// previously created state. Ignore the incorrect begin position for this test.
 		beginPositionsFour.add(new Position(BEGIN, 44));
 		BoardState boardStateFive = new BoardState(40, 7, beginPositionsFour);
 		assertEquals(4, boardState.getPawnsPerPlayer());
@@ -161,9 +227,9 @@ class BoardStateTest {
 
 		BoardState anotherBoardState = new BoardState(40, 4, beginPositionsFour);
 
-		assertTrue(boardState.equals(anotherBoardState));
-		assertTrue(boardState.equals(boardState));
-		assertTrue(anotherBoardState.equals(boardState));
+        assertEquals(boardState, anotherBoardState);
+        assertEquals(boardState, boardState);
+        assertEquals(anotherBoardState, boardState);
 
 		assertEquals(boardState, anotherBoardState);
 
@@ -216,13 +282,13 @@ class BoardStateTest {
 		assertTrue(pTwoTwo.equals(new Position(BEGIN, 14)));
 		assertTrue(boardState.getPosition(1, 1).equals(boardState.getPosition(1, 3)));
 
-		assertEquals(null, boardState.getPosition(-1, 1));
-		assertEquals(null, boardState.getPosition(-3, 5));
-		assertEquals(null, boardState.getPosition(0, 4));
-		assertEquals(null, boardState.getPosition(1, 4));
-		assertEquals(null, boardState.getPosition(-1, -1));
-		assertEquals(null, boardState.getPosition(0, -1));
-		assertEquals(null, boardState.getPosition(1, -1));
+        assertNull(boardState.getPosition(-1, 1));
+        assertNull(boardState.getPosition(-3, 5));
+        assertNull(boardState.getPosition(0, 4));
+        assertNull(boardState.getPosition(1, 4));
+        assertNull(boardState.getPosition(-1, -1));
+        assertNull(boardState.getPosition(0, -1));
+        assertNull(boardState.getPosition(1, -1));
 
 		logger.trace(boardState);
 	}

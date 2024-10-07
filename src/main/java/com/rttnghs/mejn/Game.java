@@ -58,12 +58,13 @@ public class Game {
 	/**
 	 * @param strategyFactory to be used to create strategies for players.
 	 * @param strategyNames   The names of the strategies to be used, one per
-	 *                        player.
+	 *                        player. Null names indicates there is no player at this position.
 	 */
 	public Game(StrategyFactory strategyFactory, List<String> strategyNames) {
+		// TODO: Joep ensure that we test for null players where this is used.
 		players = Player.playersOf(strategyFactory, strategyNames, history);
 		finished = new ArrayList<>(players.size());
-		board = new Board(strategyNames.size());
+		board = new Board(strategyNames);
 	}
 
 	/**

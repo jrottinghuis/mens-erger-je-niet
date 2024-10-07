@@ -19,7 +19,6 @@ package com.javafx.mejn;
 import com.rttnghs.mejn.Layer;
 import com.rttnghs.mejn.Player;
 import com.rttnghs.mejn.Position;
-import com.rttnghs.mejn.configuration.Config;
 import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -87,7 +86,7 @@ class BoardView {
      * the board, the positions, the dice, and the play control buttons.
      *
      * @param borderPane the BorderPane to which the board is added
-     * @param controller
+     * @param controller the Controller to which the buttons are tied
      */
     BoardView(BorderPane borderPane, Controller controller) {
         this.controller = controller;
@@ -602,7 +601,7 @@ class BoardView {
         selectedPosition.addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 // Shift the selected position to the perspective of the player's strategy
-                positionCompletableFuture.complete(newValue.move(playerIndex * Config.value.dotsPerPlayer() * -1).normalize(BOARD_SIZE));
+                positionCompletableFuture.complete(newValue.move(playerIndex * DOTS_PER_PLAYER * -1).normalize(BOARD_SIZE));
             }
         });
     }
@@ -692,7 +691,7 @@ class BoardView {
     void setSelectedPosition(Position position, boolean force) {
         if (force) {
             selectedPosition.set(position);
-        } else if (currentPlayerIndex.get() != -1 && MainApplication.strategySelections.get(currentPlayerIndex.get()).equals("ManualStrategy")) {
+        } else if (currentPlayerIndex.get() != -1 && MANUAL_STRATEGY.equals(strategySelections.get(currentPlayerIndex.get()))) {
             selectedPosition.set(position);
         } else {
             logger.warn("Selected position ignored because the current player is not a manual strategy player.");

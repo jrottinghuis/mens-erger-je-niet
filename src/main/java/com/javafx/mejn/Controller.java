@@ -17,10 +17,7 @@
 package com.javafx.mejn;
 
 import com.javafx.mejn.strategy.ManualStrategy;
-import com.rttnghs.mejn.Board;
-import com.rttnghs.mejn.History;
-import com.rttnghs.mejn.Move;
-import com.rttnghs.mejn.Player;
+import com.rttnghs.mejn.*;
 import com.rttnghs.mejn.configuration.Config;
 import com.rttnghs.mejn.internal.BaseHistory;
 import com.rttnghs.mejn.statistics.EventCounter;
@@ -48,7 +45,6 @@ import static com.javafx.mejn.MainApplication.*;
 
 class Controller {
     private static final Logger logger = LogManager.getLogger(Controller.class);
-    private static final String MANUAL_STRATEGY = "ManualStrategy";
 
     private final StrategyFactory strategyFactory;
     final BooleanProperty autoSelectSingleChoice = new SimpleBooleanProperty(true);
@@ -86,9 +82,7 @@ class Controller {
     // create constructor
     public Controller() {
         strategyFactory = new BaseStrategyFactory();
-        board = new Board(4);
         addDebugAction();
-
     }
 
     private void addDebugAction() {
@@ -123,9 +117,9 @@ class Controller {
             MainApplication.strategyOptions.clear();
             MainApplication.strategyOptions.setAll(strategyFactory.listStrategies());
 
-            String strategySelectionAttribute = Config.configuration.getString("gui[@strategies]");
+            List<String> strategyNames = getConfiguredStrategies();
+
             strategySelections.clear();
-            List<String> strategyNames = new ArrayList<>(Arrays.asList(strategySelectionAttribute.split(",", -1)));
             strategySelections.addAll(strategyNames);
             boardView.addAccelerators(scene);
 
@@ -148,16 +142,22 @@ class Controller {
         for (int playerIndex = 0; playerIndex < 4; playerIndex++) {
             // Rotate perspective counter clockwise
             int rotation = Player.rotation(playerIndex);
-            Supplier<History<Move>> shiftedHistorySupplier = history.getSupplier(Move.shifter(rotation, 40));
-            Strategy strategy = strategyFactory.getStrategy(strategySelections.get(playerIndex)).initialize(shiftedHistorySupplier);
+            Supplier<History<Move>> shiftedHistorySupplier = history.getSupplier(Move.shifter(rotation, BoardView.BOARD_SIZE));
+            String strategyName = strategySelections.get(playerIndex);
+            if (strategyName == null) {
+                MainApplication.players.add(playerIndex, new NullPlayer(playerIndex, BoardView.BOARD_SIZE));
+                logger.debug("Player {} strategy null", playerIndex);
+                continue;
+            }
 
+            Strategy strategy = strategyFactory.getStrategy(strategyName).initialize(shiftedHistorySupplier);
             // If strategy is instanceOf ManualStrategy, then set the choice handler
             if (strategy instanceof ManualStrategy manualStrategy) {
                 int finalPlayerIndex = playerIndex;
                 manualStrategy.setChoiceHandler(positionCompletableFuture -> boardView.setChoiceHandler(positionCompletableFuture, finalPlayerIndex));
             }
 
-            MainApplication.players.add(playerIndex, new Player(strategy, playerIndex, 40));
+            MainApplication.players.add(playerIndex, new Player(strategy, playerIndex, BoardView.BOARD_SIZE));
         }
 
         // Reset any previous choice.
@@ -177,8 +177,18 @@ class Controller {
         timeline.rateProperty().bind(MainApplication.playbackSpeed);
     }
 
+    /**
+     * Get the list of strategies configured in the configuration file.
+     *
+     * @return the list of strategies
+     */
+    static List<String> getConfiguredStrategies() {
+        String strategySelectionAttribute = Config.configuration.getString("gui[@strategies]");
+        return new ArrayList<>(Arrays.asList(strategySelectionAttribute.split(",", -1)));
+    }
+
     private void resetBoardView() {
-        board = new Board(4);
+        board = new Board(MainApplication.strategySelections);
         boardView.setCurrentPlayerIndex(-1);
 
         // Reset the selected position in BoardView so that previously set listeners are dropped.
@@ -201,7 +211,12 @@ class Controller {
 
         // Reset begin positions in BoardView
         for (int player = 0; player < boardView.beginPositions.size(); player++) {
-            int finalPlayer = player;
+            int finalPlayer ;
+            if (strategySelections.get(player) == null) {
+                finalPlayer = -1;
+            } else {
+                finalPlayer = player;
+            }
             boardView.beginPositions.get(player).forEach(position -> {
                 position.setOccupiedBy(finalPlayer);
                 position.isChoice(false);
@@ -249,7 +264,7 @@ class Controller {
                     // If there is only one choice, just select it when step is called.
                     // Make sure we set the selected position in BoardView so that the selection listeners can unroll properly
                     boardView.setSelectedPosition(allowedMoves.get(0).to(), true);
-                } else if (strategySelections.get(board.getCurrentPlayer()).equals(MANUAL_STRATEGY)) {
+                } else if (MANUAL_STRATEGY.equals(strategySelections.get(board.getCurrentPlayer())) ){
                     pause();
                 }
                 break;
@@ -328,7 +343,7 @@ class Controller {
         chooseTask.setOnSucceeded(event -> {
             choice = chooseTask.getValue();
             // Step only if the strategy is the ManualStrategy
-            if (strategySelections.get(board.getCurrentPlayer()).equals(MANUAL_STRATEGY)) {
+            if (MANUAL_STRATEGY.equals(strategySelections.get(board.getCurrentPlayer()))) {
                 step();
             }
         });
@@ -338,7 +353,7 @@ class Controller {
         thread.start();
 
         // If strategy is manual, and allowedMoves.length > 1 then pause
-        if (strategySelections.get(board.getCurrentPlayer()).equals(MANUAL_STRATEGY)) {
+        if (MANUAL_STRATEGY.equals(strategySelections.get(board.getCurrentPlayer()))) {
             if (allowedMoves.size() == 1 && !autoSelectSingleChoice.get()) {
                 pause();
             } else if (allowedMoves.size() > 1 ) {

@@ -41,6 +41,7 @@ public class TestBoardState extends BoardState {
 		matcher.matches();
 
 		int boardSize = Integer.valueOf(matcher.group(1));
+		int pawnsPerPlayer = 0;
 		List<String> playerStates = Arrays.asList(matcher.group(2).split(";"));
 
 		ArrayList<List<Position>> newState = new ArrayList<>(playerStates.size());
@@ -58,6 +59,7 @@ public class TestBoardState extends BoardState {
 
 			int playerIndex = Integer.parseInt(playterStateMatcher.group(1));
 			String[] positionStrings = playterStateMatcher.group(2).split(",");
+			pawnsPerPlayer = Math.max(pawnsPerPlayer, positionStrings.length);
 			for (String positionString : positionStrings) {
 				playerState.add(Position.of(positionString));
 			}
@@ -67,16 +69,11 @@ public class TestBoardState extends BoardState {
 		System.out.println("Size: " + boardSize);
 		System.out.println("newState: " + newState);
 
-		return new BoardState(boardSize, newState);
+		return new BoardState(newState, boardSize, pawnsPerPlayer);
 	}
 
 	public TestBoardState(int boardSize, int pawnsPerPlayer, List<Position> beginPositions) {
 		super(boardSize, pawnsPerPlayer, beginPositions);
-		// Not used.
-	}
-
-	public TestBoardState(int boardSize, List<List<Position>> newState) {
-		super(boardSize, newState);
 		// Not used.
 	}
 

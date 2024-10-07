@@ -27,7 +27,7 @@
 }
 
 group = 'com.rttnghs'
-version = '1.0.1-SNAPSHOT'
+version = '1.0.2-SNAPSHOT'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_22
@@ -104,6 +104,11 @@ jar {
                 'Add-Modules': 'javafx.controls,javafx.graphics,javafx.fxml'
         )
     }
+}
+
+// Supppress annotation processing messages during compilation
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ["-Xlint:-processing"]
 }
 
 tasks.register('runGame', JavaExec) {

@@ -24,9 +24,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
-import javafx.event.EventDispatchChain;
-import javafx.event.EventDispatcher;
+import javafx.event.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
@@ -37,11 +35,14 @@ import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class MainApplication extends Application {
 
     private static final Logger logger = LogManager.getLogger(MainApplication.class);
+    static final String MANUAL_STRATEGY = "ManualStrategy";
     private final TextArea consoleTextArea = new TextArea();
 
     // Number of pixels between the border of the board and the border of the window
@@ -69,7 +70,7 @@ public class MainApplication extends Application {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("Mens erger je niet!");
 
-         controller = new Controller();
+        controller = new Controller();
 
         MenuBar menuBar = createMenuBar(primaryStage, controller);
         TabPane tabPane = createTabPane(controller);
@@ -198,36 +199,78 @@ public class MainApplication extends Application {
         gameStrateyConfigDialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
 
         // Create the ComboBoxes and pre-set their values
+
+        CheckBox checkBox0 = new CheckBox();
         ComboBox<String> comboBox0 = new ComboBox<>(strategyOptions);
-        comboBox0.setEditable(false);
-        comboBox0.setValue(strategySelections.get(0));
+        EventHandler<ActionEvent> checkBox0event = configureStrategyOptions(0, comboBox0, checkBox0);
 
+        CheckBox checkBox1 = new CheckBox();
         ComboBox<String> comboBox1 = new ComboBox<>(strategyOptions);
-        comboBox1.setEditable(false);
-        comboBox1.setValue(strategySelections.get(1));
+        EventHandler<ActionEvent> checkBox1event = configureStrategyOptions(1, comboBox1, checkBox1);
 
+        CheckBox checkBox2 = new CheckBox();
         ComboBox<String> comboBox2 = new ComboBox<>(strategyOptions);
-        comboBox2.setEditable(false);
-        comboBox2.setValue(strategySelections.get(2));
+        EventHandler<ActionEvent> checkBox2event = configureStrategyOptions(2, comboBox2, checkBox2);
 
+        CheckBox checkBox3 = new CheckBox();
         ComboBox<String> comboBox3 = new ComboBox<>(strategyOptions);
-        comboBox3.setEditable(false);
-        comboBox3.setValue(strategySelections.get(3));
+        EventHandler<ActionEvent> checkBox3event = configureStrategyOptions(3, comboBox3, checkBox3);
 
         // Create a layout and add the HBoxes
-        VBox vbox = new VBox(10, createPlayerHBox(0, comboBox0), createPlayerHBox(1, comboBox1), createPlayerHBox(2, comboBox2), createPlayerHBox(3, comboBox3));
+        VBox vbox = new VBox(10);
+        vbox.getChildren().add(createPlayerHBox(0, checkBox0, comboBox0));
+        vbox.getChildren().add(createPlayerHBox(1, checkBox1, comboBox1));
+        vbox.getChildren().add(createPlayerHBox(2, checkBox2, comboBox2));
+        vbox.getChildren().add(createPlayerHBox(3, checkBox3, comboBox3));
         gameStrateyConfigDialog.getDialogPane().setContent(vbox);
 
         // Make sure that the dialog is centered on the primaryStage
         gameStrateyConfigDialog.initOwner(primaryStage);
 
+        // Add a Label for error messages
+        Label errorMessageLabel = new Label();
+        errorMessageLabel.setTextFill(Color.RED);
+
+// Add the Label to the VBox
+        vbox.getChildren().add(errorMessageLabel);
+
+        // Add listeners to checkboxes to ensure at least two are checked
+        EventHandler<ActionEvent> checkboxListener = event -> {
+            long checkedCount = Stream.of(checkBox0, checkBox1, checkBox2, checkBox3)
+                    .filter(CheckBox::isSelected)
+                    .count();
+            boolean disableOkButton = checkedCount < 2;
+            gameStrateyConfigDialog.getDialogPane().lookupButton(okButtonType).setDisable(disableOkButton);
+            errorMessageLabel.setText(disableOkButton ? "Select a strategy for at least two players" : "");
+        };
+
+        checkBox0.setOnAction(event -> {
+            checkBox0event.handle(event);
+            checkboxListener.handle(event);
+        });
+        checkBox1.setOnAction(event -> {
+            checkBox1event.handle(event);
+            checkboxListener.handle(event);
+        });
+        checkBox2.setOnAction(event -> {
+            checkBox2event.handle(event);
+            checkboxListener.handle(event);
+        });
+        checkBox3.setOnAction(event -> {
+            checkBox3event.handle(event);
+            checkboxListener.handle(event);
+        });
+
+        // Initial validation
+        checkboxListener.handle(null);
+
         // Set result converter to update strategySelections when OK is pressed
         gameStrateyConfigDialog.setResultConverter(buttonType -> {
             if (buttonType == okButtonType) {
-                boolean hasChanged = !comboBox0.getValue().equals(strategySelections.get(0)) ||
-                        !comboBox1.getValue().equals(strategySelections.get(1)) ||
-                        !comboBox2.getValue().equals(strategySelections.get(2)) ||
-                        !comboBox3.getValue().equals(strategySelections.get(3));
+                boolean hasChanged = !Objects.equals(comboBox0.getValue(), strategySelections.get(0)) ||
+                        !Objects.equals(comboBox1.getValue(), strategySelections.get(1)) ||
+                        !Objects.equals(comboBox2.getValue(), strategySelections.get(1)) ||
+                        !Objects.equals(comboBox3.getValue(), strategySelections.get(3));
 
                 if (hasChanged) {
                     boolean confirmed = showConfirmationDialog(primaryStage);
@@ -247,6 +290,35 @@ public class MainApplication extends Application {
         gameStrateyConfigDialog.showAndWait();
     }
 
+    private static EventHandler<ActionEvent> configureStrategyOptions(int playerIndex, ComboBox<String> comboBox, CheckBox checkBox) {
+        comboBox.setEditable(false);
+        String strategySelection = strategySelections.get(playerIndex);
+        if (strategySelection == null) {
+            checkBox.setSelected(false);
+            comboBox.getSelectionModel().clearSelection();
+            comboBox.setDisable(true);
+        } else {
+            checkBox.setSelected(true);
+            comboBox.setValue(strategySelection);
+            comboBox.setDisable(false);
+        }
+
+        return event -> {
+            if (checkBox.isSelected()) {
+                String selectedStrategy = strategySelections.get(playerIndex);
+                //  If the previous strategy was null, default to the configured strategy
+                if (selectedStrategy == null) {
+                    selectedStrategy = Controller.getConfiguredStrategies().get(playerIndex);
+                }
+                comboBox.setValue(selectedStrategy);
+                comboBox.setDisable(false);
+            } else {
+                comboBox.getSelectionModel().clearSelection();
+                comboBox.setDisable(true);
+            }
+        };
+    }
+
     private boolean showConfirmationDialog(Stage primaryStage) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirm Strategy Change");
@@ -264,22 +336,32 @@ public class MainApplication extends Application {
 
     private void updateStrategySelection(int index, String newValue) {
         String currentValue = strategySelections.get(index);
-        // TODO: add an additional pop-up that will warn the user that this will reset the game.
-        if (!currentValue.equals(newValue)) {
+        if (!Objects.equals(currentValue, newValue)) {
             logger.warn("Strategy for player {} has changed from {} to {}. The game needs to be reset for this change to take effect.", index, currentValue, newValue);
             strategySelections.set(index, newValue);
         }
     }
 
-    private HBox createPlayerHBox(int playerIndex, ComboBox<String> comboBox) {
-        // Create the Circle (pawn) for the ComboBox
+    private HBox createPlayerHBox(int playerIndex, CheckBox checkBox, ComboBox<String> comboBox) {
+
+        StackPane stackPane = new StackPane();
+
         Circle pawn = new Circle(12, PlayerView.getColor(playerIndex));
         pawn.setStrokeWidth(1);
         pawn.setStroke(Color.BLACK);
         pawn.setFill(PlayerView.getGradient(playerIndex));
+        pawn.visibleProperty().bind(checkBox.selectedProperty());
+        stackPane.getChildren().add(pawn);
+
+        Circle circle = new Circle(12, PlayerView.getColor(playerIndex));
+        circle.setStrokeWidth(2.5);
+        circle.setStroke(Color.BLACK);
+        //circle.setFill(PlayerView.getColor(playerIndex));
+        circle.visibleProperty().bind(checkBox.selectedProperty().not());
+        stackPane.getChildren().add(circle);
 
         // Create an HBox to hold the Circle and ComboBox
-        return new HBox(12, pawn, comboBox);
+        return new HBox(12, checkBox, stackPane, comboBox);
     }
 
     /**
