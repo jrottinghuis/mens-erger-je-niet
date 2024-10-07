@@ -137,7 +137,7 @@ class BoardView {
             );
             scene.getAccelerators().put(
                     new KeyCodeCombination(KeyCode.P, KeyCombination.SHORTCUT_DOWN),
-                    () -> controller.playOrPause()
+                    controller::playOrPause
             );
         }
 

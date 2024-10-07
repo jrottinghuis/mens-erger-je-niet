@@ -75,15 +75,12 @@ public class MainApplication extends Application {
         MenuBar menuBar = createMenuBar(primaryStage, controller);
         TabPane tabPane = createTabPane(controller);
 
-        tabPane.setEventDispatcher(new EventDispatcher() {
-            @Override
-            public Event dispatchEvent(Event event, EventDispatchChain tail) {
-                try {
-                    return tail.dispatchEvent(event);
-                } catch (final Exception e) {
-                    logger.error("Error in event dispatching", e);
-                    return null;
-                }
+        tabPane.setEventDispatcher((event, tail) -> {
+            try {
+                return tail.dispatchEvent(event);
+            } catch (final Exception e) {
+                logger.error("Error in event dispatching", e);
+                return null;
             }
         });
 
@@ -96,7 +93,7 @@ public class MainApplication extends Application {
 
         controller.initialize(scene);
         // Initialize the strategy options and selections after the controller is initialized
-        strategyItem.setOnAction((event) -> getConfigureGameStrategies(controller));
+        strategyItem.setOnAction((_) -> getConfigureGameStrategies(controller));
 
         primaryStage.show();
     }
@@ -235,7 +232,7 @@ public class MainApplication extends Application {
         vbox.getChildren().add(errorMessageLabel);
 
         // Add listeners to checkboxes to ensure at least two are checked
-        EventHandler<ActionEvent> checkboxListener = event -> {
+        EventHandler<ActionEvent> checkboxListener = _ -> {
             long checkedCount = Stream.of(checkBox0, checkBox1, checkBox2, checkBox3)
                     .filter(CheckBox::isSelected)
                     .count();
@@ -303,7 +300,7 @@ public class MainApplication extends Application {
             comboBox.setDisable(false);
         }
 
-        return event -> {
+        return _ -> {
             if (checkBox.isSelected()) {
                 String selectedStrategy = strategySelections.get(playerIndex);
                 //  If the previous strategy was null, default to the configured strategy

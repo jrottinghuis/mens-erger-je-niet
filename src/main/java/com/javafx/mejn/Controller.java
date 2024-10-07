@@ -87,7 +87,7 @@ class Controller {
 
     private void addDebugAction() {
         // TODO: Remove after debugging
-        captureDebugItem.setOnAction(e -> {
+        captureDebugItem.setOnAction(_ -> {
             logger.debug("Debugging");
             logger.debug("Current step: {}", currentStep);
             logger.debug("board.player: {}", board.getCurrentPlayer());
@@ -171,7 +171,7 @@ class Controller {
         timeline = new Timeline();
         timeline.setCycleCount(Timeline.INDEFINITE);
 
-        KeyFrame keyFrame = new KeyFrame(Duration.millis(5000), event -> step());
+        KeyFrame keyFrame = new KeyFrame(Duration.millis(5000), _ -> step());
         timeline.getKeyFrames().add(keyFrame);
 
         timeline.rateProperty().bind(MainApplication.playbackSpeed);
@@ -195,14 +195,12 @@ class Controller {
         MainApplication.boardView.resetSelectedPosition();
 
         // Reset all home and event positions in BoardView
-        boardView.homePositions.forEach(player -> {
-            player.forEach(position -> {
-                position.isChoice(false);
-                position.setSelected(false);
-                position.setOccupiedBy(-1);
-                position.setFinishOrder(-1);
-            });
-        });
+        boardView.homePositions.forEach(player -> player.forEach(position -> {
+            position.isChoice(false);
+            position.setSelected(false);
+            position.setOccupiedBy(-1);
+            position.setFinishOrder(-1);
+        }));
         boardView.eventPositions.forEach(position -> {
             position.isChoice(false);
             position.setSelected(false);
@@ -334,13 +332,13 @@ class Controller {
         final List<Move> finalAllowedMoves = List.copyOf(allowedMoves);
         chooseTask = new Task<>() {
             @Override
-            protected Move call() throws Exception {
+            protected Move call() {
                 return MainApplication.players.get(board.getCurrentPlayer()).choose(finalAllowedMoves, board.getBoardState());
             }
         };
 
         // Set the choice to the value returned by the Task
-        chooseTask.setOnSucceeded(event -> {
+        chooseTask.setOnSucceeded(_ -> {
             choice = chooseTask.getValue();
             // Step only if the strategy is the ManualStrategy
             if (MANUAL_STRATEGY.equals(strategySelections.get(board.getCurrentPlayer()))) {

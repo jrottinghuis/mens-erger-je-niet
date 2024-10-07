@@ -40,14 +40,14 @@ public class TestBoardState extends BoardState {
 
 		matcher.matches();
 
-		int boardSize = Integer.valueOf(matcher.group(1));
+		int boardSize = Integer.parseInt(matcher.group(1));
 		int pawnsPerPlayer = 0;
 		List<String> playerStates = Arrays.asList(matcher.group(2).split(";"));
 
 		ArrayList<List<Position>> newState = new ArrayList<>(playerStates.size());
 
 		Pattern playerStatePattern = Pattern.compile("P(\\d+)=\\{(.*)}");
-		Matcher playterStateMatcher = null;
+		Matcher playterStateMatcher;
 
 		for (String playerStateString : playerStates) {
 			System.out.println("playerStateString=" + playerStateString);

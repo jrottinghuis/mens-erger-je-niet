@@ -146,7 +146,7 @@ public class Game {
 	/**
 	 * Play a single game.
 	 * 
-	 * @param args
+	 * @param args command line arguments
 	 */
 	public static void main(String[] args) {
 		Instant start = Instant.now();
