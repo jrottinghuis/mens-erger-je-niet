@@ -57,7 +57,7 @@ public class Player {
 			Strategy strategy = strategyFactory.getStrategy(strategyNames.get(playerIndex)).initialize(shiftedHistorySupplier);
 
 			players.add(playerIndex, new Player(strategy, playerIndex, boardSize));
-            logger.debug("Player {} strategy {}", playerIndex, strategy.getName());
+            //logger.debug("Player {} strategy {}", playerIndex, strategy.getName());
 		}
 		return players;
 	}
