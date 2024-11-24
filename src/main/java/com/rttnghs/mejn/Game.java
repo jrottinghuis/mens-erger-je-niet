@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.rttnghs.mejn.configuration.Config;
 import com.rttnghs.mejn.internal.BaseHistory;
 import com.rttnghs.mejn.statistics.EventCounter;
 import com.rttnghs.mejn.strategy.BaseStrategyFactory;

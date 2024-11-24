@@ -16,7 +16,6 @@
  */
 package com.rttnghs.mejn;
 
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
