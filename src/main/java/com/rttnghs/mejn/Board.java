@@ -198,7 +198,7 @@ public class Board {
      * players.
      */
     public int nextPlayer() {
-        logger.trace(() -> "Previous player in nextPlayer " + currentPlayer);
+        // logger.trace(() -> "Previous player in nextPlayer " + currentPlayer);
         // Short circuit when we're done
         if (activePlayerCount == 0) {
             logger.trace("No more active players.");
@@ -215,7 +215,7 @@ public class Board {
 
         // Same player rolls again when they currentDieValue max faces on the die.
         if (currentDieValue == die.faces) {
-            logger.trace(() -> "Player " + currentPlayer + " gets another turn.");
+            // logger.trace(() -> "Player " + currentPlayer + " gets another turn.");
         } else {
             currentPlayer = (currentPlayer + 1) % playerCount;
         }

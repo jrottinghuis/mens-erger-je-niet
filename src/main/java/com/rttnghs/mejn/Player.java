@@ -136,7 +136,7 @@ public class Player {
 	 */
 	public void finalize(int position) {
 		strategy.finalize(position);
-		logger.debug(() -> strategy.getName() + " position " + position);
+		// logger.debug(() -> strategy.getName() + " position " + position);
 	}
 
 	public String getName() {
