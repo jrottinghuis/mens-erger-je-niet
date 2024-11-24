@@ -127,7 +127,7 @@ public class Tournament {
 		int playerCount = strategyNameBrackets.getFirst().size();
 		Function<Integer, Integer> scorer = (finishPosition) -> Score.get(finishPosition, playerCount);
 		// Multiply by 100, to keep a reasonable resolution when dividing by games
-		// as the smallest score for each game is 1, and we don't want to loose too much
+		// as the smallest score for each game is 1, and we don't want to lose too much
 		// precision without having to go to floats of doubles.
 		// More accuracy isn't needed, because of the randomness of the games, which
 		// causes more variance in score that this rounding error.

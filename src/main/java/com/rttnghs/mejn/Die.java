@@ -17,6 +17,7 @@
 package com.rttnghs.mejn;
 
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  *
@@ -27,7 +28,6 @@ public class Die {
 	 * How many faces this die has.
 	 */
 	public final int faces;
-	private static final Random number = new Random();
 
 	/**
 	 * Die will roll between 1 and faces (including).
@@ -46,7 +46,7 @@ public class Die {
 	 * Roll the die. Returns a random value between 1 and faces (including).
 	 */
 	public int roll() {
-		return number.nextInt(faces) + 1;
+		return ThreadLocalRandom.current().nextInt(faces) + 1;
 	}
 
 }

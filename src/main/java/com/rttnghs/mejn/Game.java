@@ -73,7 +73,7 @@ public class Game {
 	 * @return EventCounter of player's strategy name to finish position.
 	 */
 	public EventCounter<String, Integer> play() {
-		logger.debug("Starting game.");
+		//logger.debug("Starting game.");
 		while (players.size() > finished.size()) {
 			turn();
 		}
@@ -83,7 +83,7 @@ public class Game {
 		for (int i = 0; i < finished.size(); i++) {
 			finishCounts.increment(finished.get(i), i);
 		}
-		logger.debug(finishCounts);
+		//logger.debug(finishCounts);
 		return finishCounts;
 	}
 
@@ -97,7 +97,7 @@ public class Game {
 
 			// Use lambda in trace method argument to avoid evaluating boarState.toString
 			// over and over, which would be slow
-			logger.trace(() -> "No more active players: " + board.getBoardState());
+			//logger.trace(() -> "No more active players: " + board.getBoardState());
 			return;
 		}
 
@@ -128,7 +128,7 @@ public class Game {
 		if (strike != null) {
 			int struckPlayer = board.getBoardState().getPlayer(choice.to());
 			strikes.increment(currentPlayer, struckPlayer);
-            logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, struckPlayer, choice, strike);
+           // logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, struckPlayer, choice, strike);
 			move(strike);
 		}
 		move(choice);
@@ -137,7 +137,7 @@ public class Game {
 	private void move(Move move) {
 		int finishedPlayer = board.move(move);
 		if (finishedPlayer != -1) {
-            logger.debug("Finished: {}", finishedPlayer);
+            //logger.debug("Finished: {}", finishedPlayer);
 			finished.add(players.get(finishedPlayer).getName());
 		}
 		history.add(move);
@@ -150,16 +150,16 @@ public class Game {
 	 */
 	public static void main(String[] args) {
 		Instant start = Instant.now();
-        logger.info("Starting game: {}", Config.value);
+        // logger.info("Starting game: {}", Config.value);
 		List<String> strategies = Arrays.asList("RandomStrategy", "FarStrategy", "RankingStrategy",
 				"NearStrategy");
 		Game game = new Game(new BaseStrategyFactory(), strategies);
 		EventCounter<String, Integer> finishCounts = game.play();
-        logger.info("Results {}", finishCounts);
+        // logger.info("Results {}", finishCounts);
 
 		Instant end = Instant.now();
 		Duration interval = Duration.between(start, end);
-        logger.info("Game took {} millis", interval.toMillis());
+        //logger.info("Game took {} millis", interval.toMillis());
 	}
 
 }

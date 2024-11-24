@@ -44,6 +44,6 @@ class PlayerTest {
 				Arrays.asList(bracketStrategyNamesAttribute.split(",", -1)));
 
 		List<Player> players = Player.playersOf(new BaseStrategyFactory(), bracketStrategyNames, history);
-		assertEquals(5, players.size());
+		assertEquals(4, players.size());
 	}
 }

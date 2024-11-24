@@ -50,14 +50,15 @@ limitations under the License.
 		</strategy>
 	</strategies>
 	<!-- Strategies listed in the brackets attribute list refer to the strategy names defined above. -->
-	<tournamentBrackets strategies="RandomStrategy,FarStrategy,NearStrategy,RankingStrategy,OtherRankingStrategy">
+	<tournamentBrackets strategies="RandomStrategy,FarStrategy,RankingStrategy,OtherRankingStrategy">
 		<!-- The length of the strategies attribute list must match the length of the brackets.-->
 		<!-- Brackets are 0-based indexes from the list of strategies in brackets.-->
-		<bracket>1,0,2,0</bracket>
-		<bracket>3,0,4,0</bracket>
-		<bracket>1,0,3,0</bracket>
-		<bracket>2,0,4,0</bracket>
-		<bracket>1,2,3,4</bracket>
+		<bracket>0,1,2,3</bracket>
+		<bracket>0,1,3,2</bracket>
+		<bracket>0,2,1,3</bracket>
+		<bracket>0,2,3,1</bracket>
+		<bracket>0,3,1,2</bracket>
+		<bracket>0,3,2,1</bracket>
 	</tournamentBrackets>
 	<gui strategies="ManualStrategy,RandomStrategy,FarStrategy,RankingStrategy"/>
 </config>

@@ -61,7 +61,6 @@ public class Score {
 
 	/**
 	 * @param players number of players in the game
-	 * @param rounds  number of rounds the game is played
 	 * @return exp
 	 */
 	public static int winningScore(int players) {

@@ -50,7 +50,7 @@ class TournamentTest {
 	@Test
 	final void testGetStrategyNames() {
 		List<String> strategyNames = Tournament.getStrategyNames();
-		assertEquals(5, strategyNames.size());
+		assertEquals(4, strategyNames.size());
 	}
 
 	@Test

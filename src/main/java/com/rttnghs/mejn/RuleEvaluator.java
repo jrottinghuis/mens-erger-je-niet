@@ -31,114 +31,116 @@ import com.rttnghs.mejn.configuration.Config;
  */
 public class RuleEvaluator {
 
-	public static final boolean isSelfStrikeAllowed = Config.configuration.getBoolean("isSelfStrikeAllowed");
-	private static final Logger logger = LogManager.getLogger(RuleEvaluator.class);
+    public static final boolean isSelfStrikeAllowed = Config.configuration.getBoolean("isSelfStrikeAllowed");
+    private static final Logger logger = LogManager.getLogger(RuleEvaluator.class);
 
-	private final BoardState state;
-	/**
-	 * List of positions where each respective players start from (where the layers
-	 * intersect).
-	 */
-	private final Position startPosition;
+    private final BoardState state;
+    /**
+     * List of positions where each respective players start from (where the layers
+     * intersect).
+     */
+    private final Position startPosition;
 
-	/**
-	 * Game rule evaluator for the given player.
-	 * 
-	 * @param state against which to evaluate moves
-	 */
-	public RuleEvaluator(BoardState state, Position startPosition) {
-		this.state = state;
-		this.startPosition = startPosition;
-	}
+    /**
+     * Game rule evaluator for the given player.
+     *
+     * @param state against which to evaluate moves
+     */
+    public RuleEvaluator(BoardState state, Position startPosition) {
+        this.state = state;
+        this.startPosition = startPosition;
+    }
 
-	/**
-	 * Not out of bounds.
-	 * 
-	 * @param move
-	 * @return false for all BEGIN layers that are not the start. True for all
-	 *         other.
-	 */
-	private boolean isInbound(Move move) {
-		return switch (move.to().layer()) {
-		case BEGIN -> isToStart(move);
-		case EVENT -> true;
-		case HOME -> move.to().spot() < startPosition.spot() + Config.value.pawnsPerPlayer();
-		default -> throw new IllegalArgumentException("Unexpected value: " + move.to().layer());
-		};
-	}
+    /**
+     * Not out of bounds.
+     *
+     * @param move
+     * @return false for all BEGIN layers that are not the start. True for all
+     * other.
+     */
+    private boolean isInbound(Move move) {
+        return switch (move.to().layer()) {
+            case BEGIN -> isToStart(move);
+            case EVENT -> true;
+            case HOME -> move.to().spot() < startPosition.spot() + Config.value.pawnsPerPlayer();
+            default -> throw new IllegalArgumentException("Unexpected value: " + move.to().layer());
+        };
+    }
 
-	/**
-	 * @param move
-	 * @return
-	 */
-	private boolean isToStart(Move move) {
-		return startPosition.equals(move.to());
-	}
+    /**
+     * @param move
+     * @return
+     */
+    private boolean isToStart(Move move) {
+        return startPosition.equals(move.to());
+    }
 
-	/**
-	 * @param move
-	 * @return
-	 */
-	private boolean isFromStart(Move move) {
-		return startPosition.equals(move.from());
-	}
+    /**
+     * @param move
+     * @return
+     */
+    private boolean isFromStart(Move move) {
+        return startPosition.equals(move.from());
+    }
 
-	/**
-	 * 
-	 * @param move to be evaluated
-	 * @return if the from and to are the same.
-	 */
-	private boolean stationary(Move move) {
-		return move.from().equals(move.to());
-	}
+    /**
+     * @param move to be evaluated
+     * @return if the from and to are the same.
+     */
+    private boolean stationary(Move move) {
+        return move.from().equals(move.to());
+    }
 
-	/**
-	 * @param move to be evaluated.
-	 * @return True when moving to begin, true when moving from start. False when
-	 *         EVENT is occupied. Otherwise allowed if you strike yourself and that is
-	 *         allowed per config.
-	 */
-	private boolean isLegalSelfStrike(Move move) {
-		if (isFromStart(move)) {
-			// Any move from the start is legal.
-			return true;
-		}
-		return switch (move.to().layer()) {
-		case BEGIN -> true; // Any move to begin is legal
-		case EVENT -> isSelfStrikeAllowed || (state.getPlayer(move.from()) != state.getPlayer(move.to()));
-		case HOME -> state.getPlayer(move.to()) == -1; // If nobody is in the to spot, that is legal.
-		default -> throw new IllegalArgumentException("Unexpected value: " + move.to().layer());
-		};
-	}
+    /**
+     * @param move to be evaluated.
+     * @return True when moving to begin, true when moving from start. False when
+     * EVENT is occupied. Otherwise allowed if you strike yourself and that is
+     * allowed per config.
+     */
+    private boolean isLegalSelfStrike(Move move) {
+        if (isFromStart(move) || move.to().layer() == Layer.BEGIN) {
+            // Any move from the start or to the begin layer is legal.
+            return true;
+        }
+        if (move.to().layer() == Layer.HOME) {
+            // Move to home is legal if the spot is unoccupied.
+            return state.getPlayer(move.to()) == -1;
+        }
+        if (move.to().layer() == Layer.EVENT) {
+            // Move to event is legal if self-strike is allowed or the spot is occupied by another player.
+            return isSelfStrikeAllowed || state.getPlayer(move.from()) != state.getPlayer(move.to());
+        }
+        throw new IllegalArgumentException("Unexpected value: " + move.to().layer());
+    }
 
-	/**
-	 * @param potentialMoves non-null, possibly empty, normalized list of moves.
-	 * @param roll what the die showed
-	 * @return a reduced list of moves with any non-optional moves removed.
-	 */
-	public List<Move> evaluate(List<Move> potentialMoves, int roll) {
-		// Eliminate any illegal moves
-		List<Move> legalMoves = potentialMoves.stream().filter(not(this::stationary)).filter(this::isInbound)
-				.filter(this::isLegalSelfStrike).collect(Collectors.toList());
+    /**
+     * @param potentialMoves non-null, possibly empty, normalized list of moves.
+     * @param roll           what the die showed
+     * @return a reduced list of moves with any non-optional moves removed.
+     */
+    public List<Move> evaluate(List<Move> potentialMoves, int roll) {
+        // Eliminate any illegal moves
+        List<Move> legalMoves = potentialMoves.stream().filter(not(this::stationary)).filter(this::isInbound)
+                .filter(this::isLegalSelfStrike).collect(Collectors.toList());
 
-		// If the player is on start, that must be the move they choose.
-		List<Move> possibleFromStartMove = legalMoves.stream().filter(this::isFromStart).collect(Collectors.toList());
-		if (possibleFromStartMove.size() == 1) {
-			// legalMoves contained a to-start move. possibleStartMove now contains it.
-			// logger.trace(() -> "Forcing from-start move: " + possibleFromStartMove);
-			return possibleFromStartMove;
-		}
+        // If the player is on start, that must be the move they choose.
+        List<Move> possibleFromStartMove = legalMoves.stream().filter(this::isFromStart).collect(Collectors.toList());
+        if (possibleFromStartMove.size() == 1) {
+            // legalMoves contained a to-start move. possibleStartMove now contains it.
+            // logger.trace(() -> "Forcing from-start move: " + possibleFromStartMove);
+            return possibleFromStartMove;
+        }
 
-		// If the player is not on start, but moving to start is an option, then that
-		// option must be taken.
-		List<Move> possibleToStartMove = legalMoves.stream().filter(this::isToStart).collect(Collectors.toList());
-		if (possibleToStartMove.size() == 1) {
-			// legalMoves contained a to-start move. possibleStartMove now contains it.
-			// logger.trace(() -> "Forcing to-start move: " + possibleToStartMove);
-			return possibleToStartMove;
-		}
+        // If the player is not on start, but moving to start is an option, then that
+        // option must be taken.
+        List<Move> possibleToStartMove = legalMoves.stream().filter(this::isToStart).collect(Collectors.toList());
+        if (possibleToStartMove.size() == 1) {
+            // legalMoves contained a to-start move. possibleStartMove now contains it.
+            // logger.trace(() -> "Forcing to-start move: " + possibleToStartMove);
+            return possibleToStartMove;
+        }
 
-		return legalMoves;
-	}
+        return legalMoves;
+    }
 
 }
