@@ -82,12 +82,13 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 	 * Note that we're counting on the player to projects the board state to make us
 	 * player 0;
 	 * 
-	 * @param move
+	 * @param move the move to evaluate
+	 *  @param boardState the board state
 	 * @return
 	 */
-	private int valuateSelfStrike(Move move, Supplier<BoardState> stateSupplier) {
+	private int valuateSelfStrike(Move move, BoardState boardState) {
 		// Determine who is at the to position.
-		int player = stateSupplier.get().getPlayer(move.to());
+		int player = boardState.getPlayer(move.to());
 		return switch (player) {
 		case -1 -> 0; // nobody to strike
 		// Striking yourself is as bad as the board position the
@@ -99,15 +100,16 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 
 	/**
 	 * Preference to make it home if the move is to HOME and from EVENT layer.
-	 * 
-	 * @param valuation
+	 *
+	 * @param move the move to evaluate
+	 * @param boardState the board state
 	 * @return
 	 */
-	private int valuateHome(Move move, Supplier<BoardState> stateSupplier) {
+	private int valuateHome(Move move, BoardState  boardState) {
 		if (move.to().layer() == HOME) {
 			if (move.from().layer() == EVENT) {
 				// Coming home is as good as the board is long plus how far we'd get into home.
-				return (gettingHomeParam * stateSupplier.get().getBoardSize()) / 2;
+				return (gettingHomeParam * boardState.getBoardSize()) / 2;
 			} else {
 				// Best to tinker with pawns already home as last resort.
 				return alreadyHomeParam;
@@ -119,11 +121,12 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 
 	/**
 	 * Determine value based on how far along the board this pawn is.
-	 * 
-	 * @param move
+	 *
+	 * @param move the move to evaluate
+	 * @param boardState the board state
 	 * @return
 	 */
-	private int valueateSpot(Move move, Supplier<BoardState> stateSupplier) {
+	private int valueateSpot(Move move, BoardState boardState) {
 		if (move.to().layer() == EVENT) {
 			// Inversely proportional to how far the pawn is. Hence prefer to move the last
 			// pawn first
@@ -132,7 +135,7 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 			// How important it is to be far from start. Add one to avoid multiply by 0 = 1;
 			int fromStartWeight = (fromStartParam * (move.to().spot() + 1)) / 10;
 			// How important it is to be far from home
-			int fromHomehWeight = (fromHomeParam * (stateSupplier.get().getBoardSize() + 1 - move.to().spot())) / 10;
+			int fromHomehWeight = (fromHomeParam * (boardState.getBoardSize() + 1 - move.to().spot())) / 10;
 			return fromStartWeight + fromHomehWeight;
 			// Total points after 10000 games: {RandomStrategy=1234984,
 			// SomeRankingStrategy=905016}
@@ -153,10 +156,10 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 	}
 
 	@Override
-	public Integer valuate(Move move, Supplier<BoardState> stateSupplier) {
+	public Integer valuate(Move move, BoardState boardState) {
 		// Add them all up.
-        return valuateSelfStrike(move, stateSupplier) + valuateHome(move, stateSupplier)
-                + valueateSpot(move, stateSupplier);
+        return valuateSelfStrike(move, boardState) + valuateHome(move, boardState)
+                + valueateSpot(move, boardState);
 	}
 
 }
