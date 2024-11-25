@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.rttnghs.mejn.configuration.Config;
 import com.rttnghs.mejn.internal.HistorySupplier;
-import com.rttnghs.mejn.internal.ShiftingBoardStateSupplier;
 import com.rttnghs.mejn.strategy.Strategy;
 import com.rttnghs.mejn.strategy.StrategyFactory;
 
@@ -109,18 +108,18 @@ public class Player {
 	 */
 	public Move choose(List<Move> choices, BoardState state) {
 		// Rotate perspective counter clockwise
-		Supplier<BoardState> bsProvider = new ShiftingBoardStateSupplier(state, playerIndex, rotation());
+		BoardState rotatedState = state.shift(playerIndex);
 
 		if (choices == null) {
 			// this should not happen.
-			return strategy.choose(new ArrayList<>(0), bsProvider);
+			return strategy.choose(new ArrayList<>(0), rotatedState);
 		}
 		// Shift the move to the perspective where strategy thinks it is player 0;
 
 		List<Move> shiftedChoices = choices.stream().map(Move.shifter(rotation(), boardSize))
 				.collect(Collectors.toList());
 
-		Move choice = strategy.choose(shiftedChoices, bsProvider);
+		Move choice = strategy.choose(shiftedChoices, rotatedState);
 
 		// Shift perspective back, moving board clockwise
 		if (choice != null) {

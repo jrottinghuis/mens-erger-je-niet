@@ -46,12 +46,12 @@ public class RandomStrategy extends BaseStrategy implements Strategy {
 	 * From Interface. 
 	 */
 	@Override
-	public Move choose(List<Move> choices, Supplier<BoardState> stateSupplier) {
-		return autoChoose(choices, stateSupplier);
+	public Move choose(List<Move> choices, BoardState boardState) {
+		return autoChoose(choices, boardState);
 	}
 
 	@Override
-	public Move multiChoose(List<Move> choices, Supplier<BoardState> stateSupplier) {
+	public Move multiChoose(List<Move> choices, BoardState boardState) {
 		return choose(choices);
 	}
 

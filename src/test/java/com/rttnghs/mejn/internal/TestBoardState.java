@@ -14,7 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.rttnghs.mejn;
+package com.rttnghs.mejn.internal;
+
+import com.rttnghs.mejn.BoardState;
+import com.rttnghs.mejn.Layer;
+import com.rttnghs.mejn.Move;
+import com.rttnghs.mejn.Position;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +27,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TestBoardState extends BoardState {
+public class TestBoardState extends BaseBoardState {
 
 	/**
 	 * Not built for robustness. Used only for test cases.
@@ -69,7 +74,7 @@ public class TestBoardState extends BoardState {
 		System.out.println("Size: " + boardSize);
 		System.out.println("newState: " + newState);
 
-		return new BoardState(newState, boardSize, pawnsPerPlayer);
+		return new BaseBoardState(newState, boardSize, pawnsPerPlayer);
 	}
 
 	public TestBoardState(int boardSize, int pawnsPerPlayer, List<Position> beginPositions) {

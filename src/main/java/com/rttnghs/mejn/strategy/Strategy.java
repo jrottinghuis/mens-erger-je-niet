@@ -37,13 +37,13 @@ public interface Strategy {
 
 	/**
 	 * Strategies shall implement a initialize method. This will be called before
-	 * any calls to {@link #choose(List, Supplier)}
+	 * any calls to {@link #choose(List, BoardState)}
 	 * 
 	 * @param historySupplier supplier that can be used to get the history of moves.
 	 *                        <p>
 	 *                        Note that this supplier will return a consistent
 	 *                        result only during the
-	 *                        {@link #choose(List, Supplier)}  and
+	 *                        {@link #choose(List, BoardState)}  and
 	 *                        {@link #finalize(int)} methods. If the strategy
 	 *                        implements threading, this history provider does not
 	 *                        give any guarantee that other threads will be able to
@@ -57,12 +57,11 @@ public interface Strategy {
 	 * 
 	 * @param choices           board positions from which to choose. Shall not be
 	 *                          null. Empty list indicates that there is not choice.
-	 * @param boardStateSupplier used to get to the state of the board. Access only
-	 *                          when needed.
+	 * @param boardState		the board state to consider. This is the state of the game from the perspective of the player.
 	 * @return one of the choices in the list, or else get a random choice assigned.
 	 * 
 	 */
-	Move choose(List<Move> choices, Supplier<BoardState> boardStateSupplier);
+	Move choose(List<Move> choices, BoardState boardState);
 
 	/**
 	 * Inform strategy to finalize because the game is over.

@@ -41,9 +41,9 @@ public abstract class RankingStrategy extends BaseStrategy implements Strategy {
 
 	private static final Logger logger = LogManager.getLogger(RankingStrategy.class);
 	
-	private final BiFunction<Move, Supplier<BoardState>, Integer> moveEvaluator;
+	private final BiFunction<Move, BoardState, Integer> moveEvaluator;
 
-	public RankingStrategy(BiFunction<Move, Supplier<BoardState>, Integer> moveEvaluator, String name,
+	public RankingStrategy(BiFunction<Move, BoardState, Integer> moveEvaluator, String name,
 			Collection<Integer> parameters) {
 		super(name, parameters);
 		this.moveEvaluator = moveEvaluator;
@@ -54,16 +54,16 @@ public abstract class RankingStrategy extends BaseStrategy implements Strategy {
 	 * multiple choices below.
 	 */
 	@Override
-	public Move choose(List<Move> choices, Supplier<BoardState> stateSupplier) {
-		return autoChoose(choices, stateSupplier);
+	public Move choose(List<Move> choices, BoardState boardState) {
+		return autoChoose(choices, boardState);
 	}
 
 	@Override
-	public Move multiChoose(List<Move> choices, Supplier<BoardState> stateSupplier) {
+	public Move multiChoose(List<Move> choices, BoardState boardState) {
 
 		SortedMap<Integer, Move> rankedMoves = new TreeMap<>();
 		for (Move move : choices) {
-			rankedMoves.put(moveEvaluator.apply(move, stateSupplier), move);
+			rankedMoves.put(moveEvaluator.apply(move, boardState), move);
 		}
         logger.trace("rankedMoves:{}", rankedMoves);
 		return rankedMoves.get(rankedMoves.lastKey());

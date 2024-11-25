@@ -17,6 +17,7 @@
 package com.rttnghs.mejn;
 
 import com.rttnghs.mejn.configuration.Config;
+import com.rttnghs.mejn.internal.BaseBoardState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,7 +50,7 @@ public class Board {
      */
     private final List<Position> startPositions;
 
-    private BoardState state;
+    private final BaseBoardState state;
 
     private final int playerCount;
     /**
@@ -89,7 +90,7 @@ public class Board {
             startPositions.add(i, new Position(EVENT, startIndex).normalize(boardSize));
         }
 
-        state = new BoardState(boardSize, Config.value.pawnsPerPlayer(), beginPositions);
+        state = new BaseBoardState(boardSize, Config.value.pawnsPerPlayer(), beginPositions);
 
         // Determine who goes first. Die are 1 based, players 0-based index.
         currentPlayer = new Die(playerCount).roll() - 1;
@@ -182,7 +183,7 @@ public class Board {
      * otherwise.
      */
     public int move(Move move) {
-        state = state.move(move);
+        state.move(move);
 
         if ((move.from().layer() == EVENT) && (move.to().layer() == HOME)) {
             if (state.isFinished(currentPlayer)) {

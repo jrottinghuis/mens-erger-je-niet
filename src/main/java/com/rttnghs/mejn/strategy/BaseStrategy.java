@@ -59,17 +59,17 @@ public abstract class BaseStrategy implements Strategy {
 
 	/**
 	 * Strategies that extend this class can opt to defer the
-	 * {@link #choose(List, Supplier)} method to this method. It will automatically
+	 * {@link #choose(List, BoardState)} method to this method. It will automatically
 	 * deal with a no-choice or single move choice situation, in other words, when
 	 * there really isn't anything to choose. In cases when there is something to
 	 * choose, this method will defer to the implementor's
-	 * {@link #multiChoose(List, Supplier) method.
+	 * {@link #multiChoose(List, BoardState) method.
 	 * <p>
 	 * @param choices
 	 * @return null for no choice, return the one choice in that case, or
 	 *         multiChoose() if there are more choices.
 	 */
-	protected Move autoChoose(List<Move> choices, Supplier<BoardState> stateSupplier) {
+	protected Move autoChoose(List<Move> choices, BoardState boardState) {
 		if (choices == null) {
 			// This should not happen, we should not get called with null choice;
 			throw new IllegalArgumentException();
@@ -80,17 +80,17 @@ public abstract class BaseStrategy implements Strategy {
 		if (choices.size() == 1) {
 			return choices.getFirst();
 		}
-		return multiChoose(choices, stateSupplier);
+		return multiChoose(choices, boardState);
 	}
 
 	/**
 	 * Called iff there is more than one choice to make and the implementing class
-	 * defers the {@link #choose(List, Supplier)} method to the
-	 * {@link #autoChoose(List, Supplier) method.
+	 * defers the {@link #choose(List, BoardState)} method to the
+	 * {@link #autoChoose(List, BoardState) method.
 	 * @param choices       Two or more choices to choose from.
 	 * @param stateSupplier to get to the state of the board.
 	 * @return
 	 */
-	public abstract Move multiChoose(List<Move> choices, Supplier<BoardState> stateSupplier);
+	public abstract Move multiChoose(List<Move> choices, BoardState boardState);
 
 }

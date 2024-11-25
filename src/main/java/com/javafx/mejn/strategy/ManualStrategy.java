@@ -49,7 +49,7 @@ public class ManualStrategy extends BaseStrategy implements Strategy {
      * From Interface.
      */
     @Override
-    public Move multiChoose(List<Move> choices, Supplier<BoardState> stateSupplier) {
+    public Move multiChoose(List<Move> choices, BoardState boardState) {
         // We won't get here, because we will not invoke BaseStrategy.autoChoose
         return null;
     }
@@ -58,7 +58,7 @@ public class ManualStrategy extends BaseStrategy implements Strategy {
      * From Interface.
      */
     @Override
-    public synchronized Move choose(List<Move> choices, Supplier<BoardState> boardStateSupplier) {
+    public synchronized Move choose(List<Move> choices, BoardState boardStater) {
 
         CompletableFuture<Position> choiceFuture = new CompletableFuture<>();
         choiceHandler.accept(choiceFuture);

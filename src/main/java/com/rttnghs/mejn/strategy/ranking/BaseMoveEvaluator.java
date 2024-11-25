@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import com.rttnghs.mejn.BoardState;
 import com.rttnghs.mejn.Move;
 
-public abstract class BaseMoveEvaluator implements BiFunction<Move, Supplier<BoardState>, Integer> {
+public abstract class BaseMoveEvaluator implements BiFunction<Move, BoardState, Integer> {
 
 	/**
 	 * Parameters to be used for the strategy. Could be empty if so configured in
@@ -40,8 +40,8 @@ public abstract class BaseMoveEvaluator implements BiFunction<Move, Supplier<Boa
 	}
 
 	@Override
-	public Integer apply(Move move, Supplier<BoardState> stateSupplier) {
-		return valuate(move, stateSupplier);
+	public Integer apply(Move move, BoardState boardState) {
+		return valuate(move, boardState);
 	}
 
 	/**
@@ -49,10 +49,10 @@ public abstract class BaseMoveEvaluator implements BiFunction<Move, Supplier<Boa
 	 * will be chosen.
 	 * 
 	 * @param move          to be valuated.
-	 * @param stateSupplier to be used to access the board state.
+	 * @param boardState	the current state of the board.
 	 * @return the valuation (Integer value) for this move, given the supplied
 	 *         state.
 	 */
-	abstract public Integer valuate(Move move, Supplier<BoardState> stateSupplier);
+	abstract public Integer valuate(Move move, BoardState boardState);
 
 }
