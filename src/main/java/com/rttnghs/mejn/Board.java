@@ -90,7 +90,7 @@ public class Board {
             startPositions.add(i, new Position(EVENT, startIndex).normalize(boardSize));
         }
 
-        state = new BaseBoardState(boardSize, Config.value.pawnsPerPlayer(), beginPositions);
+        state = new BaseBoardState(boardSize, Config.value.dotsPerPlayer(), Config.value.pawnsPerPlayer(), beginPositions);
 
         // Determine who goes first. Die are 1 based, players 0-based index.
         currentPlayer = new Die(playerCount).roll() - 1;

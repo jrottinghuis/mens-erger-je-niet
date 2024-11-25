@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,12 +34,12 @@ import com.rttnghs.mejn.strategy.Strategy;
 class SomeRankingStrategyTest {
 
 	/**
-	 * Some extra plumbing to make use of the static {@link #of(String) method in
+	 * Some extra plumbing to make use of the static {@link TestBoardState#of(String, int) method in
 	 * TestBoardState} that is meant only for test cases.
 	 */
     static class MyTestBoardState extends TestBoardState {
 		static BoardState myOf(String boardStateString) {
-			return of(boardStateString);
+			return of(boardStateString, 10);
 		}
 
 		public MyTestBoardState(int boardSize, int pawnsPerPlayer, List<Position> beginPositions) {

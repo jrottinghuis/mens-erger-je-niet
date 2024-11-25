@@ -31,11 +31,12 @@ public class TestBoardState extends BaseBoardState {
 
 	/**
 	 * Not built for robustness. Used only for test cases.
-	 * 
+	 *
 	 * @param boardStateString boardStateString.toString formatted board state.
+	 * @param dotsPerPlayer
 	 * @return new Test Board State
 	 */
-	protected static BoardState of(String boardStateString) {
+	protected static BoardState of(String boardStateString, int dotsPerPlayer) {
 		String regex = "^\\((\\d+)\\)\\[(.*)]";
 
 		Pattern pattern = Pattern.compile(regex); // "a{1,}" matches at least one a.
@@ -74,11 +75,11 @@ public class TestBoardState extends BaseBoardState {
 		System.out.println("Size: " + boardSize);
 		System.out.println("newState: " + newState);
 
-		return new BaseBoardState(newState, boardSize, pawnsPerPlayer);
+		return new BaseBoardState(newState, boardSize, dotsPerPlayer, pawnsPerPlayer);
 	}
 
 	public TestBoardState(int boardSize, int pawnsPerPlayer, List<Position> beginPositions) {
-		super(boardSize, pawnsPerPlayer, beginPositions);
+		super(boardSize, 10, pawnsPerPlayer, beginPositions);
 		// Not used.
 	}
 

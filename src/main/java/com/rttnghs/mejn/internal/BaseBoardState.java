@@ -49,18 +49,19 @@ public class BaseBoardState implements BoardState {
 
 	/**
 	 * @param boardSize      The number of spots in the Event layer of the board.
+	 * @param dotsPerPlayer The number of spots in the Event layer of the board per player.
 	 * @param pawnsPerPlayer how many pawns each player should have. Should be >0;
 	 * @param beginPositions List of  begin positions for each player with the length of
 	 *                       number of players. Cannot be null; If the list of a player is empty, the player is considered finished.
 	 */
-	public BaseBoardState(int boardSize, int pawnsPerPlayer, List<Position> beginPositions) {
+	public BaseBoardState(int boardSize, int dotsPerPlayer, int pawnsPerPlayer, List<Position> beginPositions) {
 		if ((beginPositions == null) || beginPositions.isEmpty() || pawnsPerPlayer < 1) {
 			throw new IllegalStateException(
 					"Cannot create BoardState with empty/null beginpositions or < 1 pawns per player");
 		}
 		this.boardSize = boardSize;
 		this.pawnsPerPlayer = pawnsPerPlayer;
-		this.dotsPerPlayer = Config.value.dotsPerPlayer();
+		this.dotsPerPlayer = dotsPerPlayer;
 		List<List<Position>> newState = new ArrayList<>(beginPositions.size());
 		// Iterate over player begin positions and expand them to the pawnsPerPlayer
 		for (int i = 0; i < beginPositions.size(); i++) {
@@ -83,10 +84,10 @@ public class BaseBoardState implements BoardState {
 	 * @param otherState to start this new board state with. Each sub-list
 	 *              (playerPositions) must have the same length.
 	 */
-	protected BaseBoardState(List<List<Position>> otherState, int boardSize, int pawnsPerPlayer) {
+	protected BaseBoardState(List<List<Position>> otherState, int boardSize, int dotsPerPlayer, int pawnsPerPlayer) {
 		this.boardSize = boardSize;
 		this.pawnsPerPlayer = pawnsPerPlayer;
-		this.dotsPerPlayer = Config.value.dotsPerPlayer();
+		this.dotsPerPlayer = dotsPerPlayer;
 		List<List<Position>> newStateCopy = new ArrayList<>(otherState.size());
         for (List<Position> positions : otherState) {
             List<Position> playerState = new ArrayList<>(positions);

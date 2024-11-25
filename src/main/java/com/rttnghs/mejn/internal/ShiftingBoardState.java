@@ -66,7 +66,7 @@ public class ShiftingBoardState implements BoardState {
 
     @Override
     public Position getPosition(int shiftedPlayer, int pawn) {
-        int player = (shiftedPlayer - playerIndex) % playerCount;
+        int player = (shiftedPlayer + playerIndex) % playerCount;
         return baseBoardState.getPosition(player, pawn).move(shift).normalize(boardSize);
     }
 
@@ -82,9 +82,10 @@ public class ShiftingBoardState implements BoardState {
     }
 
     @Override
-    public int getPlayer(Position position) {
+    public int getPlayer(Position shiftedPosition) {
+        Position position = shiftedPosition.move(-shift).normalize(boardSize);
         int player = baseBoardState.getPlayer(position);
-        return (player - playerIndex) % playerCount;
+        return (player + playerIndex) % playerCount;
     }
 
     @Override
