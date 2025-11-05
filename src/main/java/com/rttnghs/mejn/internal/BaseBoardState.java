@@ -16,6 +16,7 @@
  */
 package com.rttnghs.mejn.internal;
 
+import static com.rttnghs.mejn.Layer.EVENT;
 import static com.rttnghs.mejn.Layer.HOME;
 
 import java.util.*;
@@ -46,6 +47,7 @@ public class BaseBoardState implements BoardState {
 	private final int boardSize;
 	private final int pawnsPerPlayer;
 	private final int dotsPerPlayer;
+	private final int[] eventSpots;
 
 	/**
 	 * @param boardSize      The number of spots in the Event layer of the board.
@@ -62,6 +64,8 @@ public class BaseBoardState implements BoardState {
 		this.boardSize = boardSize;
 		this.pawnsPerPlayer = pawnsPerPlayer;
 		this.dotsPerPlayer = dotsPerPlayer;
+		eventSpots = new int[boardSize];
+		Arrays.fill(eventSpots, -1);
 		List<List<Position>> newState = new ArrayList<>(beginPositions.size());
 		// Iterate over player begin positions and expand them to the pawnsPerPlayer
 		for (int i = 0; i < beginPositions.size(); i++) {
@@ -70,6 +74,10 @@ public class BaseBoardState implements BoardState {
 			if (beginPosition != null) {
 				for (int j = 0; j < pawnsPerPlayer; j++) {
 					playerState.add(j, beginPosition);
+				}
+				if (EVENT == beginPosition.layer() ) {
+					// It should be rare for beginPosition to be in the EVENT layer, but it can happen.
+					eventSpots[beginPosition.spot()] = i;
 				}
 			}
 			newState.add(i, Collections.unmodifiableList(playerState));
@@ -86,14 +94,22 @@ public class BaseBoardState implements BoardState {
 	 */
 	protected BaseBoardState(List<List<Position>> otherState, int boardSize, int dotsPerPlayer, int pawnsPerPlayer) {
 		this.boardSize = boardSize;
-		this.pawnsPerPlayer = pawnsPerPlayer;
 		this.dotsPerPlayer = dotsPerPlayer;
+		this.pawnsPerPlayer = pawnsPerPlayer;
+		eventSpots =  new int[boardSize];
+		Arrays.fill(eventSpots, -1);
 		List<List<Position>> newStateCopy = new ArrayList<>(otherState.size());
-        for (List<Position> positions : otherState) {
-            List<Position> playerState = new ArrayList<>(positions);
-            playerState.sort(Position::compareTo);
-            newStateCopy.add(Collections.unmodifiableList(playerState));
-        }
+        for (int i = 0; i < otherState.size(); i++) {
+			List<Position> playerState = new ArrayList<>(otherState.get(i));
+			playerState.sort(Position::compareTo);
+			newStateCopy.add(Collections.unmodifiableList(playerState));
+			// Capture if any of the player's pawns are in the EVENT layer.
+			for (Position position : playerState) {
+				if (EVENT == position.layer()) {
+					eventSpots[position.spot()] = i;
+				}
+			}
+		}
 		this.state = Collections.unmodifiableList(newStateCopy);
 	}
 
@@ -136,7 +152,7 @@ public class BaseBoardState implements BoardState {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(boardSize, state);
+		return Objects.hash(boardSize, state, dotsPerPlayer, pawnsPerPlayer);
 	}
 
 	@Override
@@ -151,7 +167,11 @@ public class BaseBoardState implements BoardState {
 			return false;
 		}
 		BaseBoardState other = (BaseBoardState) obj;
-		return boardSize == other.boardSize && Objects.equals(state, other.state);
+		return boardSize == other.boardSize &&
+				dotsPerPlayer == other.dotsPerPlayer &&
+				pawnsPerPlayer == other.pawnsPerPlayer &&
+				Objects.equals(state, other.state);
+// Joep: TODO: add beginPositions to equals and hashCode. Deal with protected constructor. Possibly add this to the toString method as well and update the unit tests.awk 'NR == 1 || $0 != prev { print; prev = $0 }' ~/.zsh_history > ~/.zsh_history_cleaned
 	}
 
 	@Override
@@ -211,11 +231,15 @@ public class BaseBoardState implements BoardState {
 			return;
 		}
 		// Determine who's pawn we're moving
+		//int player = eventSpots[move.from().spot()]; // TODO: Make sure that we normalize the spot to avoid running off the array.
 		int player = getPlayer(move.from());
 		if (player == -1) {
 			// No such move
 			return;
 		}
+
+		// TODO: deal with strikes appropriately
+
 		List<Position> oldPlayerState = state.get(player);
 		List<Position> newPlayerState = getPositions(move, oldPlayerState);
 		// Determine if the newPlayerState is in order, most of the time it will be
@@ -269,29 +293,6 @@ public class BaseBoardState implements BoardState {
 		return new ShiftingBoardState(this, playerIndex);
 	}
 
-
-//	public BoardState oldSshift(int playerIndex, int shift) {
-//		if (shift == 0) {
-//			// Happens for each player 0 turn
-//			return this;
-//		}
-//		// Start at player i, then move along modulo number of players.
-//		int p = playerIndex;
-//		List<List<Position>> newState = new ArrayList<>(state.size());
-//		// Here i is just to count the number of players. p is the actual index to grab.
-//		// For example, for four players and playerIndex initialized to 2, p is element
-//		// of {2, 3, 0, 1}
-//		for (int i = 0; i < state.size(); i++) {
-//			List<Position> playerState = state.get(p);
-//			List<Position> newPlayerState = new ArrayList<>(playerState.size());
-//			for (Position position : playerState) {
-//				newPlayerState.add(position.move(shift).normalize(boardSize));
-//			}
-//			newState.add(newPlayerState);
-//			p = (p + 1) % state.size();
-//		}
-//		return new BaseBoardState(newState, boardSize, pawnsPerPlayer);
-//	}
 
 	@Override
 	public boolean isFinished(int player) {

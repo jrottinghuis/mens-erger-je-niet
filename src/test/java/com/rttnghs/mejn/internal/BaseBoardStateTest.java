@@ -266,6 +266,13 @@ class BaseBoardStateTest {
         BaseBoardState boardStateCopy = new BaseBoardState(40, 10, 3, beginPositionsTwo);
         assertEquals(boardState, boardStateCopy);
 
+        int player = boardState.getPlayer(null);
+        assertEquals(-1, player);
+        player = boardState.getPlayer(new Position(BEGIN, 3));
+        assertEquals(-1, player);
+        player = boardState.getPlayer(new Position(BEGIN, 4));
+        assertEquals(1, player);
+
         boardStateCopy.move(null);
         assertEquals(boardState, boardStateCopy);
 
@@ -273,6 +280,9 @@ class BaseBoardStateTest {
         // state.
         boardStateCopy.move(new Move(new Position(HOME, 7), new Position(HOME, 13)));
         assertEquals(boardState, boardStateCopy);
+
+        player = boardState.getPlayer(new Position(HOME, 13));
+        assertEquals(-1, player);
 
         Position from = boardState.getPosition(0, 0);
         Move inPlace = new Move(from, from);
@@ -283,8 +293,15 @@ class BaseBoardStateTest {
         Move move = new Move(from, start);
         boardStateCopy.move(move);
 
+        player = boardStateCopy.getPlayer(start);
+        assertEquals(0, player);
+        player = boardState.getPlayer(start);
+        assertEquals(-1, player);
+
         assertNotEquals(boardState, boardStateCopy);
         boardState.move(move);
+        player = boardState.getPlayer(start);
+        assertEquals(0, player);
 
         assertEquals(start, boardState.getPosition(0, 2));
         assertEquals(start, boardState.shift(0).getPosition(0, 2));
@@ -292,6 +309,8 @@ class BaseBoardStateTest {
         BoardState shiftedState = boardState.shift(1);
         assertEquals(new Position(BEGIN, 34), shiftedState.getPosition(0, 2));
         assertEquals(new Position(BEGIN, 34), shiftedState.getPositions(0).get(2));
+        player = shiftedState.getPlayer(new Position(BEGIN, 34));
+        assertEquals(0, player);
 
         // Same move applied to both states should result in identical states.
         assertEquals(boardState, boardStateCopy);
@@ -302,6 +321,9 @@ class BaseBoardStateTest {
         String expected = "(40)[P0={B14,B14,E0};P1={B4,B4,E10}]";
         assertEquals(expected, boardState.toString());
         assertEquals(new Position(EVENT, 10), boardState.getPosition(1,2));
+        player = boardState.getPlayer(new Position(EVENT, 10));
+        assertEquals(1, player);
+
         shiftedState = boardState.shift(1);
         assertEquals(new Position(EVENT, 0), shiftedState.getPosition(0, 2));
         assertEquals(new Position(EVENT, 0), shiftedState.getPositions(0).get(2));
@@ -310,6 +332,13 @@ class BaseBoardStateTest {
         assertEquals(new Position(EVENT, 11), boardState.getPosition(1, 2));
         expected = "(40)[P0={B14,B14,E0};P1={B4,B4,E11}]";
         assertEquals(expected, boardState.toString());
+
+        player = boardState.getPlayer(new Position(EVENT, 10));
+        assertEquals(-1, player);
+        player = boardState.getPlayer(new Position(EVENT, 11));
+        assertEquals(1, player);
+        player = boardState.getPlayer(new Position(EVENT, 12));
+        assertEquals(-1, player);
 
         boardState.move(getMove(EVENT, 11, HOME, 1));
         assertEquals(new Position(BEGIN, 14), boardState.getPosition(0, 0));
@@ -335,6 +364,37 @@ class BaseBoardStateTest {
         boardState.move(getMove(EVENT, 0, EVENT, 3));
         expected = "(40)[P0={B14,E1,E3};P1={B4,B4,H1}]";
         assertEquals(expected, boardState.toString());
+
+        player = boardState.getPlayer(new Position(EVENT, 10));
+        assertEquals(-1, player);
+        player = boardState.getPlayer(new Position(EVENT, 1));
+        assertEquals(0, player);
+        // Move player 1 from B4 to E10
+        boardState.move(getMove(BEGIN, 4, EVENT, 10));
+        expected = "(40)[P0={B14,E1,E3};P1={B4,E10,H1}]";
+        assertEquals(expected, boardState.toString());
+        player = boardState.getPlayer(new Position(EVENT, 10));
+        assertEquals(1, player);
+        player = boardState.getPlayer(new Position(EVENT, 1));
+        assertEquals(0, player);
+
+        // Move player 0 from E1 to E10
+        boardState.move(getMove(EVENT, 1, EVENT, 10));
+        expected = "(40)[P0={B14,E3,E10};P1={B4,E10,H1}]"; // Joep: TODO fix this
+        assertEquals(expected, boardState.toString());
+        player = boardState.getPlayer(new Position(EVENT, 3));
+        assertEquals(0, player);
+        player = boardState.getPlayer(new Position(EVENT, 10));
+        assertEquals(0, player);
+
+        player = boardState.getPlayer(new Position(EVENT, 33));
+        assertEquals(-1, player);
+
+        player = boardState.getPlayer(new Position(EVENT, 100));
+        assertEquals(-1, player);
+
+        // TODO: add a test to see what happens if we try to move off the board. BoardState should normalize the position.
+
     }
 
     @Test

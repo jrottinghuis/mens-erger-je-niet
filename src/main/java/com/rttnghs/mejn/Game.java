@@ -128,7 +128,7 @@ public class Game {
 			int struckPlayer = board.getBoardState().getPlayer(choice.to());
 			strikes.increment(currentPlayer, struckPlayer);
            // logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, struckPlayer, choice, strike);
-			move(strike);
+			move(strike); // TODO: Joep Remove this logic. That should be the responsibility of the state
 		}
 		move(choice);
 	}
