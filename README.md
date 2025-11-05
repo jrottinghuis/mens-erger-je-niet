@@ -214,7 +214,7 @@ Strategies for a tournament are a little more structured. See [src/main/resource
 
  ## Build
 
- The project is coded in Java (requires version 22+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
+ The project is coded in Java (requires version 25+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
 
      /mens-erger-je-niet% gradle test
 
