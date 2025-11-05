@@ -33,9 +33,9 @@ When a player rolls a six and none of their pawns are in their Begin area, in ot
 
 If another player is already in the position that your pawn would land in, you strike their pawn and send that pawn back to it's beginning position "B". Once a pawn is on one of the final home positions, they are safe from strikes. On some version of the board, the home position are marked with lower letters "a", and in some versions, "b", "c", and "d" respectively. On the four player board above only the first home position is marked, and on the image of the six-player board, none are marked. In short, you start at "B", then go to "A" then finish at "a", makes sense?
 
-If a player has their pawn right in front of the home ("a") position and would theoretically land on another pawn that is already in a home position, that is not considered a legal move and they have to choose another pawn to move, or forfeit that turn. In other words, a pawn can land on a home spot only if that spot is not already occupied. Pawns can move forward towards an open home position.
+If a player has their pawn right in front of the home ("a") position and would theoretically land on another pawn that is already in a home position, that is not considered a legal move; they have to choose another pawn to move, or forfeit that turn. In other words, a pawn can land on a home spot only if that spot is not already occupied. Pawns can move forward towards an open home position.
 
-Whether or not a player can strike their own pawn anywhere on the regular board should be agreed upon ahead of time. Even though players are unlikely to choose to strike themselves, there can be situations when this is the only option. Note that no pawn can be removed from a home position.
+Whether a player can strike their own pawn anywhere on the regular board should be agreed upon ahead of time. Even though players are unlikely to choose to strike themselves, there can be situations when this is the only option. Note that no pawn can be removed from a home position.
 
  # Graphical User Interface
 The Graphical User Interface (GUI) contains two tabs. The first tab is the game board for four players, each with a configurable strategy.
@@ -44,8 +44,8 @@ The second tab is a console log area that is used for debugging purposes. Any er
 
  ## Game Board
 
-A die in the appears in the corner of the player whos turn it is.
-A dotted line in the color of the current player around a position indicates a option for a move for that player. For manual strategies, the user can click on this position to select it.
+A die in the appears in the corner of the player whose turn it is.
+A dotted line in the color of the current player around a position indicates an option for a move for that player. For manual strategies, the user can click on this position to select it.
 A solid line in the color of that player indicated that this position has been chosen as the next move to make.
 For example, on the board below, the blue player (using a "ManualStrategy") threw a value of 2, has two options:
 1. move the pawn two positions forward from E6 to E8.
@@ -86,7 +86,7 @@ Note that if there is more than one option, the game will always pause.
 2. Playback Speed. This is where you can configure how fast the game will proceed in "Play" mode. Once the game is paused, you can proceed one step at a time.
 3. Show Position Numbers. This toggles the numbers on the board. This can be useful for debugging, or for learning the game.
 4. Strategies. This window allows users to select the strategies they want each player to use.
-By default the blue player in the bottom left is configured to be the "ManualStrategy" which allows the user to select a move by clicking on the board.
+By default, the blue player in the bottom left is configured to be the "ManualStrategy" which allows the user to select a move by clicking on the board.
 By mousing-over the "B" in each players home area, the user can see the strategy that is currently configured for that player.
 
 <img
@@ -169,7 +169,7 @@ The board is laid out in several PositionViews, which re-position themselves bas
  * __History__ : Used to keep track of list of events, for example moves or scores. Accessible in forward or reverse order.
  * __BoardState__ :  A board state is essentially a list of positions for each player.
  * __Player__ :  Arranges interaction between board and a strategy. Uses the strategy to choose one of the provided possible moves. Positions of BoardState and list of allowed moves to choose from are shifted such that each strategy thinks they are playing from the bottom left position, starting at E0. This way there are not four equivalent, and functionally identical versions of each board state depending on whether a strategy is player 1, 2, 3, or 4.
- * __Score__ : Used to assign an integer value to zero, first, second, third, fourth etc player finish place using the scoring system proposed by Sitarz [[1]](#1).
+ * __Score__ : Used to assign an integer value to zero, first, second, third, fourth etc. player finish place using the scoring system proposed by Sitarz [[1]](#1).
  * __RuleEvaluator__ :  Used to apply the rules, determine if moves are allowed etc.
  * __Tournament__ : Used to play multiple games and keep track of score.
 
@@ -252,7 +252,7 @@ Log4j is used for logging. The default configuration [src/main/resources/log4j2.
 Contributions are welcome. Please open an issue if you see a problem, or better yet, create a fork and generate a pull request.
 In order to avoid massive formatting changes, please see [Code Formatting](https://www.jetbrains.com/help/idea/migrating-from-eclipse-to-intellij-idea.html#CodeFormatting) if IntelliJ is your IDE of choice.
 
-I would love to see other strategies implemented. There is currently no limit in time or computational resources that a strategy can take to make a decision. There are currently also no rules (yet) as to whether strategies are allowed to collaborate to gang up on other strategies.
+I would love to see other strategies implemented. There is currently no limit in time or computational resources that a strategy can take to make a decision. There are currently also no rules (yet)  whether strategies are allowed to collaborate to gang up on other strategies.
 Using reflection, or introspection to observe or manipulate other players' strategies will be considered cheating.
 
  ## Future work
@@ -275,7 +275,7 @@ Using reflection, or introspection to observe or manipulate other players' strat
 
    Applied Mathematics Letters Volume 26, Issue 4, April 2013, Pages 408-412
 
-   [https://doi.org/10.1016/j.aml.2012.10.014](https://doi.org/10.1016/j.aml.2012.10.014)
+   [https://doi.org/10.1016/j.aml.2012.10.014](https://doi.org/10.1016/j.aml.2012.10.014)</a>
 
  * <a id="2">[2] Ben van der Genugten & Marcel Das (2020).
 
@@ -283,4 +283,4 @@ Using reflection, or introspection to observe or manipulate other players' strat
 
    STAtOR Jaargang 20, nummer 2, juni 2019 pages 4-9
 
-   https://www.vvsor.nl/wp-content/uploads/2018/01/STAtOR-2019-2-1-40-spreads-LR.pdf
+   https://www.vvsor.nl/wp-content/uploads/2018/01/STAtOR-2019-2-1-40-spreads-LR.pdf</a>
