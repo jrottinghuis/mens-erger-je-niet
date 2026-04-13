@@ -1,9 +1,15 @@
 package com.rttnghs.mejn.statistics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -202,4 +208,91 @@ class EventCounterTest {
 		assertEquals(3, scores.get("actorThree"));
 	}
 
+	/**
+	 * Helper to serialize an object to a byte array.
+	 */
+	private byte[] serialize(Object obj) throws IOException {
+		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+		try (ObjectOutputStream out = new ObjectOutputStream(byteOut)) {
+			out.writeObject(obj);
+		}
+		return byteOut.toByteArray();
+	}
+
+	/**
+	 * Helper to deserialize an object from a byte array.
+	 */
+	@SuppressWarnings("unchecked")
+	private <T> T deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
+		try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
+			return (T) in.readObject();
+		}
+	}
+
+	@Test
+	final void testSerializationRoundTrip() throws IOException, ClassNotFoundException {
+		EventCounter<String, Integer> original = new EventCounter<>();
+		original.increment("actorA", 1);
+		original.add("actorA", 2, 3);
+		original.add("actorB", 1, 5);
+
+		byte[] bytes = serialize(original);
+		EventCounter<String, Integer> deserialized = deserialize(bytes);
+
+		// Deserialized object must be a distinct instance
+		assertNotSame(original, deserialized);
+
+		// Counts must match
+		assertEquals(original.getCount("actorA", 1), deserialized.getCount("actorA", 1));
+		assertEquals(original.getCount("actorA", 2), deserialized.getCount("actorA", 2));
+		assertEquals(original.getCount("actorB", 1), deserialized.getCount("actorB", 1));
+
+		// Actors and events must match
+		assertEquals(original.getActors(), deserialized.getActors());
+		assertEquals(original.getEvents("actorA"), deserialized.getEvents("actorA"));
+		assertEquals(original.getEvents("actorB"), deserialized.getEvents("actorB"));
+	}
+
+	@Test
+	final void testSerializationPreservesToString() throws IOException, ClassNotFoundException {
+		EventCounter<String, String> original = new EventCounter<>();
+		original.increment("actorA", "X");
+		original.add("actorA", "Y", 2);
+		original.add("actorB", "Z", 3);
+
+		byte[] bytes = serialize(original);
+		EventCounter<String, String> deserialized = deserialize(bytes);
+
+		assertEquals(original.toString(), deserialized.toString());
+	}
+
+	@Test
+	final void testSerializationOfEmptyEventCounter() throws IOException, ClassNotFoundException {
+		EventCounter<String, Integer> empty = new EventCounter<>();
+
+		byte[] bytes = serialize(empty);
+		EventCounter<String, Integer> deserialized = deserialize(bytes);
+
+		assertNotSame(empty, deserialized);
+		assertEquals(0, deserialized.getActors().size());
+		assertEquals(empty.toString(), deserialized.toString());
+	}
+
+	@Test
+	final void testDeserializedCounterIsIndependent() throws IOException, ClassNotFoundException {
+		EventCounter<String, Integer> original = new EventCounter<>();
+		original.increment("actorA", 1);
+
+		byte[] bytes = serialize(original);
+		EventCounter<String, Integer> deserialized = deserialize(bytes);
+
+		// Mutating the deserialized copy must not affect the original
+		deserialized.add("actorA", 1, 99);
+		assertEquals(1, original.getCount("actorA", 1));
+		assertEquals(100, deserialized.getCount("actorA", 1));
+
+		// Mutating the original must not affect the deserialized copy
+		original.add("actorB", 2, 7);
+		assertEquals(0, deserialized.getCount("actorB", 2));
+	}
 }

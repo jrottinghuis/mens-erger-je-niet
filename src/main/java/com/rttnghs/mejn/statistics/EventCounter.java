@@ -16,6 +16,8 @@
  */
 package com.rttnghs.mejn.statistics;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +33,10 @@ import java.util.function.Function;
  * @param <E> The type of event. Type E must have hashCode and equals properly
  *            defined.
  */
-public class EventCounter<A, E> {
+public class EventCounter<A extends Comparable<A>, E> implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 466432446316L;
 
 	/**
 	 * Map of actor -> map (event->count)
@@ -95,7 +100,7 @@ public class EventCounter<A, E> {
 	}
 
 	/**
-	 * @param actor
+	 * @param actor for whom to add the events.
 	 * @param otherEvents map of events with their respective counts.
 	 * @return reference to this for convenience.
 	 */
@@ -109,7 +114,7 @@ public class EventCounter<A, E> {
 	/**
 	 * Add the other EventCounter to this one.
 	 * 
-	 * @param other
+	 * @param other EventCounter to add to this one. If other is null, nothing is changed.
 	 * @return reference to this class with the other one added.
 	 */
 	public EventCounter<A, E> add(EventCounter<? extends A, ? extends E> other) {
@@ -199,8 +204,8 @@ public class EventCounter<A, E> {
 	 *         same number of rounds in each, and we still need to be able to
 	 *         compare the scores.
 	 */
-	public static <AA, EE> Map<AA, Integer> getNormalizedScores(EventCounter<AA, EE> eventCounts,
-			Function<EE, Integer> scorer, int accuracy) {
+	public static <AA extends Comparable<AA>, EE> Map<AA, Integer> getNormalizedScores(EventCounter<AA, EE> eventCounts,
+                                                                                       Function<EE, Integer> scorer, int accuracy) {
 		Map<AA, Integer> results = new TreeMap<>();
 		if (eventCounts == null) {
 			return results;
