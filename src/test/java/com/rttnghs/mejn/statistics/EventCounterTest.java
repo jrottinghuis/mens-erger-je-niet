@@ -1,7 +1,10 @@
 package com.rttnghs.mejn.statistics;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,6 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -183,7 +188,7 @@ class EventCounterTest {
 	@Test
 	final void testGetNormalizedScore() {
 		Function<Integer, Integer> scorer = (finishPosition) -> Score.get(finishPosition, 4);
-		assertEquals(0, EventCounter.getNormalizedScores(null, scorer, 10).keySet().size());
+		assertEquals(0, EventCounter.getNormalizedScores(null, scorer, 10).size());
 		
 		
 		
@@ -206,6 +211,25 @@ class EventCounterTest {
 		assertEquals(1, scores.get("actorOne"));
 		assertEquals(2, scores.get("actorTwo"));
 		assertEquals(3, scores.get("actorThree"));
+	}
+
+	@Test
+	final void testGetNormalizedScoreHandlesActorWithNoEvents() throws Exception {
+		EventCounter<String, Integer> eventCounter = new EventCounter<>();
+
+		// Create a malformed state to reproduce a potential zero-event actor edge case.
+		Field actorEventCountsField = EventCounter.class.getDeclaredField("actorEventCounts");
+		actorEventCountsField.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		Map<String, Map<Integer, Integer>> actorEventCounts =
+				(Map<String, Map<Integer, Integer>>) actorEventCountsField.get(eventCounter);
+		actorEventCounts.put("actorWithNoEvents", new HashMap<>());
+
+		Function<Integer, Integer> scorer = (finishPosition) -> Score.get(finishPosition, 4);
+		Map<String, Integer> scores = assertDoesNotThrow(
+				() -> EventCounter.getNormalizedScores(eventCounter, scorer, 100));
+        assert scores != null;
+        assertFalse(scores.containsKey("actorWithNoEvents"));
 	}
 
 	/**
@@ -294,5 +318,28 @@ class EventCounterTest {
 		// Mutating the original must not affect the deserialized copy
 		original.add("actorB", 2, 7);
 		assertEquals(0, deserialized.getCount("actorB", 2));
+	}
+	
+	@Test
+	final void testAddAndIncrementAreChainable() {
+		EventCounter<String, Integer> eventCounter = new EventCounter<>();
+
+		EventCounter<String, Integer> afterIncrement = eventCounter.increment("actorA", 1);
+		assertSame(eventCounter, afterIncrement);
+
+		EventCounter<String, Integer> afterAdd = eventCounter.add("actorA", 2, 3);
+		assertSame(eventCounter, afterAdd);
+
+		EventCounter<String, Integer> chainResult = eventCounter
+				.increment("actorA", 3)
+				.add("actorA", 4, 2)
+				.increment("actorB", 1);
+		assertSame(eventCounter, chainResult);
+
+		assertEquals(1, eventCounter.getCount("actorA", 1));
+		assertEquals(3, eventCounter.getCount("actorA", 2));
+		assertEquals(1, eventCounter.getCount("actorA", 3));
+		assertEquals(2, eventCounter.getCount("actorA", 4));
+		assertEquals(1, eventCounter.getCount("actorB", 1));
 	}
 }

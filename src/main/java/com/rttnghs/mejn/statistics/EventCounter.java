@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -48,7 +47,11 @@ public class EventCounter<A extends Comparable<A>, E> implements Serializable {
 	}
 
 	/**
-	 * @param previousCount non-null map of events to counts.
+     * Add the count for the given event to the given map of event counts. If the event is not yet in the map, it will be added with the given count.
+     * If the event is already in the map, the count will be incremented by the given count.
+     * @param eventCounts map of event to count for a given actor
+     * @param event event for which to add the count
+     * @param count how many times the event happened for the actor
 	 * @return new map with the count for the given event incremented.
 	 */
 	private Map<E, Integer> addEvents(Map<E, Integer> eventCounts, E event, Integer count) {
@@ -57,7 +60,8 @@ public class EventCounter<A extends Comparable<A>, E> implements Serializable {
 	}
 
 	/**
-	 * Like Java 9's {@link Map#of(E, Integer)} but then a mutable version.
+	 * Creates a new map. If the event is not null, the map will contain a single entry of event pointing to count.
+     * If the event is null, the map will be empty.
 	 * 
 	 * @param event to add to the map
 	 * @param count to add to the map
@@ -91,10 +95,10 @@ public class EventCounter<A extends Comparable<A>, E> implements Serializable {
 	 *         actor.
 	 */
 	public EventCounter<A, E> add(A actor, E event, Integer count) {
-		if (actor != null && event != null & count != null) {
-			BiFunction<? super Map<E, Integer>, ? super Map<E, Integer>, ? extends Map<E, Integer>> sumEvents = (
-					previousCounts, newCounts) -> addEvents(previousCounts, event, count);
-			actorEventCounts.merge(actor, mapOf(event, count), sumEvents);
+		if (actor != null && event != null && count != null) {
+            actorEventCounts
+                    .computeIfAbsent(actor, a -> new HashMap<>())
+                    .merge(event, count, Integer::sum);
 		}
 		return this;
 	}
@@ -220,6 +224,9 @@ public class EventCounter<A extends Comparable<A>, E> implements Serializable {
 				int eventCount = eventCounts.getCount(actor, event);
 				actorEventCountTotal += eventCount;
 				actorScore += eventCount * score;
+			}
+			if (actorEventCountTotal == 0) {
+				continue;
 			}
 			actorScore = (actorScore * accuracy) / actorEventCountTotal;
 			// Just drop the decimal bits
