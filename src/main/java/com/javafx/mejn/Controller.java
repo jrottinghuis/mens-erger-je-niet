@@ -140,7 +140,7 @@ class Controller {
         MainApplication.players.clear();
 
         for (int playerIndex = 0; playerIndex < 4; playerIndex++) {
-            // Rotate perspective counter clockwise
+            // Rotate perspective counterclockwise
             int rotation = Player.rotation(playerIndex);
             Supplier<History<Move>> shiftedHistorySupplier = history.getSupplier(Move.shifter(rotation, BoardView.BOARD_SIZE));
             String strategyName = strategySelections.get(playerIndex);
@@ -261,7 +261,7 @@ class Controller {
                 } else if (allowedMoves.size() == 1 && autoSelectSingleChoice.get()) {
                     // If there is only one choice, just select it when step is called.
                     // Make sure we set the selected position in BoardView so that the selection listeners can unroll properly
-                    boardView.setSelectedPosition(allowedMoves.get(0).to(), true);
+                    boardView.setSelectedPosition(allowedMoves.getFirst().to(), true);
                 } else if (MANUAL_STRATEGY.equals(strategySelections.get(board.getCurrentPlayer())) ){
                     pause();
                 }

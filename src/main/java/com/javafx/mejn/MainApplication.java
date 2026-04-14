@@ -385,7 +385,7 @@ public class MainApplication extends Application {
         VBox vbox = new VBox(10, playbackSpeedSlider);
         dialog.getDialogPane().setContent(vbox);
 
-        // create a listener for the OK button to set set playbackSpeed to the value of the slider
+        // create a listener for the OK button to set  playbackSpeed to the value of the slider
         dialog.setResultConverter(buttonType -> {
             if (buttonType == okButtonType) {
                 playbackSpeed.set(playbackSpeedSlider.getValue());

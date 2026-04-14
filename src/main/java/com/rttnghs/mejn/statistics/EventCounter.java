@@ -27,7 +27,7 @@ import java.util.function.Function;
 /**
  * Used to keep track of count of events happening for actors.
  *
- * @param <A> The type of actor generating the events. Type A must have hashCode
+ * @param <A> The type of actor generating the events. Type A must-have hashCode
  *            and equals properly defined.
  * @param <E> The type of event. Type E must have hashCode and equals properly
  *            defined.
@@ -44,33 +44,6 @@ public class EventCounter<A extends Comparable<A>, E> implements Serializable {
 
 	public EventCounter() {
 		actorEventCounts = new TreeMap<>();
-	}
-
-	/**
-     * Add the count for the given event to the given map of event counts. If the event is not yet in the map, it will be added with the given count.
-     * If the event is already in the map, the count will be incremented by the given count.
-     * @param eventCounts map of event to count for a given actor
-     * @param event event for which to add the count
-     * @param count how many times the event happened for the actor
-	 * @return new map with the count for the given event incremented.
-	 */
-	private Map<E, Integer> addEvents(Map<E, Integer> eventCounts, E event, Integer count) {
-		eventCounts.merge(event, count, Integer::sum);
-		return eventCounts;
-	}
-
-	/**
-	 * Creates a new map. If the event is not null, the map will contain a single entry of event pointing to count.
-     * If the event is null, the map will be empty.
-	 * 
-	 * @param event to add to the map
-	 * @param count to add to the map
-	 * @return a map with a single element of event pointing to count.
-	 */
-	private Map<E, Integer> mapOf(E event, Integer count) {
-		Map<E, Integer> hashMap = new HashMap<>();
-		hashMap.put(event, count);
-		return hashMap;
 	}
 
 	/**
@@ -97,7 +70,7 @@ public class EventCounter<A extends Comparable<A>, E> implements Serializable {
 	public EventCounter<A, E> add(A actor, E event, Integer count) {
 		if (actor != null && event != null && count != null) {
             actorEventCounts
-                    .computeIfAbsent(actor, a -> new HashMap<>())
+                    .computeIfAbsent(actor, _ -> new HashMap<>())
                     .merge(event, count, Integer::sum);
 		}
 		return this;
@@ -195,7 +168,7 @@ public class EventCounter<A extends Comparable<A>, E> implements Serializable {
 	 * @param <EE>        type of events in the EventCounter.
 	 * @param eventCounts per player (actor) the count of finish positions (events).
 	 * @param scorer      assigns a score to each event. The total score will be the
-	 *                    score multiplied by the number of times each events
+	 *                    score multiplied by the number of times each event
 	 *                    happens, multiplied by the accuracy divided by the total
 	 *                    number of events.
 	 * @param accuracy    Factor that the total counts are multiplied by before

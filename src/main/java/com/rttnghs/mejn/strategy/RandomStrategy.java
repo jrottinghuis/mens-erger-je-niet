@@ -17,7 +17,6 @@
 package com.rttnghs.mejn.strategy;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import com.rttnghs.mejn.BoardState;
 import com.rttnghs.mejn.Die;

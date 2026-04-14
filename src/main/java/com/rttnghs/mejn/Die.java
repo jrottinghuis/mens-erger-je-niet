@@ -20,32 +20,27 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  *
+ * @param faces How many faces this die has.
  */
-public class Die {
+public record Die(int faces) {
 
-	/**
-	 * How many faces this die has.
-	 */
-	public final int faces;
+    /**
+     * Die will roll between 1 and faces (including).
+     *
+     * @param faces upper limit of what this die can roll.
+     * @throws IllegalArgumentException when faces is < 1.
+     */
+    public Die {
+        if (faces < 1) {
+            throw new IllegalArgumentException("Cannot have a die with <1 faces");
+        }
+    }
 
-	/**
-	 * Die will roll between 1 and faces (including).
-	 * 
-	 * @param faces upper limit of what this die can roll.
-	 * @throws IllegalArgumentException when faces is < 1.
-	 */
-	public Die(int faces) {
-		if (faces < 1) {
-			throw new IllegalArgumentException("Cannot have a die with <1 faces");
-		}
-		this.faces = faces;
-	}
-
-	/**
-	 * Roll the die. Returns a random value between 1 and faces (including).
-	 */
-	public int roll() {
-		return ThreadLocalRandom.current().nextInt(faces) + 1;
-	}
+    /**
+     * Roll the die. Returns a random value between 1 and faces (including).
+     */
+    public int roll() {
+        return ThreadLocalRandom.current().nextInt(faces) + 1;
+    }
 
 }

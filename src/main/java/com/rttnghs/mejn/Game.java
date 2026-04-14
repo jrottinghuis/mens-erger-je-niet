@@ -104,7 +104,7 @@ public class Game {
 		List<Move> allowedMoves = board.getAllowedMoves();
 		// logger.debug(() -> "AlloweMoves: " + allowedMoves);
 
-		// Let the player choose, whether there is a choice or not (may be useful for
+		// Let the player choose, whether there is a choice or not (maybe useful for
 		// some strategies);
 		Move choice = players.get(currentPlayer).choose(allowedMoves, board.getBoardState());
 

@@ -39,7 +39,7 @@ public class BaseStrategyFactory implements StrategyFactory {
 	private final List<String> strategyParametersList;
 
 	/**
-	 * Create a strategy factory that retrieves strategies from the strategy congig
+	 * Create a strategy factory that retrieves strategies from the strategy config
 	 * file.
 	 */
 	public BaseStrategyFactory() {

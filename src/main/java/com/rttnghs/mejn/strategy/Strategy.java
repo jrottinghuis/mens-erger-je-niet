@@ -36,7 +36,7 @@ public interface Strategy {
 	String getName();
 
 	/**
-	 * Strategies shall implement a initialize method. This will be called before
+	 * Strategies shall implement an initialize method. This will be called before
 	 * any calls to {@link #choose(List, BoardState)}
 	 * 
 	 * @param historySupplier supplier that can be used to get the history of moves.
@@ -66,7 +66,7 @@ public interface Strategy {
 	/**
 	 * Inform strategy to finalize because the game is over.
 	 * 
-	 * @param position this player finished in. First place = 1, runner up, 2, etc.
+	 * @param position this player finished in. First place = 1, runner-up, 2, etc.
 	 */
 	void finalize(int position);
 

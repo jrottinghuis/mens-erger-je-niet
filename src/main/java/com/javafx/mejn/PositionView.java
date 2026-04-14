@@ -157,7 +157,7 @@ class PositionView {
         stackPane.prefWidthProperty().bind(circle.radiusProperty());
         rotateStackPane(stackPane);
 
-        stackPane.setOnMouseClicked(event -> {
+        stackPane.setOnMouseClicked(_ -> {
             if (isChoice.get()) {
                 selectedPositionSetter.accept(position);
             } else {

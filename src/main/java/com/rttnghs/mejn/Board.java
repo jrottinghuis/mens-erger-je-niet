@@ -208,14 +208,14 @@ public class Board {
 
         // If the current player is done
         if (state.isFinished(currentPlayer)) {
-            // A Player that just finished might have finished with a die.faces roll
+            // A Player that just finished might have finished with a die.faces roll,
             // and we might want to let them play again, but they should not.
             currentDieValue = 0; // Reset last roll;
             // logger.trace("Skipping finished player " + currentPlayer);
         }
 
         // Same player rolls again when they currentDieValue max faces on the die.
-        if (currentDieValue == die.faces) {
+        if (currentDieValue == die.faces()) {
             // logger.trace(() -> "Player " + currentPlayer + " gets another turn.");
         } else {
             currentPlayer = (currentPlayer + 1) % playerCount;
