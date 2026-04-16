@@ -380,7 +380,7 @@ class BaseBoardStateTest {
 
         // Move player 0 from E1 to E10
         boardState.move(getMove(EVENT, 1, EVENT, 10));
-        expected = "(40)[P0={B14,E3,E10};P1={B4,E10,H1}]"; // Joep: TODO fix this
+        expected = "(40)[P0={B14,E3,E10};P1={B4,B4,H1}]";
         assertEquals(expected, boardState.toString());
         player = boardState.getPlayer(new Position(EVENT, 3));
         assertEquals(0, player);

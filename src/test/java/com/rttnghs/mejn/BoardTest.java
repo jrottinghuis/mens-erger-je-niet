@@ -16,11 +16,20 @@
  */
 package com.rttnghs.mejn;
 
+import static com.rttnghs.mejn.Layer.BEGIN;
+import static com.rttnghs.mejn.Layer.EVENT;
+import static com.rttnghs.mejn.Layer.HOME;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.rttnghs.mejn.configuration.Config;
+import com.rttnghs.mejn.internal.BaseBoardState;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 class BoardTest {
 
@@ -50,6 +59,84 @@ class BoardTest {
 
 		board = new Board(Arrays.asList("null", "strategy2", "strategy3", "strategy4"));
 		assertNotNull(board.getBoardState());
+	}
+
+	@Test
+	final void testMoveReturnsStrikeOutcomeDeterministically() {
+		int dotsPerPlayer = Config.value.dotsPerPlayer();
+		int dieFaces = Config.value.dieFaces();
+		int boardSize = 2 * dotsPerPlayer;
+
+		Position playerZeroBegin = new Position(BEGIN, -dieFaces).normalize(boardSize);
+		Position playerOneBegin = new Position(BEGIN, -dieFaces + dotsPerPlayer).normalize(boardSize);
+		List<Position> beginPositions = new ArrayList<>(List.of(playerZeroBegin, playerOneBegin));
+
+		BaseBoardState state = new BaseBoardState(boardSize, dotsPerPlayer, 1, beginPositions);
+		Position contested = new Position(EVENT, 3);
+		state.move(new Move(playerOneBegin, contested));
+
+		Board board = new Board(Arrays.asList("strategy1", "strategy2"), new Die(dieFaces), state, 0, 1);
+		Board.MoveResult result = board.move(new Move(playerZeroBegin, contested));
+
+		assertEquals(new Move(contested, playerOneBegin), result.strikeMove());
+		assertEquals(1, result.struckPlayer());
+		assertEquals(-1, result.finishedPlayer());
+		assertEquals(0, board.getBoardState().getPlayer(contested));
+		assertEquals(1, board.getBoardState().getPlayer(playerOneBegin));
+	}
+
+	@Test
+	final void testMoveReturnsFinishedOutcomeDeterministically() {
+		int dotsPerPlayer = Config.value.dotsPerPlayer();
+		int dieFaces = Config.value.dieFaces();
+		int boardSize = 2 * dotsPerPlayer;
+
+		Position playerZeroBegin = new Position(BEGIN, -dieFaces).normalize(boardSize);
+		Position playerOneBegin = new Position(BEGIN, -dieFaces + dotsPerPlayer).normalize(boardSize);
+		List<Position> beginPositions = new ArrayList<>(List.of(playerZeroBegin, playerOneBegin));
+
+		BaseBoardState state = new BaseBoardState(boardSize, dotsPerPlayer, 1, beginPositions);
+		Position eventBeforeHome = new Position(EVENT, dotsPerPlayer - 1);
+		state.move(new Move(playerZeroBegin, eventBeforeHome));
+
+		Board board = new Board(Arrays.asList("strategy1", "strategy2"), new Die(dieFaces), state, 0, 1);
+		Board.MoveResult result = board.move(new Move(eventBeforeHome, new Position(HOME, 0)));
+
+		assertNull(result.strikeMove());
+		assertNull(result.struckPlayer());
+		assertEquals(0, result.finishedPlayer());
+		assertEquals(0, board.getBoardState().getPlayer(new Position(HOME, 0)));
+	}
+
+	@Test
+	final void testMoveNullAndInvalidAreNeutralAndDoNotChangeState() {
+		int dotsPerPlayer = Config.value.dotsPerPlayer();
+		int dieFaces = Config.value.dieFaces();
+		int boardSize = 2 * dotsPerPlayer;
+
+		Position playerZeroBegin = new Position(BEGIN, -dieFaces).normalize(boardSize);
+		Position playerOneBegin = new Position(BEGIN, -dieFaces + dotsPerPlayer).normalize(boardSize);
+		List<Position> beginPositions = new ArrayList<>(List.of(playerZeroBegin, playerOneBegin));
+
+		BaseBoardState state = new BaseBoardState(boardSize, dotsPerPlayer, 1, beginPositions);
+		Board board = new Board(Arrays.asList("strategy1", "strategy2"), new Die(dieFaces), state, 0, 1);
+
+		String before = board.getBoardState().toString();
+
+		Board.MoveResult nullResult = board.move(null);
+		assertNull(nullResult.move());
+		assertNull(nullResult.strikeMove());
+		assertNull(nullResult.struckPlayer());
+		assertEquals(-1, nullResult.finishedPlayer());
+		assertEquals(before, board.getBoardState().toString());
+
+		Move invalidMove = new Move(new Position(HOME, 7), new Position(HOME, 13));
+		Board.MoveResult invalidResult = board.move(invalidMove);
+		assertEquals(invalidMove, invalidResult.move());
+		assertNull(invalidResult.strikeMove());
+		assertNull(invalidResult.struckPlayer());
+		assertEquals(-1, invalidResult.finishedPlayer());
+		assertEquals(before, board.getBoardState().toString());
 	}
 
 }

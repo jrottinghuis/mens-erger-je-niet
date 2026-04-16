@@ -230,36 +230,61 @@ public class BaseBoardState implements BoardState {
 			// nobody is moving anywhere
 			return;
 		}
-		// Determine who's pawn we're moving
-		//int player = eventSpots[move.from().spot()]; // TODO: Make sure that we normalize the spot to avoid running off the array.
-		int player = getPlayer(move.from());
-		if (player == -1) {
-			// No such move
-			return;
+        // Determine who's pawn we're moving
+        //int player = eventSpots[move.from().spot()]; // TODO: Make sure that we normalize the spot to avoid running off the array.
+        int player = getPlayer(move.from());
+        if (player == -1) {
+            // No such move
+            return;
+        }
+
+		// Resolve strike as part of state mutation: any pawn currently on move.to()
+		// is moved back to that player's begin position first.
+		int struckPlayer = getPlayer(move.to());
+		if (struckPlayer != -1) {
+			Position struckBegin = getBeginPosition(struckPlayer);
+			if (struckBegin != null) {
+				List<Position> struckOldState = state.get(struckPlayer);
+				List<Position> struckNewState = getPositions(new Move(move.to(), struckBegin), struckOldState);
+				sortIfOutOfOrder(struckNewState);
+				state.set(struckPlayer, Collections.unmodifiableList(struckNewState));
+			}
 		}
 
-		// TODO: deal with strikes appropriately
+
 
 		List<Position> oldPlayerState = state.get(player);
 		List<Position> newPlayerState = getPositions(move, oldPlayerState);
-		// Determine if the newPlayerState is in order, most of the time it will be
-		// Note that this seems some unnecessarily complicated logic.
-		// The initial version of this method was more straightforward, but performance
-		// profiling showed that a little optimization was in order.
+		sortIfOutOfOrder(newPlayerState);
+		// Replace the player state in the state list.
+		state.set(player, Collections.unmodifiableList(newPlayerState));
+	}
+
+	private Position getBeginPosition(int player) {
+		List<Position> playerState = state.get(player);
+		for (Position position : playerState) {
+			if (position.layer() == com.rttnghs.mejn.Layer.BEGIN) {
+				return position;
+			}
+		}
+		// Fall back to configured board begin formula if this player currently has no
+		// pawn in BEGIN.
+		int beginIndex = (-1 * Config.value.dieFaces()) + (player * dotsPerPlayer);
+		return new Position(com.rttnghs.mejn.Layer.BEGIN, beginIndex).normalize(boardSize);
+	}
+
+	private static void sortIfOutOfOrder(List<Position> playerState) {
+		// Determine if the new player state is in order, most of the time it will be.
 		boolean outOfOrder = false;
-		for (int i = 1; i < oldPlayerState.size(); i++) {
-			// if any previous item is bigger than the current one, the list is out of order
-			if (newPlayerState.get(i - 1).compareTo(newPlayerState.get(i)) > 0) {
+		for (int i = 1; i < playerState.size(); i++) {
+			if (playerState.get(i - 1).compareTo(playerState.get(i)) > 0) {
 				outOfOrder = true;
-				// Stop on first out of order item.
 				break;
 			}
 		}
 		if (outOfOrder) {
-			newPlayerState.sort(Comparator.naturalOrder());
+			playerState.sort(Comparator.naturalOrder());
 		}
-		// Replace the player state in the state list.
-		state.set(player, Collections.unmodifiableList(newPlayerState));
 	}
 
 	/**

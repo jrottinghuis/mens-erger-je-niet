@@ -394,15 +394,25 @@ class Controller {
     private void move() {
 
         if (choice != null) {
-            Move strike = board.getStrikeMove(choice);
-            if (strike != null) {
-                int struckPlayer = board.getBoardState().getPlayer(choice.to());
-                strikes.increment(board.getCurrentPlayer(), struckPlayer);
-                logger.trace("Player {} strikes {} with {} forcing {}", board.getCurrentPlayer(), struckPlayer, choice, strike);
-                // Note that we're moving the struck player from the choice.to() position to their respective 'begin' position
-                applyMove(strike, struckPlayer);
+            int currentPlayer = board.getCurrentPlayer();
+            Board.MoveResult moveResult = board.move(choice);
+
+            if (moveResult.strikeMove() != null) {
+                strikes.increment(currentPlayer, moveResult.struckPlayer());
+                logger.trace("Player {} strikes {} with {} forcing {}", currentPlayer,
+                        moveResult.struckPlayer(), choice, moveResult.strikeMove());
+                applyMove(moveResult.strikeMove(), moveResult.struckPlayer());
             }
-            applyMove(choice, board.getCurrentPlayer());
+
+            applyMove(choice, currentPlayer);
+
+            if (moveResult.finishedPlayer() != -1) {
+                logger.debug("Finished: {}", moveResult.finishedPlayer());
+                finished.add(MainApplication.players.get(moveResult.finishedPlayer()).getName());
+                for (int i = 0; i < 4; i++) {
+                    boardView.homePositions.get(moveResult.finishedPlayer()).get(i).setFinishOrder(finished.size());
+                }
+            }
             // Reset the choice
             choice = null;
             boardView.setSelectedPosition(null, true);
@@ -412,14 +422,6 @@ class Controller {
     }
 
     private void applyMove(Move move, int playerIndex) {
-        int finishedPlayer = board.move(move);
-        if (finishedPlayer != -1) {
-            logger.debug("Finished: {}", finishedPlayer);
-            finished.add(MainApplication.players.get(finishedPlayer).getName());
-            for (int i = 0; i < 4; i++) {
-                boardView.homePositions.get(finishedPlayer).get(i).setFinishOrder(finished.size());
-            }
-        }
         history.add(move);
 
         PositionView fromPosition = boardView.getPositionView(move.from(), playerIndex, true);

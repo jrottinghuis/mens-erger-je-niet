@@ -123,23 +123,24 @@ public class Game {
 		// effectively final variables, which choice is not in this case.
 		// logger.debug("Player: " + board.getCurrentPlayer() + " chose " + choice);
 
-		Move strike = board.getStrikeMove(choice);
-		if (strike != null) {
-			int struckPlayer = board.getBoardState().getPlayer(choice.to());
-			strikes.increment(currentPlayer, struckPlayer);
-           // logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, struckPlayer, choice, strike);
-			move(strike); // TODO: Joep Remove this logic. That should be the responsibility of the state
+		Board.MoveResult moveResult = move(choice);
+		if (moveResult.struckPlayer() != null) {
+			strikes.increment(currentPlayer, moveResult.struckPlayer());
+           // logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, moveResult.struckPlayer(), choice, moveResult.strikeMove());
 		}
-		move(choice);
 	}
 
-	private void move(Move move) {
-		int finishedPlayer = board.move(move);
-		if (finishedPlayer != -1) {
+	private Board.MoveResult move(Move move) {
+		Board.MoveResult moveResult = board.move(move);
+		if (moveResult.strikeMove() != null) {
+			history.add(moveResult.strikeMove());
+		}
+		if (moveResult.finishedPlayer() != -1) {
             //logger.debug("Finished: {}", finishedPlayer);
-			finished.add(players.get(finishedPlayer).getName());
+			finished.add(players.get(moveResult.finishedPlayer()).getName());
 		}
 		history.add(move);
+		return moveResult;
 	}
 
 	/**

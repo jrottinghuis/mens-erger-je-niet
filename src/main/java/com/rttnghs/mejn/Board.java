@@ -33,6 +33,17 @@ import static com.rttnghs.mejn.Layer.*;
  */
 public class Board {
 
+    /**
+     * Result of applying a move from the board perspective.
+     *
+     * @param move the requested move
+     * @param strikeMove the strike move that was applied as a side effect, or null
+     * @param struckPlayer player index that got struck, or null
+     * @param finishedPlayer player index that finished with this move, or -1
+     */
+    public record MoveResult(Move move, Move strikeMove, Integer struckPlayer, int finishedPlayer) {
+    }
+
     private static final Logger logger = LogManager.getLogger(Board.class);
 
     private final Die die;
@@ -64,8 +75,26 @@ public class Board {
      * @param strategyNames listing the players to be used on this board. Names can contain nulls, but the list itself must not be null.
      */
     public Board(List<String> strategyNames) {
+        this(strategyNames, new Die(Config.value.dieFaces()), null,
+                new Die(strategyNames.size()).roll() - 1, null);
+    }
+
+    /**
+     * Constructor variant used for deterministic tests.
+     *
+     * @param strategyNames players to place on the board
+     * @param die die used for subsequent turns
+     * @param initialState initial state to use, or null to create default begin state
+     * @param initialCurrentPlayer zero-based player index that starts
+     * @param initialDieValue current die value, or null to roll once from {@code die}
+     */
+    Board(List<String> strategyNames, Die die, BaseBoardState initialState, int initialCurrentPlayer,
+          Integer initialDieValue) {
         this.playerCount = strategyNames.size();
-        die = new Die(Config.value.dieFaces());
+        if (die == null) {
+            throw new IllegalArgumentException("die cannot be null");
+        }
+        this.die = die;
         boardSize = playerCount * Config.value.dotsPerPlayer();
         // hang on to begin positions, they are used throughout the game.
         beginPositions = new ArrayList<>(playerCount);
@@ -90,12 +119,22 @@ public class Board {
             startPositions.add(i, new Position(EVENT, startIndex).normalize(boardSize));
         }
 
-        state = new BaseBoardState(boardSize, Config.value.dotsPerPlayer(), Config.value.pawnsPerPlayer(), beginPositions);
+        state = (initialState == null)
+                ? new BaseBoardState(boardSize, Config.value.dotsPerPlayer(), Config.value.pawnsPerPlayer(), beginPositions)
+                : initialState;
 
-        // Determine who goes first. Die are 1 based, players 0-based index.
-        currentPlayer = new Die(playerCount).roll() - 1;
-        // Do the first die roll for them
-        currentDieValue = die.roll();
+        if ((initialCurrentPlayer < 0) || (initialCurrentPlayer >= playerCount)) {
+            throw new IllegalArgumentException("Invalid initialCurrentPlayer: " + initialCurrentPlayer);
+        }
+        currentPlayer = initialCurrentPlayer;
+        currentDieValue = (initialDieValue == null) ? this.die.roll() : initialDieValue;
+
+        // Ensure active player count matches the injected state as well.
+        for (int i = 0; i < playerCount; i++) {
+            if ((beginPositions.get(i) != null) && state.isFinished(i)) {
+                activePlayerCount--;
+            }
+        }
     }
 
     /**
@@ -163,35 +202,39 @@ public class Board {
     }
 
     /**
-     * If a move results into another player being struck off the board, then that
-     * would essentially result in a second move. This method gets such second move,
-     * if the provided move does indeed strike another player's pawn.
+     * Calculates strike side effects for the current board state before mutation.
      *
-     * @param move given a move, determine if another player is at the to spot. If
-     *             so, return a move to send them back to the beginning.
-     * @return move to send a potential player who's at the input move to spot back
-     * to beginning or null if that spot is not occupied.
+     * @param move requested move from current player's perspective
+     * @return strike move that will be applied by state mutation, or null when no
+     * player occupies the destination
      */
-    public Move getStrikeMove(Move move) {
+    private Move getStrikeMoveForCurrentState(Move move) {
+        if ((move == null) || (move.to() == null)) {
+            return null;
+        }
         int otherPlayer = state.getPlayer(move.to());
         return (otherPlayer == -1) ? null : new Move(move.to(), beginPositions.get(otherPlayer));
     }
 
     /**
      * @param move from the board's perspective.
-     * @return the index of the player that finished the game with this move, or -1
-     * otherwise.
+     * @return metadata about the applied move, including strike side effects and
+     * finishing player if any.
      */
-    public int move(Move move) {
+    public MoveResult move(Move move) {
+        Move strikeMove = getStrikeMoveForCurrentState(move);
+        Integer struckPlayer = (strikeMove == null) ? null : state.getPlayer(move.to());
         state.move(move);
 
-        if ((move.from().layer() == EVENT) && (move.to().layer() == HOME)) {
+        int finishedPlayer = -1;
+        if ((move != null) && (move.from() != null) && (move.to() != null)
+                && (move.from().layer() == EVENT) && (move.to().layer() == HOME)) {
             if (state.isFinished(currentPlayer)) {
                 activePlayerCount--;
-                return currentPlayer;
+                finishedPlayer = currentPlayer;
             }
         }
-        return -1;
+        return new MoveResult(move, strikeMove, struckPlayer, finishedPlayer);
     }
 
     /**
