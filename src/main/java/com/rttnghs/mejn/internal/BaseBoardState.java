@@ -90,11 +90,11 @@ public class BaseBoardState implements BoardState {
 		this.dotsPerPlayer = dotsPerPlayer;
 		this.pawnsPerPlayer = pawnsPerPlayer;
 		List<List<Position>> newStateCopy = new ArrayList<>(otherState.size());
-        for (int i = 0; i < otherState.size(); i++) {
-			List<Position> playerState = new ArrayList<>(otherState.get(i));
-			playerState.sort(Position::compareTo);
-			newStateCopy.add(Collections.unmodifiableList(playerState));
-		}
+        for (List<Position> positions : otherState) {
+            List<Position> playerState = new ArrayList<>(positions);
+            playerState.sort(Position::compareTo);
+            newStateCopy.add(Collections.unmodifiableList(playerState));
+        }
 		this.state = Collections.unmodifiableList(newStateCopy);
 	}
 
@@ -202,10 +202,11 @@ public class BaseBoardState implements BoardState {
 	}
 
 	/**
+	 * Applies the move to this state in place. Nothing changes when {@code move} is
+	 * null, when either endpoint is null, or when there is no player at
+	 * {@code move.from()}.
+	 *
 	 * @param move assumed to be a valid move
-	 * @return new state with the move applied. Will be the same as this state if
-	 *         move is null, or to/from Positions in the move are null. Same when
-	 *         there is no player at the given move.from() position.
 	 */
 	public void move(Move move) {
 		if ((move == null) || (move.from() == null) || (move.to() == null)) {
