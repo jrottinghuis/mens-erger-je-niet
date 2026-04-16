@@ -47,7 +47,6 @@ public class BaseBoardState implements BoardState {
 	private final int boardSize;
 	private final int pawnsPerPlayer;
 	private final int dotsPerPlayer;
-	private final int[] eventSpots;
 
 	/**
 	 * @param boardSize      The number of spots in the Event layer of the board.
@@ -64,8 +63,6 @@ public class BaseBoardState implements BoardState {
 		this.boardSize = boardSize;
 		this.pawnsPerPlayer = pawnsPerPlayer;
 		this.dotsPerPlayer = dotsPerPlayer;
-		eventSpots = new int[boardSize];
-		Arrays.fill(eventSpots, -1);
 		List<List<Position>> newState = new ArrayList<>(beginPositions.size());
 		// Iterate over player begin positions and expand them to the pawnsPerPlayer
 		for (int i = 0; i < beginPositions.size(); i++) {
@@ -74,10 +71,6 @@ public class BaseBoardState implements BoardState {
 			if (beginPosition != null) {
 				for (int j = 0; j < pawnsPerPlayer; j++) {
 					playerState.add(j, beginPosition);
-				}
-				if (EVENT == beginPosition.layer() ) {
-					// It should be rare for beginPosition to be in the EVENT layer, but it can happen.
-					eventSpots[beginPosition.spot()] = i;
 				}
 			}
 			newState.add(i, Collections.unmodifiableList(playerState));
@@ -96,19 +89,11 @@ public class BaseBoardState implements BoardState {
 		this.boardSize = boardSize;
 		this.dotsPerPlayer = dotsPerPlayer;
 		this.pawnsPerPlayer = pawnsPerPlayer;
-		eventSpots =  new int[boardSize];
-		Arrays.fill(eventSpots, -1);
 		List<List<Position>> newStateCopy = new ArrayList<>(otherState.size());
         for (int i = 0; i < otherState.size(); i++) {
 			List<Position> playerState = new ArrayList<>(otherState.get(i));
 			playerState.sort(Position::compareTo);
 			newStateCopy.add(Collections.unmodifiableList(playerState));
-			// Capture if any of the player's pawns are in the EVENT layer.
-			for (Position position : playerState) {
-				if (EVENT == position.layer()) {
-					eventSpots[position.spot()] = i;
-				}
-			}
 		}
 		this.state = Collections.unmodifiableList(newStateCopy);
 	}
@@ -230,8 +215,7 @@ public class BaseBoardState implements BoardState {
 			// nobody is moving anywhere
 			return;
 		}
-        // Determine who's pawn we're moving
-        //int player = eventSpots[move.from().spot()]; // TODO: Make sure that we normalize the spot to avoid running off the array.
+		// Determine whose pawn we're moving.
         int player = getPlayer(move.from());
         if (player == -1) {
             // No such move
