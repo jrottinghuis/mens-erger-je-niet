@@ -397,20 +397,24 @@ class Controller {
             int currentPlayer = board.getCurrentPlayer();
             Board.MoveResult moveResult = board.move(choice);
 
-            if (moveResult.strikeMove() != null) {
-                strikes.increment(currentPlayer, moveResult.struckPlayer());
+            if (moveResult.hasStrike()) {
+                Board.Strike strike = moveResult.strike().orElseThrow();
+                int struckPlayer = strike.struckPlayer();
+                Move strikeMove = strike.move();
+                strikes.increment(currentPlayer, struckPlayer);
                 logger.trace("Player {} strikes {} with {} forcing {}", currentPlayer,
-                        moveResult.struckPlayer(), choice, moveResult.strikeMove());
-                applyMove(moveResult.strikeMove(), moveResult.struckPlayer());
+                        struckPlayer, choice, strikeMove);
+                applyMove(strikeMove, struckPlayer);
             }
 
             applyMove(choice, currentPlayer);
 
-            if (moveResult.finishedPlayer() != -1) {
-                logger.debug("Finished: {}", moveResult.finishedPlayer());
-                finished.add(MainApplication.players.get(moveResult.finishedPlayer()).getName());
+            if (moveResult.hasFinished()) {
+                int finishedPlayer = moveResult.finishedPlayer().orElseThrow();
+                logger.debug("Finished: {}", finishedPlayer);
+                finished.add(MainApplication.players.get(finishedPlayer).getName());
                 for (int i = 0; i < 4; i++) {
-                    boardView.homePositions.get(moveResult.finishedPlayer()).get(i).setFinishOrder(finished.size());
+                    boardView.homePositions.get(finishedPlayer).get(i).setFinishOrder(finished.size());
                 }
             }
             // Reset the choice

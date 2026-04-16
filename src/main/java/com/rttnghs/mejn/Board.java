@@ -23,6 +23,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static com.rttnghs.mejn.Layer.*;
 
@@ -34,14 +36,43 @@ import static com.rttnghs.mejn.Layer.*;
 public class Board {
 
     /**
+     * Atomic strike side effect of a move.
+     *
+     * @param move move that sends the struck player back to begin
+     * @param struckPlayer index of the struck player
+     */
+    public record Strike(Move move, int struckPlayer) {
+        public Strike {
+            Objects.requireNonNull(move, "move cannot be null");
+        }
+    }
+
+    /**
      * Result of applying a move from the board perspective.
      *
-     * @param move the requested move
-     * @param strikeMove the strike move that was applied as a side effect, or null
-     * @param struckPlayer player index that got struck, or null
-     * @param finishedPlayer player index that finished with this move, or -1
+     * @param move requested move (never null)
+     * @param strike atomic strike side effect, if any
+     * @param finishedPlayer player index that finished with this move, if any
      */
-    public record MoveResult(Move move, Move strikeMove, Integer struckPlayer, int finishedPlayer) {
+    public record MoveResult(Move move, Optional<Strike> strike,
+                             Optional<Integer> finishedPlayer) {
+
+        /**
+         * @throws NullPointerException if {@code move} or any Optional parameter is null
+         */
+        public MoveResult {
+            Objects.requireNonNull(move, "move cannot be null");
+            Objects.requireNonNull(strike, "strike cannot be null");
+            Objects.requireNonNull(finishedPlayer, "finishedPlayer cannot be null");
+        }
+
+        public boolean hasStrike() {
+            return strike.isPresent();
+        }
+
+        public boolean hasFinished() {
+            return finishedPlayer.isPresent();
+        }
     }
 
     private static final Logger logger = LogManager.getLogger(Board.class);
@@ -217,16 +248,19 @@ public class Board {
     }
 
     /**
-     * @param move from the board's perspective.
+     * @param move non-null move from the board's perspective
      * @return metadata about the applied move, including strike side effects and
      * finishing player if any.
+     * @throws NullPointerException when {@code move} is null
      */
     public MoveResult move(Move move) {
+        Objects.requireNonNull(move, "move cannot be null");
         Move strikeMove = getStrikeMoveForCurrentState(move);
         Integer struckPlayer = (strikeMove == null) ? null : state.getPlayer(move.to());
+        Strike strike = (strikeMove == null) ? null : new Strike(strikeMove, struckPlayer);
         state.move(move);
 
-        int finishedPlayer = -1;
+        Integer finishedPlayer = null;
         if ((move != null) && (move.from() != null) && (move.to() != null)
                 && (move.from().layer() == EVENT) && (move.to().layer() == HOME)) {
             if (state.isFinished(currentPlayer)) {
@@ -234,7 +268,7 @@ public class Board {
                 finishedPlayer = currentPlayer;
             }
         }
-        return new MoveResult(move, strikeMove, struckPlayer, finishedPlayer);
+        return new MoveResult(move, Optional.ofNullable(strike), Optional.ofNullable(finishedPlayer));
     }
 
     /**

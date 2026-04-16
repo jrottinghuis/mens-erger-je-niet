@@ -124,20 +124,21 @@ public class Game {
 		// logger.debug("Player: " + board.getCurrentPlayer() + " chose " + choice);
 
 		Board.MoveResult moveResult = move(choice);
-		if (moveResult.struckPlayer() != null) {
-			strikes.increment(currentPlayer, moveResult.struckPlayer());
-           // logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, moveResult.struckPlayer(), choice, moveResult.strikeMove());
+		if (moveResult.hasStrike()) {
+			int struckPlayer = moveResult.strike().orElseThrow().struckPlayer();
+			strikes.increment(currentPlayer, struckPlayer);
+		   // logger.debug("Player {} strikes {} with {} forcing {}", currentPlayer, struckPlayer, choice, moveResult.strike().orElseThrow().move());
 		}
 	}
 
 	private Board.MoveResult move(Move move) {
 		Board.MoveResult moveResult = board.move(move);
-		if (moveResult.strikeMove() != null) {
-			history.add(moveResult.strikeMove());
+		if (moveResult.hasStrike()) {
+			history.add(moveResult.strike().orElseThrow().move());
 		}
-		if (moveResult.finishedPlayer() != -1) {
+		if (moveResult.hasFinished()) {
             //logger.debug("Finished: {}", finishedPlayer);
-			finished.add(players.get(moveResult.finishedPlayer()).getName());
+			finished.add(players.get(moveResult.finishedPlayer().orElseThrow()).getName());
 		}
 		history.add(move);
 		return moveResult;

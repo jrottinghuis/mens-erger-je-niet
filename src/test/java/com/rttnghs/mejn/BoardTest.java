@@ -20,8 +20,10 @@ import static com.rttnghs.mejn.Layer.BEGIN;
 import static com.rttnghs.mejn.Layer.EVENT;
 import static com.rttnghs.mejn.Layer.HOME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.rttnghs.mejn.configuration.Config;
 import com.rttnghs.mejn.internal.BaseBoardState;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 class BoardTest {
 
@@ -78,9 +81,10 @@ class BoardTest {
 		Board board = new Board(Arrays.asList("strategy1", "strategy2"), new Die(dieFaces), state, 0, 1);
 		Board.MoveResult result = board.move(new Move(playerZeroBegin, contested));
 
-		assertEquals(new Move(contested, playerOneBegin), result.strikeMove());
-		assertEquals(1, result.struckPlayer());
-		assertEquals(-1, result.finishedPlayer());
+		assertTrue(result.hasStrike());
+		assertFalse(result.hasFinished());
+		assertEquals(Optional.of(new Board.Strike(new Move(contested, playerOneBegin), 1)), result.strike());
+		assertEquals(Optional.empty(), result.finishedPlayer());
 		assertEquals(0, board.getBoardState().getPlayer(contested));
 		assertEquals(1, board.getBoardState().getPlayer(playerOneBegin));
 	}
@@ -102,14 +106,15 @@ class BoardTest {
 		Board board = new Board(Arrays.asList("strategy1", "strategy2"), new Die(dieFaces), state, 0, 1);
 		Board.MoveResult result = board.move(new Move(eventBeforeHome, new Position(HOME, 0)));
 
-		assertNull(result.strikeMove());
-		assertNull(result.struckPlayer());
-		assertEquals(0, result.finishedPlayer());
+		assertFalse(result.hasStrike());
+		assertTrue(result.hasFinished());
+		assertEquals(Optional.empty(), result.strike());
+		assertEquals(Optional.of(0), result.finishedPlayer());
 		assertEquals(0, board.getBoardState().getPlayer(new Position(HOME, 0)));
 	}
 
 	@Test
-	final void testMoveNullAndInvalidAreNeutralAndDoNotChangeState() {
+	final void testMoveNullThrowsAndInvalidIsNeutral() {
 		int dotsPerPlayer = Config.value.dotsPerPlayer();
 		int dieFaces = Config.value.dieFaces();
 		int boardSize = 2 * dotsPerPlayer;
@@ -123,19 +128,16 @@ class BoardTest {
 
 		String before = board.getBoardState().toString();
 
-		Board.MoveResult nullResult = board.move(null);
-		assertNull(nullResult.move());
-		assertNull(nullResult.strikeMove());
-		assertNull(nullResult.struckPlayer());
-		assertEquals(-1, nullResult.finishedPlayer());
+		assertThrows(NullPointerException.class, () -> board.move(null));
 		assertEquals(before, board.getBoardState().toString());
 
 		Move invalidMove = new Move(new Position(HOME, 7), new Position(HOME, 13));
 		Board.MoveResult invalidResult = board.move(invalidMove);
+		assertFalse(invalidResult.hasStrike());
+		assertFalse(invalidResult.hasFinished());
 		assertEquals(invalidMove, invalidResult.move());
-		assertNull(invalidResult.strikeMove());
-		assertNull(invalidResult.struckPlayer());
-		assertEquals(-1, invalidResult.finishedPlayer());
+		assertEquals(Optional.empty(), invalidResult.strike());
+		assertEquals(Optional.empty(), invalidResult.finishedPlayer());
 		assertEquals(before, board.getBoardState().toString());
 	}
 
