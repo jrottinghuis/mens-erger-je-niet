@@ -141,4 +141,43 @@ class BoardTest {
 		assertEquals(before, board.getBoardState().toString());
 	}
 
+	@Test
+	final void testAllowedMovesIsNeverNullWhenNoLegalMovesExist() {
+		int dotsPerPlayer = Config.value.dotsPerPlayer();
+		int dieFaces = Config.value.dieFaces();
+		int boardSize = 2 * dotsPerPlayer;
+
+		Position playerZeroBegin = new Position(BEGIN, -dieFaces).normalize(boardSize);
+		Position playerOneBegin = new Position(BEGIN, -dieFaces + dotsPerPlayer).normalize(boardSize);
+		List<Position> beginPositions = new ArrayList<>(List.of(playerZeroBegin, playerOneBegin));
+
+		BaseBoardState state = new BaseBoardState(boardSize, dotsPerPlayer, 1, beginPositions);
+		Board board = new Board(Arrays.asList("strategy1", "strategy2"), new Die(dieFaces), state, 0, 1);
+
+		List<Move> allowedMoves = board.getAllowedMoves();
+		assertNotNull(allowedMoves);
+		assertTrue(allowedMoves.isEmpty());
+	}
+
+	@Test
+	final void testForcedSingleChoiceAllowedMovesIsImmutable() {
+		int dotsPerPlayer = Config.value.dotsPerPlayer();
+		int dieFaces = Config.value.dieFaces();
+		int boardSize = 2 * dotsPerPlayer;
+
+		Position playerZeroBegin = new Position(BEGIN, -dieFaces).normalize(boardSize);
+		Position playerOneBegin = new Position(BEGIN, -dieFaces + dotsPerPlayer).normalize(boardSize);
+		List<Position> beginPositions = new ArrayList<>(List.of(playerZeroBegin, playerOneBegin));
+
+		BaseBoardState state = new BaseBoardState(boardSize, dotsPerPlayer, 1, beginPositions);
+		Position playerZeroStart = new Position(EVENT, 0);
+		state.move(new Move(playerZeroBegin, playerZeroStart));
+
+		Board board = new Board(Arrays.asList("strategy1", "strategy2"), new Die(dieFaces), state, 0, 1);
+		List<Move> allowedMoves = board.getAllowedMoves();
+
+		assertEquals(1, allowedMoves.size());
+		assertThrows(UnsupportedOperationException.class, () -> allowedMoves.remove(0));
+	}
+
 }

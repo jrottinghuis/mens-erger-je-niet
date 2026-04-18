@@ -16,15 +16,12 @@
  */
 package com.rttnghs.mejn;
 
-import static java.util.function.Predicate.not;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.rttnghs.mejn.configuration.Config;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.rttnghs.mejn.configuration.Config;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Used to apply the rules, determine if moves are allowed etc.
@@ -68,16 +65,16 @@ public class RuleEvaluator {
     }
 
     /**
-     * @param move
-     * @return
+     * @param move to check
+     * @return whether this move moves a pawn onto the start position.
      */
     private boolean isToStart(Move move) {
         return startPosition.equals(move.to());
     }
 
     /**
-     * @param move
-     * @return
+     * @param move to check
+     * @return if the move is from the start position, which is preferential. over other moves.
      */
     private boolean isFromStart(Move move) {
         return startPosition.equals(move.from());
@@ -116,28 +113,37 @@ public class RuleEvaluator {
     /**
      * @param potentialMoves non-null, possibly empty, normalized list of moves.
      * @param roll           what the die showed
-     * @return a reduced list of moves with any non-optional moves removed.
+     * @return a reduced list of moves with any non-optional moves removed. Forced
+     * single-move outcomes are returned as immutable singleton lists.
      */
     public List<Move> evaluate(List<Move> potentialMoves, int roll) {
-        // Eliminate any illegal moves
-        List<Move> legalMoves = potentialMoves.stream().filter(not(this::stationary)).filter(this::isInbound)
-                .filter(this::isLegalSelfStrike).collect(Collectors.toList());
+        List<Move> legalMoves = new ArrayList<>(potentialMoves.size());
 
-        // If the player is on start, that must be the move they choose.
-        List<Move> possibleFromStartMove = legalMoves.stream().filter(this::isFromStart).collect(Collectors.toList());
-        if (possibleFromStartMove.size() == 1) {
-            // legalMoves contained a to-start move. possibleStartMove now contains it.
-            // logger.trace(() -> "Forcing from-start move: " + possibleFromStartMove);
-            return possibleFromStartMove;
+        Move possibleToStartMove = null;
+
+        for (Move potentialMove : potentialMoves) {
+            // Discard plainly illegal moves.
+            if (stationary(potentialMove) || !isInbound(potentialMove) || !isLegalSelfStrike(potentialMove)) {
+                continue;
+            }
+
+            if (isFromStart(potentialMove)) {
+                // Mandatory move: when a pawn is on start it must move off start.
+                return List.of(potentialMove);
+            }
+
+            if (isToStart(potentialMove)) {
+                // Remember the to-start move; from-start has higher priority and will return immediately.
+                possibleToStartMove = potentialMove;
+            }
+
+            legalMoves.add(potentialMove);
         }
 
         // If the player is not on start, but moving to start is an option, then that
         // option must be taken.
-        List<Move> possibleToStartMove = legalMoves.stream().filter(this::isToStart).collect(Collectors.toList());
-        if (possibleToStartMove.size() == 1) {
-            // legalMoves contained a to-start move. possibleStartMove now contains it.
-            // logger.trace(() -> "Forcing to-start move: " + possibleToStartMove);
-            return possibleToStartMove;
+        if (possibleToStartMove != null) {
+            return List.of(possibleToStartMove);
         }
 
         return legalMoves;

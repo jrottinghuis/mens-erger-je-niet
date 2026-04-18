@@ -104,14 +104,14 @@ public class Game {
 		List<Move> allowedMoves = board.getAllowedMoves();
 		// logger.debug(() -> "AlloweMoves: " + allowedMoves);
 
-		// Let the player choose, whether there is a choice or not (maybe useful for
-		// some strategies);
-		Move choice = players.get(currentPlayer).choose(allowedMoves, board.getBoardState());
-
 		if ((allowedMoves == null) || (allowedMoves.isEmpty())) {
 			// No valid moves to make by the player, continue to next player.
 			return;
 		}
+
+		// Let the player choose from the valid moves.
+		Move choice = players.get(currentPlayer).choose(allowedMoves, board.getBoardState());
+
 		// There was a valid choice, but the strategy didn't pick it.
 		if (!allowedMoves.contains(choice)) {
 			// invalid choice, choose random for player

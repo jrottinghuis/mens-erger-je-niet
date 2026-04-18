@@ -314,9 +314,10 @@ class Controller {
         // Reset any previous choice.
         choice = null;
 
-        allowedMoves = board.getAllowedMoves();
+        // Keep a mutable copy: selection() removes entries as choices are cleared.
+        allowedMoves = new ArrayList<>(board.getAllowedMoves());
 
-        if ((allowedMoves == null) || (allowedMoves.isEmpty())) {
+        if (allowedMoves.isEmpty()) {
             // No valid moves to make by the player, continue to next player.
             next();
             return;

@@ -109,12 +109,13 @@ public class Tournament {
 
 		List<String> strategyNames = getStrategyNames();
 		List<List<String>> strategyNameBrackets = getStrategyNameBrackets(strategyNames);
+		int configuredGames = Config.configuration.getInt("games");
 
 		List<CompletableFuture<EventCounter<String, Integer>>> futures = new ArrayList<>(strategyNameBrackets.size());
 
 		for (List<String> strategyNameBracket : strategyNameBrackets) {
 			Tournament tournament = new Tournament(new BaseStrategyFactory(), strategyNameBracket,
-					Config.configuration.getInt("games"));
+					configuredGames);
 			CompletableFuture<EventCounter<String, Integer>> future;
             future = CompletableFuture.supplyAsync(tournament::play);
             futures.add(future);

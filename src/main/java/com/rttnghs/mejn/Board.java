@@ -175,34 +175,41 @@ public class Board {
      * Note that this move may not be a legal move.
      *
      * @param player must be in range for the players in the state (zero based)
-     * @param pawn   must be in range for the pawn positions for the player (zero
-     *               based)
+     * @param from   current position for the pawn to be moved
      * @param spots  must be > 0
-     * @return Move of given pawn to given player given the eyes rolled.
+     * @return move for the given position and die roll, or null when no valid
+     *         starting position exists.
      */
-    private Move potentialMove(int player, int pawn, int spots) {
-        Position from = state.getPosition(player, pawn);
-        if ((from == null || (player >= startPositions.size()))) {
+    private Move potentialMove(int player, Position from, int spots) {
+        if ((from == null) || (player >= startPositions.size())) {
             // Happens when there is no pawn on that state or no startPosition. Likely index
             // out of range.
             return null;
         }
-        Position start = startPositions.get(player).normalize(boardSize);
-        from = from.normalize(boardSize);
-        Position to = from.move(spots).normalize(boardSize);
+        Position start = startPositions.get(player);
+        Position normalizedFrom = from.normalize(boardSize);
+        Position to = moveWithinLayer(normalizedFrom, spots);
         if (player == 0) {
-            if (to.compareTo(from) < 0) {
+            if (to.spot() < normalizedFrom.spot()) {
                 // Bump layer, since player 0 wrapped around 0
                 to = to.nextLayer();
             }
         } else {
-            if (from.spot() < start.spot() && start.spot() <= to.spot()) {
+            if (normalizedFrom.spot() < start.spot() && start.spot() <= to.spot()) {
                 // For other players, if (from < start <= to)-ignoring layers then they wrapped
                 // their start
                 to = to.nextLayer();
             }
         }
-        return new Move(from, to);
+        return new Move(normalizedFrom, to);
+    }
+
+    private Position moveWithinLayer(Position from, int spots) {
+        int normalizedSpot = (from.spot() + spots) % boardSize;
+        if (normalizedSpot < 0) {
+            normalizedSpot += boardSize;
+        }
+        return new Position(from.layer(), normalizedSpot);
     }
 
     /**
@@ -210,20 +217,25 @@ public class Board {
      */
     protected List<Move> getPotentialMoves() {
         List<Move> potentialMoves = new ArrayList<>(Config.value.pawnsPerPlayer());
-        Move previousMove = null;
+        Position previousFrom = null;
         for (int i = 0; i < Config.value.pawnsPerPlayer(); i++) {
-            Move potentialMove = potentialMove(currentPlayer, i, currentDieValue);
-            if ((potentialMove != null) && (!potentialMove.equals(previousMove))) {
+            Position from = state.getPosition(currentPlayer, i);
+            Position normalizedFrom = (from == null) ? null : from.normalize(boardSize);
+            if ((normalizedFrom != null) && normalizedFrom.equals(previousFrom)) {
+                continue;
+            }
+            Move potentialMove = potentialMove(currentPlayer, from, currentDieValue);
+            if (potentialMove != null) {
                 potentialMoves.add(potentialMove);
-                previousMove = potentialMove;
+                previousFrom = normalizedFrom;
             }
         }
         return potentialMoves;
     }
 
     /**
-     * @return the list of moves that are allowed for the current player and the
-     * current die value.
+     * @return non-null list of moves that are allowed for the current player and
+     * current die value; may be empty.
      */
     public List<Move> getAllowedMoves() {
         List<Move> potentialMoves = getPotentialMoves();
@@ -261,7 +273,7 @@ public class Board {
         state.move(move);
 
         Integer finishedPlayer = null;
-        if ((move != null) && (move.from() != null) && (move.to() != null)
+        if ((move.from() != null) && (move.to() != null)
                 && (move.from().layer() == EVENT) && (move.to().layer() == HOME)) {
             if (state.isFinished(currentPlayer)) {
                 activePlayerCount--;
@@ -292,11 +304,12 @@ public class Board {
         }
 
         // Same player rolls again when they currentDieValue max faces on the die.
-        if (currentDieValue == die.faces()) {
-            // logger.trace(() -> "Player " + currentPlayer + " gets another turn.");
-        } else {
+        if (currentDieValue != die.faces()) {
             currentPlayer = (currentPlayer + 1) % playerCount;
         }
+        //else {
+        //    logger.trace(() -> "Player " + currentPlayer + " gets another turn.");
+        //}
 
         if (state.isFinished(currentPlayer)) {
             // This player is done, try the next player.
