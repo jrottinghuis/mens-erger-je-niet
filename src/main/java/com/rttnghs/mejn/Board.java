@@ -91,6 +91,7 @@ public class Board {
      * intersect).
      */
     private final List<Position> startPositions;
+    private final List<RuleEvaluator> ruleEvaluators;
 
     private final BaseBoardState state;
 
@@ -148,6 +149,11 @@ public class Board {
             // further along on the board.
             int startIndex = (i * Config.value.dotsPerPlayer());
             startPositions.add(i, new Position(EVENT, startIndex).normalize(boardSize));
+        }
+
+        ruleEvaluators = new ArrayList<>(playerCount);
+        for (Position startPosition : startPositions) {
+            ruleEvaluators.add(new RuleEvaluator(startPosition));
         }
 
         state = (initialState == null)
@@ -240,8 +246,7 @@ public class Board {
     public List<Move> getAllowedMoves() {
         List<Move> potentialMoves = getPotentialMoves();
         // logger.debug(() -> "PotentialMoves: " + potentialMoves);
-        RuleEvaluator rulesEvaluator = new RuleEvaluator(state, startPositions.get(currentPlayer));
-        return rulesEvaluator.evaluate(potentialMoves, currentDieValue);
+        return ruleEvaluators.get(currentPlayer).evaluate(state, potentialMoves);
     }
 
     /**

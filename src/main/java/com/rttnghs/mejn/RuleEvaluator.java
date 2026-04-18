@@ -17,11 +17,10 @@
 package com.rttnghs.mejn;
 
 import com.rttnghs.mejn.configuration.Config;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Used to apply the rules, determine if moves are allowed etc.
@@ -29,9 +28,7 @@ import java.util.List;
 public class RuleEvaluator {
 
     public static final boolean isSelfStrikeAllowed = Config.configuration.getBoolean("isSelfStrikeAllowed");
-    private static final Logger logger = LogManager.getLogger(RuleEvaluator.class);
 
-    private final BoardState state;
     /**
      * List of positions where each respective players start from (where the layers
      * intersect).
@@ -40,12 +37,9 @@ public class RuleEvaluator {
 
     /**
      * Game rule evaluator for the given player.
-     *
-     * @param state against which to evaluate moves
      */
-    public RuleEvaluator(BoardState state, Position startPosition) {
-        this.state = state;
-        this.startPosition = startPosition;
+    public RuleEvaluator(Position startPosition) {
+        this.startPosition = Objects.requireNonNull(startPosition, "startPosition cannot be null");
     }
 
     /**
@@ -94,7 +88,7 @@ public class RuleEvaluator {
      * EVENT is occupied. Otherwise allowed if you strike yourself and that is
      * allowed per config.
      */
-    private boolean isLegalSelfStrike(Move move) {
+    private boolean isLegalSelfStrike(BoardState state, Move move) {
         if (isFromStart(move) || move.to().layer() == Layer.BEGIN) {
             // Any move from the start or to the begin layer is legal.
             return true;
@@ -111,19 +105,21 @@ public class RuleEvaluator {
     }
 
     /**
+     * @param state board state used for occupancy/self-strike checks.
      * @param potentialMoves non-null, possibly empty, normalized list of moves.
-     * @param roll           what the die showed
      * @return a reduced list of moves with any non-optional moves removed. Forced
      * single-move outcomes are returned as immutable singleton lists.
      */
-    public List<Move> evaluate(List<Move> potentialMoves, int roll) {
+    public List<Move> evaluate(BoardState state, List<Move> potentialMoves) {
+        Objects.requireNonNull(state, "state cannot be null");
+        Objects.requireNonNull(potentialMoves, "potentialMoves cannot be null");
         List<Move> legalMoves = new ArrayList<>(potentialMoves.size());
 
         Move possibleToStartMove = null;
 
         for (Move potentialMove : potentialMoves) {
             // Discard plainly illegal moves.
-            if (stationary(potentialMove) || !isInbound(potentialMove) || !isLegalSelfStrike(potentialMove)) {
+            if (stationary(potentialMove) || !isInbound(potentialMove) || !isLegalSelfStrike(state, potentialMove)) {
                 continue;
             }
 

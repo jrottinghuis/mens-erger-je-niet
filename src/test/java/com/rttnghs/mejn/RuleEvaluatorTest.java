@@ -45,13 +45,13 @@ class RuleEvaluatorTest {
         Position start = new Position(EVENT, 0);
         state.move(new Move(playerZeroBegin, start));
 
-        RuleEvaluator evaluator = new RuleEvaluator(state, start);
+        RuleEvaluator evaluator = new RuleEvaluator(start);
         Move toStart = new Move(playerZeroBegin, start);
         Move fromStart = new Move(start, new Position(EVENT, dieFaces));
 
         // Put to-start first to prove from-start still has precedence.
         List<Move> moves = Arrays.asList(toStart, fromStart);
-        List<Move> allowed = evaluator.evaluate(moves, dieFaces);
+        List<Move> allowed = evaluator.evaluate(state, moves);
 
         assertEquals(List.of(fromStart), allowed);
     }
@@ -69,11 +69,11 @@ class RuleEvaluatorTest {
         BaseBoardState state = new BaseBoardState(boardSize, dotsPerPlayer, 1, beginPositions);
         Position start = new Position(EVENT, 0);
 
-        RuleEvaluator evaluator = new RuleEvaluator(state, start);
+        RuleEvaluator evaluator = new RuleEvaluator(start);
         Move toStart = new Move(playerZeroBegin, start);
         Move otherLegalMove = new Move(playerZeroBegin, new Position(EVENT, 1));
 
-        List<Move> allowed = evaluator.evaluate(Arrays.asList(toStart, otherLegalMove), dieFaces);
+        List<Move> allowed = evaluator.evaluate(state, Arrays.asList(toStart, otherLegalMove));
 
         assertEquals(List.of(toStart), allowed);
     }
@@ -90,15 +90,16 @@ class RuleEvaluatorTest {
 
         BaseBoardState state = new BaseBoardState(boardSize, dotsPerPlayer, 1, beginPositions);
         Position start = new Position(EVENT, 0);
-        RuleEvaluator evaluator = new RuleEvaluator(state, start);
+        RuleEvaluator evaluator = new RuleEvaluator(start);
         Move toStart = new Move(playerZeroBegin, start);
         Move otherLegalMove = new Move(playerZeroBegin, new Position(EVENT, 1));
 
-        List<Move> allowed = evaluator.evaluate(Arrays.asList(toStart, otherLegalMove), dieFaces);
+        List<Move> allowed = evaluator.evaluate(state, Arrays.asList(toStart, otherLegalMove));
 
         assertEquals(List.of(toStart), allowed);
-        assertThrows(UnsupportedOperationException.class, () -> allowed.remove(0));
+        assertThrows(UnsupportedOperationException.class, allowed::removeFirst);
     }
 }
+
 
 
