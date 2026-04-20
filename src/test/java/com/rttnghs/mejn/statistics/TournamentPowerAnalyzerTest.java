@@ -16,7 +16,12 @@
  */
 package com.rttnghs.mejn.statistics;
 
+import com.rttnghs.mejn.configuration.Config;
+import com.rttnghs.mejn.strategy.BaseStrategyFactory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -171,36 +176,18 @@ class TournamentPowerAnalyzerTest {
     }
 
     // Constructor validation
-
     /**
-     * Verifies the constructor rejects a non-positive batch size.
+     * Verifies that the constructor throws an exception if the strategy factory is null.
      */
     @Test
-    void constructor_invalidGamesPerBatch_throws() {
-        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 0, 5, 200, 4, 2.0));
+    void constructor_nullStrategyFactory_throwsException() {
+        List<List<String>> validBrackets = List.of(List.of("A", "B"));
+        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(null, validBrackets));
     }
 
-    /**
-     * Verifies the constructor rejects a warmup size below two.
-     */
-    @Test
-    void constructor_warmupLessThanTwo_throws() {
-        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 100, 1, 200, 4, 2.0));
-    }
-
-    /**
-     * Verifies the constructor rejects a max batch count smaller than warmup.
-     */
-    @Test
-    void constructor_maxBatchesLessThanWarmup_throws() {
-        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 100, 5, 3, 4, 2.0));
-    }
-
-    /**
-     * Verifies the constructor rejects a non-positive minimum detectable effect.
-     */
-    @Test
-    void constructor_negativeMde_throws() {
-        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 100, 5, 200, 4, -1.0));
+    @BeforeEach
+    void setUp() {
+        // Ensure Config.configuration is initialized with a default or mock configuration
+        Config.configuration.addProperty("powerAnalyzerConcurrency", 4);
     }
 }

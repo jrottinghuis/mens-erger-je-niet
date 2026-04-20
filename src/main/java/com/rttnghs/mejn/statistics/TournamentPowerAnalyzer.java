@@ -90,41 +90,31 @@ public class TournamentPowerAnalyzer {
 
     private final StrategyFactory strategyFactory;
     private final List<List<String>> brackets;
-    private final int gamesPerBatch;
-    private final int warmupBatches;
-    private final int maxBatches;
     private final int concurrency;
-    private final double mde;
     private final int playerCount;
+
 
     /**
      * @param strategyFactory factory that resolves strategy names
      * @param brackets        list of bracket strategy-name lists
-     * @param gamesPerBatch   games per batch; must be ≥ 1
-     * @param warmupBatches   minimum batches before stop condition is checked; must be ≥ 2
-     * @param maxBatches      hard cap on total batches (safety valve); must be ≥ warmupBatches
      * @param concurrency     maximum in-flight batches; set to the number of remote servers (1–N)
-     * @param mde             minimum detectable effect on the normalized score scale (e.g. 2.0 for
-     *                        a 2-point difference); pairs closer than this are deemed equivalent
      */
-    public TournamentPowerAnalyzer(StrategyFactory strategyFactory, List<List<String>> brackets, int gamesPerBatch, int warmupBatches, int maxBatches, int concurrency, double mde) {
-        Objects.requireNonNull(strategyFactory, "strategyFactory cannot be null");
+    public TournamentPowerAnalyzer(StrategyFactory strategyFactory, List<List<String>> brackets, int concurrency) {
+        if (strategyFactory == null) {
+            throw new IllegalArgumentException("strategyFactory cannot be null");
+        }
         Objects.requireNonNull(brackets, "brackets cannot be null");
         if (brackets.isEmpty()) throw new IllegalArgumentException("brackets must not be empty");
-        if (gamesPerBatch < 1) throw new IllegalArgumentException("gamesPerBatch must be >= 1");
-        if (warmupBatches < 2) throw new IllegalArgumentException("warmupBatches must be >= 2");
-        if (maxBatches < warmupBatches) throw new IllegalArgumentException("maxBatches must be >= warmupBatches");
         if (concurrency < 1) throw new IllegalArgumentException("concurrency must be >= 1");
-        if (mde <= 0) throw new IllegalArgumentException("mde must be > 0");
 
         this.strategyFactory = strategyFactory;
         this.brackets = brackets;
-        this.gamesPerBatch = gamesPerBatch;
-        this.warmupBatches = warmupBatches;
-        this.maxBatches = maxBatches;
         this.concurrency = concurrency;
-        this.mde = mde;
-        this.playerCount = brackets.getFirst().size();
+        this.playerCount = brackets.get(0).size();
+    }
+
+    public TournamentPowerAnalyzer(StrategyFactory strategyFactory, List<List<String>> brackets) {
+        this(strategyFactory, brackets, Config.configuration.getInt("powerAnalyzerConcurrency", 4));
     }
 
     // ── Running statistics ─────────────────────────────────────────────────────
@@ -252,7 +242,7 @@ public class TournamentPowerAnalyzer {
 
             List<CompletableFuture<EventCounter<String, Integer>>> bracketFutures = new ArrayList<>(brackets.size());
             for (List<String> bracket : brackets) {
-                Tournament t = new Tournament(strategyFactory, bracket, gamesPerBatch);
+                Tournament t = new Tournament(strategyFactory, bracket, Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")));
                 bracketFutures.add(CompletableFuture.supplyAsync(t::play));
             }
             for (CompletableFuture<EventCounter<String, Integer>> f : bracketFutures) {
@@ -298,53 +288,80 @@ public class TournamentPowerAnalyzer {
         record InFlight(int batchIndex, CompletableFuture<Map<String, Double>> future) {
         }
 
-        Deque<InFlight> inFlight = new ArrayDeque<>(concurrency);
+        Set<InFlight> inFlight = new HashSet<>();
 
         // Seed the window: submit up to concurrency batches immediately.
         int submitted = 0;
-        int initialSeed = Math.min(concurrency, warmupBatches + concurrency);
-        while (submitted < initialSeed && submitted < maxBatches) {
+        int initialSeed = Math.min(concurrency, Config.configuration.getInt("powerAnalyzerWarmupBatches", 5) + concurrency);
+        while (submitted < initialSeed && submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200)) {
             inFlight.add(new InFlight(submitted, submitBatch()));
             submitted++;
         }
 
         while (!inFlight.isEmpty()) {
-            // Wait for the oldest in-flight batch to complete (FIFO preserves fairness).
-            InFlight head = inFlight.poll();
-            Map<String, Double> batchScores = head.future().get();
-            completedBatches++;
-
-            // Update running stats.
-            batchScores.forEach((strategy, score) -> statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
-
-            logger.debug("Batch {} complete: {}", completedBatches, formatScores(statsMap));
-
-            if (completedBatches % 5 == 0) {
-                logger.info("After {} batches ({} games): {}", completedBatches, (long) completedBatches * gamesPerBatch, formatPowerSummary(statsMap, completedBatches));
+            // Wait for ANY in-flight batch to complete
+            CompletableFuture<?>[] futures = inFlight.stream().map(InFlight::future).toArray(CompletableFuture[]::new);
+            try {
+                CompletableFuture.anyOf(futures).get(Config.configuration.getInt("tournamentPowerAnalyzer.batchTimeoutSeconds", 15), java.util.concurrent.TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException e) {
+                // Speculatively dispatch another batch if something is stuck, keeping an upper bound
+                if (submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200) && inFlight.size() < concurrency * 2) {
+                    logger.debug("Batches are taking long; speculatively dispatching batch {}", submitted);
+                    inFlight.add(new InFlight(submitted, submitBatch()));
+                    submitted++;
+                }
+                continue;
             }
 
-            // Check stop condition once warmup is complete.
-            if (completedBatches >= warmupBatches) {
-                StopEvaluation eval = evaluateStop(statsMap, completedBatches);
-                if (eval.shouldStop()) {
-                    stopReason = eval.reason();
-                    logger.info("Early stop after {} batches ({} games). Reason: {}", completedBatches, (long) completedBatches * gamesPerBatch, stopReason);
-                    // Cancel remaining in-flight futures.
-                    inFlight.forEach(f -> f.future().cancel(true));
-                    inFlight.clear();
-                    break;
+            // Process all completed batches
+            List<InFlight> done = inFlight.stream().filter(f -> f.future().isDone()).toList();
+            for (InFlight head : done) {
+                inFlight.remove(head);
+                Map<String, Double> batchScores;
+                try {
+                    batchScores = head.future().get();
+                } catch (Exception e) {
+                    logger.warn("Batch {} failed: {}", head.batchIndex(), e.getMessage());
+                    continue;
+                }
+                completedBatches++;
+
+                // Update running stats.
+                batchScores.forEach((strategy, score) -> statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
+
+                logger.debug("Batch {} complete: {}", completedBatches, formatScores(statsMap));
+
+                if (completedBatches % 5 == 0) {
+                    logger.info("After {} batches ({} games): {}", completedBatches, (long) completedBatches * Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")), formatPowerSummary(statsMap, completedBatches));
+                }
+
+                // Check stop condition once warmup is complete.
+                if (completedBatches >= Config.configuration.getInt("powerAnalyzerWarmupBatches", 5)) {
+                    StopEvaluation eval = evaluateStop(statsMap, completedBatches);
+                    if (eval.shouldStop()) {
+                        stopReason = eval.reason();
+                        logger.info("Early stop after {} batches ({} games). Reason: {}", completedBatches, (long) completedBatches * Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")), stopReason);
+                        // Cancel remaining in-flight futures.
+                        inFlight.forEach(f -> f.future().cancel(true));
+                        inFlight.clear();
+                        break; // Break out of done processing loop
+                    }
                 }
             }
 
+            if (inFlight.isEmpty() && stopReason != StopReason.MAX_BATCHES) {
+                break;
+            }
+
             // Submit another batch if we still have budget and the window has room.
-            if (submitted < maxBatches && inFlight.size() < concurrency) {
+            while (submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200) && inFlight.size() < concurrency) {
                 inFlight.add(new InFlight(submitted, submitBatch()));
                 submitted++;
             }
         }
 
         Duration elapsed = Duration.between(start, Instant.now());
-        return new Result(completedBatches, gamesPerBatch, Collections.unmodifiableMap(statsMap), buildPairAnalyses(statsMap, completedBatches), stopReason, elapsed);
+        return new Result(completedBatches, Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")), Collections.unmodifiableMap(statsMap), buildPairAnalyses(statsMap, completedBatches), stopReason, elapsed);
     }
 
     // ── Stop condition evaluation ──────────────────────────────────────────────
@@ -377,7 +394,7 @@ public class TournamentPowerAnalyzer {
             double delta = sA.mean() - sB.mean();
             double pooledStddev = Math.sqrt((sA.variance() + sB.variance()) / 2.0);
 
-            boolean practicallyEqual = delta < mde;
+            boolean practicallyEqual = delta < Config.configuration.getDouble("powerAnalyzerMde", 2.0);
             int reqBatches = practicallyEqual ? 0 : requiredBatches(delta, pooledStddev);
             double power = observedPower(n, delta, pooledStddev);
             boolean resolved = practicallyEqual || (n >= reqBatches && power >= 0.80);
@@ -492,25 +509,21 @@ public class TournamentPowerAnalyzer {
      *   <li>{@code powerAnalyzerMaxBatches} — hard cap on total batches (default 200)</li>
      *   <li>{@code powerAnalyzerConcurrency} — in-flight batches / server count (default 4)</li>
      *   <li>{@code powerAnalyzerMde} — minimum detectable effect on score scale (default 2.0)</li>
+     *   <li>{@code tournamentPowerAnalyzer.batchTimeoutSeconds} — maximum time to wait for a batch to complete, in seconds (default 15)</li>
      * </ul>
      */
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         List<String> strategyNames = Tournament.getStrategyNames();
         List<List<String>> brackets = Tournament.getStrategyNameBrackets(strategyNames);
 
-        int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games"));
-        int warmup = Config.configuration.getInt("powerAnalyzerWarmupBatches", 5);
-        int maxBatches = Config.configuration.getInt("powerAnalyzerMaxBatches", 200);
         int concurrency = Config.configuration.getInt("powerAnalyzerConcurrency", 4);
-        double mde = Config.configuration.getDouble("powerAnalyzerMde", 2.0);
 
-        logger.info("Starting TournamentPowerAnalyzer: gamesPerBatch={} warmup={} max={} concurrency={} mde={}", gamesPerBatch, warmup, maxBatches, concurrency, mde);
+        logger.info("Starting TournamentPowerAnalyzer: concurrency={}", concurrency);
 
-        TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(new BaseStrategyFactory(), brackets, gamesPerBatch, warmup, maxBatches, concurrency, mde);
+        TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(new BaseStrategyFactory(), brackets, concurrency);
 
         Result result = analyzer.run();
         logger.info("{}", result.toSummary());
     }
 }
-
 
