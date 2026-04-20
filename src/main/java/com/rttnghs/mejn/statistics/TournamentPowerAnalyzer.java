@@ -71,13 +71,19 @@ public class TournamentPowerAnalyzer {
 
     private static final Logger logger = LogManager.getLogger(TournamentPowerAnalyzer.class);
 
-    /** Z for two-sided α = 0.05 (95 % confidence). */
+    /**
+     * Z for two-sided α = 0.05 (95 % confidence).
+     */
     public static final double Z_ALPHA_2 = 1.96;
 
-    /** Z for β = 0.20 (80 % power). */
+    /**
+     * Z for β = 0.20 (80 % power).
+     */
     public static final double Z_BETA = 0.841;
 
-    /** Combined Z factor: (Z_α/2 + Z_β)². */
+    /**
+     * Combined Z factor: (Z_α/2 + Z_β)².
+     */
     private static final double Z_FACTOR_SQ = Math.pow(Z_ALPHA_2 + Z_BETA, 2);
 
     // ── Configuration ─────────────────────────────────────────────────────────
@@ -101,13 +107,7 @@ public class TournamentPowerAnalyzer {
      * @param mde             minimum detectable effect on the normalized score scale (e.g. 2.0 for
      *                        a 2-point difference); pairs closer than this are deemed equivalent
      */
-    public TournamentPowerAnalyzer(StrategyFactory strategyFactory,
-                                   List<List<String>> brackets,
-                                   int gamesPerBatch,
-                                   int warmupBatches,
-                                   int maxBatches,
-                                   int concurrency,
-                                   double mde) {
+    public TournamentPowerAnalyzer(StrategyFactory strategyFactory, List<List<String>> brackets, int gamesPerBatch, int warmupBatches, int maxBatches, int concurrency, double mde) {
         Objects.requireNonNull(strategyFactory, "strategyFactory cannot be null");
         Objects.requireNonNull(brackets, "brackets cannot be null");
         if (brackets.isEmpty()) throw new IllegalArgumentException("brackets must not be empty");
@@ -141,7 +141,9 @@ public class TournamentPowerAnalyzer {
         private double mean = 0.0;
         private double m2 = 0.0; // running sum of squared deviations
 
-        /** Incorporate a new observation. */
+        /**
+         * Incorporate a new observation.
+         */
         public synchronized void update(double value) {
             n++;
             double delta = value - mean;
@@ -150,21 +152,46 @@ public class TournamentPowerAnalyzer {
             m2 += delta * delta2;
         }
 
-        public synchronized int count()   { return n; }
-        public synchronized double mean() { return mean; }
+        public synchronized int count() {
+            return n;
+        }
 
-        /** Sample variance (Bessel-corrected). Returns 0 if fewer than 2 observations. */
-        public synchronized double variance() { return n < 2 ? 0.0 : m2 / (n - 1); }
+        public synchronized double mean() {
+            return mean;
+        }
 
-        public synchronized double stddev()  { return Math.sqrt(variance()); }
-        public synchronized double stderr()  { return n == 0 ? 0.0 : stddev() / Math.sqrt(n); }
-        public synchronized double moe95()   { return Z_ALPHA_2 * stderr(); }
+        /**
+         * Sample variance (Bessel-corrected). Returns 0 if fewer than 2 observations.
+         */
+        public synchronized double variance() {
+            return n < 2 ? 0.0 : m2 / (n - 1);
+        }
 
-        /** Lower bound of the 95 % CI. */
-        public synchronized double ciLow()   { return mean - moe95(); }
+        public synchronized double stddev() {
+            return Math.sqrt(variance());
+        }
 
-        /** Upper bound of the 95 % CI. */
-        public synchronized double ciHigh()  { return mean + moe95(); }
+        public synchronized double stderr() {
+            return n == 0 ? 0.0 : stddev() / Math.sqrt(n);
+        }
+
+        public synchronized double moe95() {
+            return Z_ALPHA_2 * stderr();
+        }
+
+        /**
+         * Lower bound of the 95 % CI.
+         */
+        public synchronized double ciLow() {
+            return mean - moe95();
+        }
+
+        /**
+         * Upper bound of the 95 % CI.
+         */
+        public synchronized double ciHigh() {
+            return mean + moe95();
+        }
     }
 
     // ── Power analysis helpers ─────────────────────────────────────────────────
@@ -178,7 +205,7 @@ public class TournamentPowerAnalyzer {
      * — but here each observation is one batch, so this is the number of
      * batches required.
      *
-     * @param delta       expected mean score difference between the two strategies
+     * @param delta        expected mean score difference between the two strategies
      * @param pooledStdDev pooled sample standard deviation of batch scores
      * @return required number of batches (≥ 1)
      */
@@ -191,8 +218,8 @@ public class TournamentPowerAnalyzer {
      * Actual power for a given observed delta and pooled stddev at the current
      * sample size {@code n}.
      *
-     * @param n           number of observations (batches) per strategy
-     * @param delta       observed mean score difference
+     * @param n            number of observations (batches) per strategy
+     * @param delta        observed mean score difference
      * @param pooledStdDev pooled sample standard deviation
      * @return estimated power in [0, 1]
      */
@@ -223,8 +250,7 @@ public class TournamentPowerAnalyzer {
             EventCounter<String, Integer> batchCounts = new EventCounter<>();
             Function<Integer, Integer> scorer = pos -> Score.get(pos, playerCount);
 
-            List<CompletableFuture<EventCounter<String, Integer>>> bracketFutures =
-                    new ArrayList<>(brackets.size());
+            List<CompletableFuture<EventCounter<String, Integer>>> bracketFutures = new ArrayList<>(brackets.size());
             for (List<String> bracket : brackets) {
                 Tournament t = new Tournament(strategyFactory, bracket, gamesPerBatch);
                 bracketFutures.add(CompletableFuture.supplyAsync(t::play));
@@ -269,7 +295,8 @@ public class TournamentPowerAnalyzer {
 
         // ── Sliding-window dispatch ──────────────────────────────────────────
         // Each element pairs the future with its submit index so we can log it.
-        record InFlight(int batchIndex, CompletableFuture<Map<String, Double>> future) {}
+        record InFlight(int batchIndex, CompletableFuture<Map<String, Double>> future) {
+        }
 
         Deque<InFlight> inFlight = new ArrayDeque<>(concurrency);
 
@@ -288,16 +315,12 @@ public class TournamentPowerAnalyzer {
             completedBatches++;
 
             // Update running stats.
-            batchScores.forEach((strategy, score) ->
-                    statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
+            batchScores.forEach((strategy, score) -> statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
 
-            logger.debug("Batch {} complete: {}", completedBatches,
-                    formatScores(statsMap));
+            logger.debug("Batch {} complete: {}", completedBatches, formatScores(statsMap));
 
             if (completedBatches % 5 == 0) {
-                logger.info("After {} batches ({} games): {}",
-                        completedBatches, (long) completedBatches * gamesPerBatch,
-                        formatPowerSummary(statsMap, completedBatches));
+                logger.info("After {} batches ({} games): {}", completedBatches, (long) completedBatches * gamesPerBatch, formatPowerSummary(statsMap, completedBatches));
             }
 
             // Check stop condition once warmup is complete.
@@ -305,8 +328,7 @@ public class TournamentPowerAnalyzer {
                 StopEvaluation eval = evaluateStop(statsMap, completedBatches);
                 if (eval.shouldStop()) {
                     stopReason = eval.reason();
-                    logger.info("Early stop after {} batches ({} games). Reason: {}",
-                            completedBatches, (long) completedBatches * gamesPerBatch, stopReason);
+                    logger.info("Early stop after {} batches ({} games). Reason: {}", completedBatches, (long) completedBatches * gamesPerBatch, stopReason);
                     // Cancel remaining in-flight futures.
                     inFlight.forEach(f -> f.future().cancel(true));
                     inFlight.clear();
@@ -322,8 +344,7 @@ public class TournamentPowerAnalyzer {
         }
 
         Duration elapsed = Duration.between(start, Instant.now());
-        return new Result(completedBatches, gamesPerBatch, Collections.unmodifiableMap(statsMap),
-                buildPairAnalyses(statsMap, completedBatches), stopReason, elapsed);
+        return new Result(completedBatches, gamesPerBatch, Collections.unmodifiableMap(statsMap), buildPairAnalyses(statsMap, completedBatches), stopReason, elapsed);
     }
 
     // ── Stop condition evaluation ──────────────────────────────────────────────
@@ -338,24 +359,13 @@ public class TournamentPowerAnalyzer {
         }
 
         // Log the least-resolved pair.
-        pairs.stream()
-                .filter(p -> !p.resolved())
-                .min(Comparator.comparingDouble(PairAnalysis::observedPower))
-                .ifPresent(p -> logger.debug(
-                        "  Closest unresolved pair: {} vs {} delta={} power={}% need {} more batches",
-                        p.strategyA(), p.strategyB(),
-                        String.format("%.2f", p.delta()),
-                        String.format("%.1f", p.observedPower() * 100),
-                        Math.max(0, p.requiredBatches() - n)));
+        pairs.stream().filter(p -> !p.resolved()).min(Comparator.comparingDouble(PairAnalysis::observedPower)).ifPresent(p -> logger.debug("  Closest unresolved pair: {} vs {} delta={} power={}% need {} more batches", p.strategyA(), p.strategyB(), String.format("%.2f", p.delta()), String.format("%.1f", p.observedPower() * 100), Math.max(0, p.requiredBatches() - n)));
         return new StopEvaluation(false, null);
     }
 
     private List<PairAnalysis> buildPairAnalyses(Map<String, RunningStats> statsMap, int n) {
         // Sort strategies by current mean score descending.
-        List<Map.Entry<String, RunningStats>> ranked = statsMap.entrySet().stream()
-                .sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) ->
-                        e.getValue().mean()).reversed())
-                .toList();
+        List<Map.Entry<String, RunningStats>> ranked = statsMap.entrySet().stream().sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed()).toList();
 
         List<PairAnalysis> pairs = new ArrayList<>();
         for (int i = 0; i + 1 < ranked.size(); i++) {
@@ -372,8 +382,7 @@ public class TournamentPowerAnalyzer {
             double power = observedPower(n, delta, pooledStddev);
             boolean resolved = practicallyEqual || (n >= reqBatches && power >= 0.80);
 
-            pairs.add(new PairAnalysis(nameA, nameB, delta, pooledStddev, power,
-                    reqBatches, practicallyEqual, resolved));
+            pairs.add(new PairAnalysis(nameA, nameB, delta, pooledStddev, power, reqBatches, practicallyEqual, resolved));
         }
         return pairs;
     }
@@ -382,13 +391,10 @@ public class TournamentPowerAnalyzer {
 
     private static String formatScores(Map<String, RunningStats> statsMap) {
         StringBuilder sb = new StringBuilder();
-        statsMap.entrySet().stream()
-                .sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) ->
-                        e.getValue().mean()).reversed())
-                .forEach(e -> {
-                    RunningStats s = e.getValue();
-                    sb.append(String.format("%s=%.1f±%.1f ", e.getKey(), s.mean(), s.moe95()));
-                });
+        statsMap.entrySet().stream().sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed()).forEach(e -> {
+            RunningStats s = e.getValue();
+            sb.append(String.format("%s=%.1f±%.1f ", e.getKey(), s.mean(), s.moe95()));
+        });
         return sb.toString().strip();
     }
 
@@ -396,24 +402,29 @@ public class TournamentPowerAnalyzer {
         List<PairAnalysis> pairs = buildPairAnalyses(statsMap, n);
         StringBuilder sb = new StringBuilder();
         for (PairAnalysis p : pairs) {
-            sb.append(String.format("[%s vs %s: Δ=%.1f power=%.0f%% need~%d batches] ",
-                    p.strategyA(), p.strategyB(), p.delta(), p.observedPower() * 100,
-                    Math.max(0, p.requiredBatches() - n)));
+            sb.append(String.format("[%s vs %s: Δ=%.1f power=%.0f%% need~%d batches] ", p.strategyA(), p.strategyB(), p.delta(), p.observedPower() * 100, Math.max(0, p.requiredBatches() - n)));
         }
         return sb.toString().strip();
     }
 
     // ── Records ────────────────────────────────────────────────────────────────
 
-    /** Reasons a run terminated. */
+    /**
+     * Reasons a run terminated.
+     */
     public enum StopReason {
-        /** All adjacent strategy pairs are resolved with ≥ 80 % power. */
+        /**
+         * All adjacent strategy pairs are resolved with ≥ 80 % power.
+         */
         SUFFICIENT_POWER,
-        /** The {@code maxBatches} cap was hit before convergence. */
+        /**
+         * The {@code maxBatches} cap was hit before convergence.
+         */
         MAX_BATCHES
     }
 
-    private record StopEvaluation(boolean shouldStop, StopReason reason) {}
+    private record StopEvaluation(boolean shouldStop, StopReason reason) {
+    }
 
     /**
      * Power analysis for a single adjacent strategy pair.
@@ -427,67 +438,45 @@ public class TournamentPowerAnalyzer {
      * @param practicallyEqual true if {@code delta < mde}
      * @param resolved         true if this pair needs no more samples
      */
-    public record PairAnalysis(
-            String strategyA,
-            String strategyB,
-            double delta,
-            double pooledStddev,
-            double observedPower,
-            int requiredBatches,
-            boolean practicallyEqual,
-            boolean resolved
-    ) {}
+    public record PairAnalysis(String strategyA, String strategyB, double delta, double pooledStddev,
+                               double observedPower, int requiredBatches, boolean practicallyEqual, boolean resolved) {
+    }
 
     /**
      * Aggregated results from a full power-analyzer run.
      *
-     * @param completedBatches  total number of batches executed
-     * @param gamesPerBatch     games per batch
-     * @param runningStats      per-strategy running statistics
-     * @param pairAnalyses      final power analysis for each adjacent strategy pair
-     * @param stopReason        why the run terminated
-     * @param elapsed           wall-clock time
+     * @param completedBatches total number of batches executed
+     * @param gamesPerBatch    games per batch
+     * @param runningStats     per-strategy running statistics
+     * @param pairAnalyses     final power analysis for each adjacent strategy pair
+     * @param stopReason       why the run terminated
+     * @param elapsed          wall-clock time
      */
-    public record Result(
-            int completedBatches,
-            int gamesPerBatch,
-            Map<String, RunningStats> runningStats,
-            List<PairAnalysis> pairAnalyses,
-            StopReason stopReason,
-            Duration elapsed
-    ) {
-        /** Total games played across all batches (all brackets × gamesPerBatch × completedBatches). */
+    public record Result(int completedBatches, int gamesPerBatch, Map<String, RunningStats> runningStats,
+                         List<PairAnalysis> pairAnalyses, StopReason stopReason, Duration elapsed) {
+        /**
+         * Total games played across all batches (all brackets × gamesPerBatch × completedBatches).
+         */
         public long totalGames() {
             return (long) completedBatches * gamesPerBatch;
         }
 
-        /** Formatted summary table. */
+        /**
+         * Formatted summary table.
+         */
         public String toSummary() {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%nTournamentPowerAnalyzer: %d batches × %,d games/batch  " +
-                            "(total: %,d games)  stop=%s%n",
-                    completedBatches, gamesPerBatch, totalGames(), stopReason));
-            sb.append(String.format("%-24s %7s %7s %7s %7s%n",
-                    "Strategy", "mean", "stddev", "stderr", "95%CI±"));
+            sb.append(String.format("%nTournamentPowerAnalyzer: %d batches × %,d games/batch  " + "(total: %,d games)  stop=%s%n", completedBatches, gamesPerBatch, totalGames(), stopReason));
+            sb.append(String.format("%-24s %7s %7s %7s %7s%n", "Strategy", "mean", "stddev", "stderr", "95%CI±"));
             sb.append("-".repeat(65)).append(System.lineSeparator());
-            runningStats.entrySet().stream()
-                    .sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) ->
-                            e.getValue().mean()).reversed())
-                    .forEach(e -> {
-                        RunningStats s = e.getValue();
-                        sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f%n",
-                                e.getKey(), s.mean(), s.stddev(), s.stderr(), s.moe95()));
-                    });
+            runningStats.entrySet().stream().sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed()).forEach(e -> {
+                RunningStats s = e.getValue();
+                sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f%n", e.getKey(), s.mean(), s.stddev(), s.stderr(), s.moe95()));
+            });
             sb.append(System.lineSeparator());
-            sb.append(String.format("%-24s %-24s %6s %7s %7s %10s %10s%n",
-                    "Strategy A", "Strategy B", "Δ", "power", "n_need", "equiv?", "resolved?"));
+            sb.append(String.format("%-24s %-24s %6s %7s %7s %10s %10s%n", "Strategy A", "Strategy B", "Δ", "power", "n_need", "equiv?", "resolved?"));
             sb.append("-".repeat(100)).append(System.lineSeparator());
-            pairAnalyses.forEach(p -> sb.append(String.format(
-                    "%-24s %-24s %6.2f %6.0f%% %7d %10s %10s%n",
-                    p.strategyA(), p.strategyB(), p.delta(),
-                    p.observedPower() * 100, p.requiredBatches(),
-                    p.practicallyEqual() ? "YES" : "no",
-                    p.resolved() ? "YES" : "no")));
+            pairAnalyses.forEach(p -> sb.append(String.format("%-24s %-24s %6.2f %6.0f%% %7d %10s %10s%n", p.strategyA(), p.strategyB(), p.delta(), p.observedPower() * 100, p.requiredBatches(), p.practicallyEqual() ? "YES" : "no", p.resolved() ? "YES" : "no")));
             sb.append(String.format("%nElapsed: %s%n", elapsed));
             return sb.toString();
         }
@@ -509,17 +498,15 @@ public class TournamentPowerAnalyzer {
         List<String> strategyNames = Tournament.getStrategyNames();
         List<List<String>> brackets = Tournament.getStrategyNameBrackets(strategyNames);
 
-        int gamesPerBatch  = Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games"));
-        int warmup         = Config.configuration.getInt("powerAnalyzerWarmupBatches",   5);
-        int maxBatches     = Config.configuration.getInt("powerAnalyzerMaxBatches",     200);
-        int concurrency    = Config.configuration.getInt("powerAnalyzerConcurrency",      4);
-        double mde         = Config.configuration.getDouble("powerAnalyzerMde",          2.0);
+        int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games"));
+        int warmup = Config.configuration.getInt("powerAnalyzerWarmupBatches", 5);
+        int maxBatches = Config.configuration.getInt("powerAnalyzerMaxBatches", 200);
+        int concurrency = Config.configuration.getInt("powerAnalyzerConcurrency", 4);
+        double mde = Config.configuration.getDouble("powerAnalyzerMde", 2.0);
 
-        logger.info("Starting TournamentPowerAnalyzer: gamesPerBatch={} warmup={} max={} concurrency={} mde={}",
-                gamesPerBatch, warmup, maxBatches, concurrency, mde);
+        logger.info("Starting TournamentPowerAnalyzer: gamesPerBatch={} warmup={} max={} concurrency={} mde={}", gamesPerBatch, warmup, maxBatches, concurrency, mde);
 
-        TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(
-                new BaseStrategyFactory(), brackets, gamesPerBatch, warmup, maxBatches, concurrency, mde);
+        TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(new BaseStrategyFactory(), brackets, gamesPerBatch, warmup, maxBatches, concurrency, mde);
 
         Result result = analyzer.run();
         logger.info("{}", result.toSummary());

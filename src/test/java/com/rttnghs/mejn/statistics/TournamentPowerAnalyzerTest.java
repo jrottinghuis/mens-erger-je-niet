@@ -24,6 +24,9 @@ class TournamentPowerAnalyzerTest {
 
     // RunningStats
 
+    /**
+     * Verifies that a single observation produces zero variance and a stable mean.
+     */
     @Test
     void runningStats_singleObservation_hasZeroVariance() {
         TournamentPowerAnalyzer.RunningStats stats = new TournamentPowerAnalyzer.RunningStats();
@@ -34,6 +37,9 @@ class TournamentPowerAnalyzerTest {
         assertEquals(0.0, stats.stddev());
     }
 
+    /**
+     * Verifies Welford's running statistics match a known three-value dataset.
+     */
     @Test
     void runningStats_knownValues_matchDirectCalculation() {
         // values: 10, 20, 30 -> mean=20, sample variance=100, stddev=10
@@ -48,6 +54,9 @@ class TournamentPowerAnalyzerTest {
         assertEquals(10.0, stats.stddev(), 1e-6);
     }
 
+    /**
+     * Verifies the 95% margin of error is computed as z multiplied by the standard error.
+     */
     @Test
     void runningStats_moe95_isZ96TimesStderr() {
         TournamentPowerAnalyzer.RunningStats stats = new TournamentPowerAnalyzer.RunningStats();
@@ -59,6 +68,9 @@ class TournamentPowerAnalyzerTest {
         assertEquals(TournamentPowerAnalyzer.Z_ALPHA_2 * expectedStderr, stats.moe95(), 1e-9);
     }
 
+    /**
+     * Verifies the confidence interval bounds the mean symmetrically.
+     */
     @Test
     void runningStats_ciLowCiHigh_bracketsTheMean() {
         TournamentPowerAnalyzer.RunningStats stats = new TournamentPowerAnalyzer.RunningStats();
@@ -72,16 +84,25 @@ class TournamentPowerAnalyzerTest {
 
     // requiredBatches
 
+    /**
+     * Verifies zero delta yields the minimum batch requirement.
+     */
     @Test
     void requiredBatches_zeroDelta_returnsOne() {
         assertEquals(1, TournamentPowerAnalyzer.requiredBatches(0.0, 10.0));
     }
 
+    /**
+     * Verifies zero standard deviation yields the minimum batch requirement.
+     */
     @Test
     void requiredBatches_zeroStddev_returnsOne() {
         assertEquals(1, TournamentPowerAnalyzer.requiredBatches(5.0, 0.0));
     }
 
+    /**
+     * Verifies a large effect size should require only a small number of batches.
+     */
     @Test
     void requiredBatches_largeEffect_requiresFewBatches() {
         int n = TournamentPowerAnalyzer.requiredBatches(50.0, 5.0);
@@ -89,30 +110,40 @@ class TournamentPowerAnalyzerTest {
         assertTrue(n < 10, "Large effect should need < 10 batches, got " + n);
     }
 
+    /**
+     * Verifies a small effect size requires substantially more batches.
+     */
     @Test
     void requiredBatches_smallEffect_requiresManyBatches() {
         int n = TournamentPowerAnalyzer.requiredBatches(1.0, 10.0);
         assertTrue(n > 100, "Small effect should need many batches, got " + n);
     }
 
+    /**
+     * Verifies the required-batch formula matches the expected power-analysis equation.
+     */
     @Test
     void requiredBatches_formula_matchesExpected() {
         double sigma = 5.0;
         double delta = 2.0;
-        double expected = Math.ceil(2.0
-                * Math.pow(TournamentPowerAnalyzer.Z_ALPHA_2 + TournamentPowerAnalyzer.Z_BETA, 2)
-                * sigma * sigma / (delta * delta));
+        double expected = Math.ceil(2.0 * Math.pow(TournamentPowerAnalyzer.Z_ALPHA_2 + TournamentPowerAnalyzer.Z_BETA, 2) * sigma * sigma / (delta * delta));
         assertEquals((int) expected, TournamentPowerAnalyzer.requiredBatches(delta, sigma));
     }
 
     // observedPower
 
+    /**
+     * Verifies that a tiny sample with a small effect has low observed power.
+     */
     @Test
     void observedPower_insufficientSamples_lowPower() {
         double power = TournamentPowerAnalyzer.observedPower(2, 1.0, 10.0);
         assertTrue(power < 0.5, "Expected low power for tiny n, got " + power);
     }
 
+    /**
+     * Verifies observed power near the required sample size is roughly 80%.
+     */
     @Test
     void observedPower_atRequiredN_nearEightyPercent() {
         double sigma = 5.0;
@@ -120,15 +151,20 @@ class TournamentPowerAnalyzerTest {
         int n = TournamentPowerAnalyzer.requiredBatches(delta, sigma);
         double power = TournamentPowerAnalyzer.observedPower(n, delta, sigma);
         // Sigmoid approximation: allow +/-5% tolerance around 80%.
-        assertTrue(power >= 0.75 && power <= 0.90,
-                "Expected power ~80%% at required n=" + n + ", got " + power);
+        assertTrue(power >= 0.75 && power <= 0.90, "Expected power ~80%% at required n=" + n + ", got " + power);
     }
 
+    /**
+     * Verifies zero delta produces zero observed power.
+     */
     @Test
     void observedPower_zeroDelta_returnsZero() {
         assertEquals(0.0, TournamentPowerAnalyzer.observedPower(100, 0.0, 5.0));
     }
 
+    /**
+     * Verifies zero standard deviation produces zero observed power.
+     */
     @Test
     void observedPower_zeroStddev_returnsZero() {
         assertEquals(0.0, TournamentPowerAnalyzer.observedPower(100, 5.0, 0.0));
@@ -136,39 +172,35 @@ class TournamentPowerAnalyzerTest {
 
     // Constructor validation
 
+    /**
+     * Verifies the constructor rejects a non-positive batch size.
+     */
     @Test
     void constructor_invalidGamesPerBatch_throws() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new TournamentPowerAnalyzer(
-                        new com.rttnghs.mejn.strategy.BaseStrategyFactory(),
-                        java.util.List.of(java.util.List.of("A")),
-                        0, 5, 200, 4, 2.0));
+        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 0, 5, 200, 4, 2.0));
     }
 
+    /**
+     * Verifies the constructor rejects a warmup size below two.
+     */
     @Test
     void constructor_warmupLessThanTwo_throws() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new TournamentPowerAnalyzer(
-                        new com.rttnghs.mejn.strategy.BaseStrategyFactory(),
-                        java.util.List.of(java.util.List.of("A")),
-                        100, 1, 200, 4, 2.0));
+        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 100, 1, 200, 4, 2.0));
     }
 
+    /**
+     * Verifies the constructor rejects a max batch count smaller than warmup.
+     */
     @Test
     void constructor_maxBatchesLessThanWarmup_throws() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new TournamentPowerAnalyzer(
-                        new com.rttnghs.mejn.strategy.BaseStrategyFactory(),
-                        java.util.List.of(java.util.List.of("A")),
-                        100, 5, 3, 4, 2.0));
+        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 100, 5, 3, 4, 2.0));
     }
 
+    /**
+     * Verifies the constructor rejects a non-positive minimum detectable effect.
+     */
     @Test
     void constructor_negativeMde_throws() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new TournamentPowerAnalyzer(
-                        new com.rttnghs.mejn.strategy.BaseStrategyFactory(),
-                        java.util.List.of(java.util.List.of("A")),
-                        100, 5, 200, 4, -1.0));
+        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(new com.rttnghs.mejn.strategy.BaseStrategyFactory(), java.util.List.of(java.util.List.of("A")), 100, 5, 200, 4, -1.0));
     }
 }

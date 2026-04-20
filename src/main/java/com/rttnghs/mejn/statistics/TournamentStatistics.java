@@ -46,14 +46,18 @@ public class TournamentStatistics {
 
     private static final Logger logger = LogManager.getLogger(TournamentStatistics.class);
 
-    /** Z-value for the 95 % confidence interval. */
+    /**
+     * Z-value for the 95 % confidence interval.
+     */
     public static final double Z_95 = 1.96;
 
     private final StrategyFactory strategyFactory;
     private final List<List<String>> brackets;
     private final int gamesPerRound;
     private final int rounds;
-    /** Number of players per game — assumed the same across all brackets. */
+    /**
+     * Number of players per game — assumed the same across all brackets.
+     */
     private final int playerCount;
 
     /**
@@ -62,10 +66,7 @@ public class TournamentStatistics {
      * @param gamesPerRound   number of games each bracket plays per round; must be ≥ 1
      * @param rounds          number of rounds to run; must be ≥ 2 (fewer rounds produce no meaningful stddev)
      */
-    public TournamentStatistics(StrategyFactory strategyFactory,
-                                List<List<String>> brackets,
-                                int gamesPerRound,
-                                int rounds) {
+    public TournamentStatistics(StrategyFactory strategyFactory, List<List<String>> brackets, int gamesPerRound, int rounds) {
         Objects.requireNonNull(strategyFactory, "strategyFactory cannot be null");
         Objects.requireNonNull(brackets, "brackets cannot be null");
         if (brackets.isEmpty()) {
@@ -123,16 +124,11 @@ public class TournamentStatistics {
             Map<String, Integer> roundScores = EventCounter.getNormalizedScores(roundFinishCounts, scorer, 100);
 
             for (String strategy : roundScores.keySet()) {
-                scoresByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>())
-                        .add(roundScores.get(strategy).doubleValue());
-                firstsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>())
-                        .add(roundFinishCounts.getCount(strategy, 0));
-                secondsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>())
-                        .add(roundFinishCounts.getCount(strategy, 1));
-                thirdsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>())
-                        .add(roundFinishCounts.getCount(strategy, 2));
-                fourthsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>())
-                        .add(roundFinishCounts.getCount(strategy, 3));
+                scoresByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>()).add(roundScores.get(strategy).doubleValue());
+                firstsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>()).add(roundFinishCounts.getCount(strategy, 0));
+                secondsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>()).add(roundFinishCounts.getCount(strategy, 1));
+                thirdsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>()).add(roundFinishCounts.getCount(strategy, 2));
+                fourthsByStrategy.computeIfAbsent(strategy, _ -> new ArrayList<>()).add(roundFinishCounts.getCount(strategy, 3));
             }
 
             if ((round + 1) % 10 == 0) {
@@ -143,14 +139,7 @@ public class TournamentStatistics {
         // Build summary statistics per strategy.
         Map<String, StrategyStats> stats = new TreeMap<>();
         for (String strategy : scoresByStrategy.keySet()) {
-            stats.put(strategy, StrategyStats.compute(
-                    strategy,
-                    scoresByStrategy.get(strategy),
-                    firstsByStrategy.getOrDefault(strategy, List.of()),
-                    secondsByStrategy.getOrDefault(strategy, List.of()),
-                    thirdsByStrategy.getOrDefault(strategy, List.of()),
-                    fourthsByStrategy.getOrDefault(strategy, List.of())
-            ));
+            stats.put(strategy, StrategyStats.compute(strategy, scoresByStrategy.get(strategy), firstsByStrategy.getOrDefault(strategy, List.of()), secondsByStrategy.getOrDefault(strategy, List.of()), thirdsByStrategy.getOrDefault(strategy, List.of()), fourthsByStrategy.getOrDefault(strategy, List.of())));
         }
 
         Duration elapsed = Duration.between(start, Instant.now());
@@ -162,46 +151,26 @@ public class TournamentStatistics {
     /**
      * Aggregated results across all rounds.
      *
-     * @param rounds            number of rounds that were run
-     * @param gamesPerRound     games per round
-     * @param scoresByStrategy  raw per-round normalized scores per strategy
-     * @param strategyStats     computed summary statistics per strategy
-     * @param elapsed           wall-clock time for the entire run
+     * @param rounds           number of rounds that were run
+     * @param gamesPerRound    games per round
+     * @param scoresByStrategy raw per-round normalized scores per strategy
+     * @param strategyStats    computed summary statistics per strategy
+     * @param elapsed          wall-clock time for the entire run
      */
-    public record Result(
-            int rounds,
-            int gamesPerRound,
-            Map<String, List<Double>> scoresByStrategy,
-            Map<String, StrategyStats> strategyStats,
-            Duration elapsed
-    ) {
-        /** Formatted summary table, one line per strategy, sorted by mean score descending. */
+    public record Result(int rounds, int gamesPerRound, Map<String, List<Double>> scoresByStrategy,
+                         Map<String, StrategyStats> strategyStats, Duration elapsed) {
+        /**
+         * Formatted summary table, one line per strategy, sorted by mean score descending.
+         */
         public String toSummary() {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%nTournamentStatistics: %d rounds × %,d games/round  (total games: %,d)%n",
-                    rounds, gamesPerRound, (long) rounds * gamesPerRound));
-            sb.append(String.format("%-24s %7s %7s %7s %7s %7s %7s %7s  %7s  %8s%n",
-                    "Strategy", "mean", "stddev", "stderr", "±95%CI", "min", "max", "median", "CoV%", "n@10%rMOE"));
+            sb.append(String.format("%nTournamentStatistics: %d rounds × %,d games/round  (total games: %,d)%n", rounds, gamesPerRound, (long) rounds * gamesPerRound));
+            sb.append(String.format("%-24s %7s %7s %7s %7s %7s %7s %7s  %7s  %8s%n", "Strategy", "mean", "stddev", "stderr", "±95%CI", "min", "max", "median", "CoV%", "n@10%rMOE"));
             sb.append("-".repeat(105)).append(System.lineSeparator());
-            strategyStats.values().stream()
-                    .sorted(Comparator.comparingDouble(StrategyStats::mean).reversed())
-                    .forEach(ss -> sb.append(String.format(
-                            "%-24s %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f  %6.1f%%  %8d%n",
-                            ss.strategy(),
-                            ss.mean(), ss.stddev(), ss.stderr(), ss.moe95(),
-                            ss.min(), ss.max(), ss.median(),
-                            ss.coefficientOfVariation() * 100.0,
-                            ss.roundsRequiredFor10PctRelativeMoe()
-                    )));
+            strategyStats.values().stream().sorted(Comparator.comparingDouble(StrategyStats::mean).reversed()).forEach(ss -> sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f  %6.1f%%  %8d%n", ss.strategy(), ss.mean(), ss.stddev(), ss.stderr(), ss.moe95(), ss.min(), ss.max(), ss.median(), ss.coefficientOfVariation() * 100.0, ss.roundsRequiredFor10PctRelativeMoe())));
             sb.append("-".repeat(105)).append(System.lineSeparator());
-            sb.append(String.format("%-24s %7s %7s %7s %7s%n",
-                    "Strategy", "1st avg", "2nd avg", "3rd avg", "4th avg"));
-            strategyStats.values().stream()
-                    .sorted(Comparator.comparingDouble(StrategyStats::mean).reversed())
-                    .forEach(ss -> sb.append(String.format("%-24s %7.1f %7.1f %7.1f %7.1f%n",
-                            ss.strategy(),
-                            ss.meanFirstPlaces(), ss.meanSecondPlaces(),
-                            ss.meanThirdPlaces(), ss.meanFourthPlaces())));
+            sb.append(String.format("%-24s %7s %7s %7s %7s%n", "Strategy", "1st avg", "2nd avg", "3rd avg", "4th avg"));
+            strategyStats.values().stream().sorted(Comparator.comparingDouble(StrategyStats::mean).reversed()).forEach(ss -> sb.append(String.format("%-24s %7.1f %7.1f %7.1f %7.1f%n", ss.strategy(), ss.meanFirstPlaces(), ss.meanSecondPlaces(), ss.meanThirdPlaces(), ss.meanFourthPlaces())));
             sb.append(String.format("%nElapsed: %s%n", elapsed));
             return sb.toString();
         }
@@ -210,44 +179,26 @@ public class TournamentStatistics {
     /**
      * Summary statistics for a single strategy across all rounds.
      *
-     * @param strategy                        strategy name
-     * @param mean                            mean normalized score across rounds
-     * @param stddev                          sample standard deviation of scores
-     * @param stderr                          standard error = stddev / sqrt(n)
-     * @param moe95                           95 % margin of error = 1.96 × stderr
-     * @param min                             minimum score observed across rounds
-     * @param max                             maximum score observed across rounds
-     * @param median                          median score across rounds
-     * @param coefficientOfVariation          stddev / mean (dimensionless stability measure)
-     * @param roundsRequiredFor10PctRelativeMoe  total rounds needed for ±10 % relative MOE at 95 %
-     * @param meanFirstPlaces                 mean 1st-place count per round
-     * @param meanSecondPlaces                mean 2nd-place count per round
-     * @param meanThirdPlaces                 mean 3rd-place count per round
-     * @param meanFourthPlaces                mean 4th-place count per round
+     * @param strategy                          strategy name
+     * @param mean                              mean normalized score across rounds
+     * @param stddev                            sample standard deviation of scores
+     * @param stderr                            standard error = stddev / sqrt(n)
+     * @param moe95                             95 % margin of error = 1.96 × stderr
+     * @param min                               minimum score observed across rounds
+     * @param max                               maximum score observed across rounds
+     * @param median                            median score across rounds
+     * @param coefficientOfVariation            stddev / mean (dimensionless stability measure)
+     * @param roundsRequiredFor10PctRelativeMoe total rounds needed for ±10 % relative MOE at 95 %
+     * @param meanFirstPlaces                   mean 1st-place count per round
+     * @param meanSecondPlaces                  mean 2nd-place count per round
+     * @param meanThirdPlaces                   mean 3rd-place count per round
+     * @param meanFourthPlaces                  mean 4th-place count per round
      */
-    public record StrategyStats(
-            String strategy,
-            double mean,
-            double stddev,
-            double stderr,
-            double moe95,
-            double min,
-            double max,
-            double median,
-            double coefficientOfVariation,
-            int roundsRequiredFor10PctRelativeMoe,
-            double meanFirstPlaces,
-            double meanSecondPlaces,
-            double meanThirdPlaces,
-            double meanFourthPlaces
-    ) {
-        static StrategyStats compute(
-                String strategy,
-                List<Double> scores,
-                List<Integer> firsts,
-                List<Integer> seconds,
-                List<Integer> thirds,
-                List<Integer> fourths) {
+    public record StrategyStats(String strategy, double mean, double stddev, double stderr, double moe95, double min,
+                                double max, double median, double coefficientOfVariation,
+                                int roundsRequiredFor10PctRelativeMoe, double meanFirstPlaces, double meanSecondPlaces,
+                                double meanThirdPlaces, double meanFourthPlaces) {
+        static StrategyStats compute(String strategy, List<Double> scores, List<Integer> firsts, List<Integer> seconds, List<Integer> thirds, List<Integer> fourths) {
 
             double mean = TournamentStatistics.mean(scores);
             double stddev = TournamentStatistics.sampleStdDev(scores, mean);
@@ -259,17 +210,9 @@ public class TournamentStatistics {
             // Coefficient of variation: how much does the score vary relative to the mean?
             double cov = (mean == 0.0) ? 0.0 : stddev / mean;
             // n_required = ceil((z * s / (0.10 * mean))^2) — relative 10 % of mean
-            int nRequired = (mean == 0.0 || stddev == 0.0)
-                    ? scores.size()
-                    : (int) Math.ceil(Math.pow(Z_95 * stddev / (0.10 * mean), 2));
+            int nRequired = (mean == 0.0 || stddev == 0.0) ? scores.size() : (int) Math.ceil(Math.pow(Z_95 * stddev / (0.10 * mean), 2));
 
-            return new StrategyStats(
-                    strategy, mean, stddev, stderr, moe95, min, max, medianScore, cov, nRequired,
-                    TournamentStatistics.mean(toDoubles(firsts)),
-                    TournamentStatistics.mean(toDoubles(seconds)),
-                    TournamentStatistics.mean(toDoubles(thirds)),
-                    TournamentStatistics.mean(toDoubles(fourths))
-            );
+            return new StrategyStats(strategy, mean, stddev, stderr, moe95, min, max, medianScore, cov, nRequired, TournamentStatistics.mean(toDoubles(firsts)), TournamentStatistics.mean(toDoubles(seconds)), TournamentStatistics.mean(toDoubles(thirds)), TournamentStatistics.mean(toDoubles(fourths)));
         }
 
         /**
@@ -328,9 +271,7 @@ public class TournamentStatistics {
         List<Double> sorted = new ArrayList<>(values);
         Collections.sort(sorted);
         int mid = sorted.size() / 2;
-        return ((sorted.size() & 1) == 0)
-                ? (sorted.get(mid - 1) + sorted.get(mid)) / 2.0
-                : sorted.get(mid);
+        return ((sorted.size() & 1) == 0) ? (sorted.get(mid - 1) + sorted.get(mid)) / 2.0 : sorted.get(mid);
     }
 
     private static List<Double> toDoubles(List<Integer> ints) {
@@ -352,11 +293,9 @@ public class TournamentStatistics {
         int gamesPerRound = Config.configuration.getInt("games");
         int rounds = Config.configuration.getInt("tournamentRounds");
 
-        logger.info("Starting TournamentStatistics: {} rounds × {} games/round, {} brackets",
-                rounds, gamesPerRound, brackets.size());
+        logger.info("Starting TournamentStatistics: {} rounds × {} games/round, {} brackets", rounds, gamesPerRound, brackets.size());
 
-        TournamentStatistics ts = new TournamentStatistics(
-                new BaseStrategyFactory(), brackets, gamesPerRound, rounds);
+        TournamentStatistics ts = new TournamentStatistics(new BaseStrategyFactory(), brackets, gamesPerRound, rounds);
 
         Result result = ts.run();
         logger.info("{}", result.toSummary());
