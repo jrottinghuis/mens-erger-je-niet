@@ -14,11 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.rttnghs.mejn;
+package com.rttnghs.mejn.statistics;
 
+import com.rttnghs.mejn.Tournament;
 import com.rttnghs.mejn.configuration.Config;
-import com.rttnghs.mejn.statistics.EventCounter;
-import com.rttnghs.mejn.statistics.Score;
 import com.rttnghs.mejn.strategy.BaseStrategyFactory;
 import com.rttnghs.mejn.strategy.StrategyFactory;
 import org.apache.logging.log4j.LogManager;

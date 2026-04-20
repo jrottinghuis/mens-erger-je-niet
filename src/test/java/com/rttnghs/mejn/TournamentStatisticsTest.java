@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 package com.rttnghs.mejn;
-import com.rttnghs.mejn.TournamentStatistics.StrategyStats;
+import com.rttnghs.mejn.statistics.TournamentStatistics;
+import com.rttnghs.mejn.statistics.TournamentStatistics.StrategyStats;
 import com.rttnghs.mejn.strategy.BaseStrategyFactory;
 import org.junit.jupiter.api.Test;
 import java.util.List;
