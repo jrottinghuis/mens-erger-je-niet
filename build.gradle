@@ -132,7 +132,17 @@ tasks.register('runGame', JavaExec) {
 tasks.register('runStatistics', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 
-    mainClass = 'com.rttnghs.mejn.TournamentStatistics'
+    mainClass = 'com.rttnghs.mejn.statistics.TournamentStatistics'
+
+    // arguments to pass to the application
+    args 'appArg1'
+
+}
+
+tasks.register('runPowerAnalyzer', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+
+    mainClass = 'com.rttnghs.mejn.statistics.TournamentPowerAnalyzer'
 
     // arguments to pass to the application
     args 'appArg1'
