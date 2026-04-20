@@ -35,7 +35,7 @@ import java.util.List;
 public class Score {
 
 	private static final List<Integer> SCORES = new ArrayList<>(
-			Arrays.asList(1019, 809, 623, 462, 326, 214, 126, 63, 24, 1));
+			Arrays.asList(1019, 809, 623, 462, 326, 214, 126, 63, 24, 10));
 
 	/**
 	 * Get the score for the given position and the specified number of players.

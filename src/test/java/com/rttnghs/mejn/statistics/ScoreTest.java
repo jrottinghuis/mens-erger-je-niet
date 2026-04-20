@@ -44,18 +44,18 @@ class ScoreTest {
 		assertEquals(126, Score.get(0, 4));
 		assertEquals(63, Score.get(1, 4));
 		assertEquals(24, Score.get(2, 4));
-		assertEquals(1, Score.get(3, 4));
+		assertEquals(10, Score.get(3, 4));
 
 		assertEquals(1019, Score.get(0, 10));
 		assertEquals(1019, Score.get(0, 11));
 		assertEquals(1019, Score.get(0, 37));
 
-		assertEquals(1, Score.get(9, 10));
+		assertEquals(10, Score.get(9, 10));
 
 		// More players than there is a score.
 		assertEquals(1019, Score.get(0, 11));
 		assertEquals(326, Score.get(4, 13));
-		assertEquals(1, Score.get(9, 11));
+		assertEquals(10, Score.get(9, 11));
 
 		assertEquals(0, Score.get(10, 17));
 		assertEquals(0, Score.get(13, 17));
@@ -65,25 +65,12 @@ class ScoreTest {
 	@Test
 	final void testGetWinningScore() {
 		assertEquals(126, Score.winningScore(4));
-		assertEquals(1, Score.winningScore(1));
+		assertEquals(10, Score.winningScore(1));
 
 		assertEquals(0, Score.winningScore(0));
 		assertEquals(0, Score.winningScore(-3));
 
 		assertEquals(1019, Score.winningScore(512));
-	}
-
-	@Test
-	final void testAddGenerics() {
-
-		Integer one = Integer.valueOf(1);
-		short two = 2;
-		Short tooShort = Short.valueOf(two);
-		long three = 3;
-		Long notLongEnough = Long.valueOf(three);
-		Long beforeTooLong = Long.valueOf(4);
-		Long tooLong = Long.valueOf(5);
-		List<Long> aLongList = new ArrayList<>(Arrays.asList(beforeTooLong, tooLong));
 	}
 
 }
