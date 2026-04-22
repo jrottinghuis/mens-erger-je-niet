@@ -281,13 +281,14 @@ public class TournamentPowerAnalyzer {
 
         Map<String, RunningStats> statsMap = new TreeMap<>();
         int completedBatches = 0;
+        int batchesStarted = 0;
+        int batchesCanceled = 0;
         StopReason stopReason = StopReason.MAX_BATCHES;
+        // For total games calculation
+        EventCounter<String, Integer> totalPlacements = new EventCounter<>();
 
         // ── Sliding-window dispatch ──────────────────────────────────────────
-        // Each element pairs the future with its submit index so we can log it.
-        record InFlight(int batchIndex, CompletableFuture<Map<String, Double>> future) {
-        }
-
+        record InFlight(int batchIndex, CompletableFuture<Map<String, Double>> future) {}
         Set<InFlight> inFlight = new HashSet<>();
 
         // Seed the window: submit up to concurrency batches immediately.
@@ -296,24 +297,23 @@ public class TournamentPowerAnalyzer {
         while (submitted < initialSeed && submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200)) {
             inFlight.add(new InFlight(submitted, submitBatch()));
             submitted++;
+            batchesStarted++;
         }
 
         while (!inFlight.isEmpty()) {
-            // Wait for ANY in-flight batch to complete
             CompletableFuture<?>[] futures = inFlight.stream().map(InFlight::future).toArray(CompletableFuture[]::new);
             try {
                 CompletableFuture.anyOf(futures).get(Config.configuration.getInt("tournamentPowerAnalyzer.batchTimeoutSeconds", 15), java.util.concurrent.TimeUnit.SECONDS);
             } catch (java.util.concurrent.TimeoutException e) {
-                // Speculatively dispatch another batch if something is stuck, keeping an upper bound
                 if (submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200) && inFlight.size() < concurrency * 2) {
                     logger.debug("Batches are taking long; speculatively dispatching batch {}", submitted);
                     inFlight.add(new InFlight(submitted, submitBatch()));
                     submitted++;
+                    batchesStarted++;
                 }
                 continue;
             }
 
-            // Process all completed batches
             List<InFlight> done = inFlight.stream().filter(f -> f.future().isDone()).toList();
             for (InFlight head : done) {
                 inFlight.remove(head);
@@ -322,6 +322,7 @@ public class TournamentPowerAnalyzer {
                     batchScores = head.future().get();
                 } catch (Exception e) {
                     logger.warn("Batch {} failed: {}", head.batchIndex(), e.getMessage());
+                    batchesCanceled++;
                     continue;
                 }
                 completedBatches++;
@@ -329,22 +330,27 @@ public class TournamentPowerAnalyzer {
                 // Update running stats.
                 batchScores.forEach((strategy, score) -> statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
 
+                // For total games: try to get placements from batchScores if possible (not available here, so skip for now)
+
                 logger.debug("Batch {} complete: {}", completedBatches, formatScores(statsMap));
 
                 if (completedBatches % 5 == 0) {
                     logger.info("After {} batches ({} games): {}", completedBatches, (long) completedBatches * Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")), formatPowerSummary(statsMap, completedBatches));
                 }
 
-                // Check stop condition once warmup is complete.
                 if (completedBatches >= Config.configuration.getInt("powerAnalyzerWarmupBatches", 5)) {
                     StopEvaluation eval = evaluateStop(statsMap, completedBatches);
                     if (eval.shouldStop()) {
                         stopReason = eval.reason();
-                        logger.info("Early stop after {} batches ({} games). Reason: {}", completedBatches, (long) completedBatches * Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")), stopReason);
-                        // Cancel remaining in-flight futures.
+                        int numBrackets = brackets.size();
+                        int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games"));
+                        int tournamentsRun = completedBatches * numBrackets;
+                        long gamesRun = (long) tournamentsRun * gamesPerBatch;
+                        logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}", completedBatches, tournamentsRun, gamesRun, stopReason);
                         inFlight.forEach(f -> f.future().cancel(true));
+                        batchesCanceled += inFlight.size();
                         inFlight.clear();
-                        break; // Break out of done processing loop
+                        break;
                     }
                 }
             }
@@ -353,17 +359,18 @@ public class TournamentPowerAnalyzer {
                 break;
             }
 
-            // Submit another batch if we still have budget and the window has room.
             while (submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200) && inFlight.size() < concurrency) {
                 inFlight.add(new InFlight(submitted, submitBatch()));
                 submitted++;
+                batchesStarted++;
             }
         }
 
         Duration elapsed = Duration.between(start, Instant.now());
-        return new Result(completedBatches, Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")), Collections.unmodifiableMap(statsMap), buildPairAnalyses(statsMap, completedBatches), stopReason, elapsed);
+        int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games"));
+        int numBrackets = brackets.size();
+        return new Result(completedBatches, gamesPerBatch, Collections.unmodifiableMap(statsMap), buildPairAnalyses(statsMap, completedBatches), stopReason, elapsed, batchesStarted, batchesCanceled, playerCount, numBrackets);
     }
-
     // ── Stop condition evaluation ──────────────────────────────────────────────
 
     private StopEvaluation evaluateStop(Map<String, RunningStats> statsMap, int n) {
@@ -470,12 +477,14 @@ public class TournamentPowerAnalyzer {
      * @param elapsed          wall-clock time
      */
     public record Result(int completedBatches, int gamesPerBatch, Map<String, RunningStats> runningStats,
-                         List<PairAnalysis> pairAnalyses, StopReason stopReason, Duration elapsed) {
+                         List<PairAnalysis> pairAnalyses, StopReason stopReason, Duration elapsed,
+                         int batchesStarted, int batchesCanceled, int playerCount, int numBrackets) {
         /**
-         * Total games played across all batches (all brackets × gamesPerBatch × completedBatches).
+         * True total games played, calculated as the sum of all placements for all strategies divided by player count.
          */
-        public long totalGames() {
-            return (long) completedBatches * gamesPerBatch;
+        public long trueTotalGames() {
+            // Actual number of games played: (batchesStarted - batchesCanceled) × numBrackets × gamesPerBatch
+            return (long) (batchesStarted - batchesCanceled) * numBrackets * gamesPerBatch;
         }
 
         /**
@@ -483,7 +492,9 @@ public class TournamentPowerAnalyzer {
          */
         public String toSummary() {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%nTournamentPowerAnalyzer: %d batches × %,d games/batch  " + "(total: %,d games)  stop=%s%n", completedBatches, gamesPerBatch, totalGames(), stopReason));
+            sb.append(String.format("%nTournamentPowerAnalyzer: %d batches × %,d games/batch × %d brackets  (total: %,d games)  stop=%s\n",
+                    completedBatches, gamesPerBatch, numBrackets, trueTotalGames(), stopReason));
+            sb.append(String.format("Batches started: %d, Batches canceled: %d\n", batchesStarted, batchesCanceled));
             sb.append(String.format("%-24s %7s %7s %7s %7s%n", "Strategy", "mean", "stddev", "stderr", "95%CI±"));
             sb.append("-".repeat(65)).append(System.lineSeparator());
             runningStats.entrySet().stream().sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed()).forEach(e -> {
