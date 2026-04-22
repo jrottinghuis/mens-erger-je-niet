@@ -376,6 +376,12 @@ public class TournamentPowerAnalyzer {
     private StopEvaluation evaluateStop(Map<String, RunningStats> statsMap, int n) {
         List<PairAnalysis> pairs = buildPairAnalyses(statsMap, n);
 
+        // Log all deltas and variances for diagnostics
+        for (PairAnalysis p : pairs) {
+            logger.info("DIAGNOSTIC: {} vs {}: delta={:.3f}, pooledStddev={:.3f}, pooledVariance={:.3f}, power={:.1f}%, resolved={}, practicallyEqual={}",
+                p.strategyA(), p.strategyB(), p.delta(), p.pooledStddev(), p.pooledVariance(), p.observedPower() * 100, p.resolved(), p.practicallyEqual());
+        }
+
         // All pairs must be resolved for an early stop.
         boolean allResolved = pairs.stream().allMatch(PairAnalysis::resolved);
         if (allResolved) {
@@ -399,14 +405,15 @@ public class TournamentPowerAnalyzer {
             RunningStats sB = ranked.get(i + 1).getValue();
 
             double delta = sA.mean() - sB.mean();
-            double pooledStddev = Math.sqrt((sA.variance() + sB.variance()) / 2.0);
+            double pooledVariance = (sA.variance() + sB.variance()) / 2.0;
+            double pooledStddev = Math.sqrt(pooledVariance);
 
             boolean practicallyEqual = delta < Config.configuration.getDouble("powerAnalyzerMde", 2.0);
             int reqBatches = practicallyEqual ? 0 : requiredBatches(delta, pooledStddev);
             double power = observedPower(n, delta, pooledStddev);
             boolean resolved = practicallyEqual || (n >= reqBatches && power >= 0.80);
 
-            pairs.add(new PairAnalysis(nameA, nameB, delta, pooledStddev, power, reqBatches, practicallyEqual, resolved));
+            pairs.add(new PairAnalysis(nameA, nameB, delta, pooledStddev, pooledVariance, power, reqBatches, practicallyEqual, resolved));
         }
         return pairs;
     }
@@ -462,7 +469,7 @@ public class TournamentPowerAnalyzer {
      * @param practicallyEqual true if {@code delta < mde}
      * @param resolved         true if this pair needs no more samples
      */
-    public record PairAnalysis(String strategyA, String strategyB, double delta, double pooledStddev,
+    public record PairAnalysis(String strategyA, String strategyB, double delta, double pooledStddev, double pooledVariance,
                                double observedPower, int requiredBatches, boolean practicallyEqual, boolean resolved) {
     }
 
@@ -502,9 +509,9 @@ public class TournamentPowerAnalyzer {
                 sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f%n", e.getKey(), s.mean(), s.stddev(), s.stderr(), s.moe95()));
             });
             sb.append(System.lineSeparator());
-            sb.append(String.format("%-24s %-24s %6s %7s %7s %10s %10s%n", "Strategy A", "Strategy B", "Δ", "power", "n_need", "equiv?", "resolved?"));
-            sb.append("-".repeat(100)).append(System.lineSeparator());
-            pairAnalyses.forEach(p -> sb.append(String.format("%-24s %-24s %6.2f %6.0f%% %7d %10s %10s%n", p.strategyA(), p.strategyB(), p.delta(), p.observedPower() * 100, p.requiredBatches(), p.practicallyEqual() ? "YES" : "no", p.resolved() ? "YES" : "no")));
+            sb.append(String.format("%-24s %-24s %6s %7s %7s %10s %10s %12s%n", "Strategy A", "Strategy B", "Δ", "power", "n_need", "equiv?", "resolved?", "variance"));
+            sb.append("-".repeat(112)).append(System.lineSeparator());
+            pairAnalyses.forEach(p -> sb.append(String.format("%-24s %-24s %6.2f %6.0f%% %7d %10s %10s %12.3f%n", p.strategyA(), p.strategyB(), p.delta(), p.observedPower() * 100, p.requiredBatches(), p.practicallyEqual() ? "YES" : "no", p.resolved() ? "YES" : "no", p.pooledVariance())));
             sb.append(String.format("%nElapsed: %s%n", elapsed));
             return sb.toString();
         }
