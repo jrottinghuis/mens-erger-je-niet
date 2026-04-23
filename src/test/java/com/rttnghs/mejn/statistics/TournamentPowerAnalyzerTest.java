@@ -17,7 +17,7 @@
 package com.rttnghs.mejn.statistics;
 
 import com.rttnghs.mejn.configuration.Config;
-import com.rttnghs.mejn.strategy.BaseStrategyFactory;
+import com.rttnghs.mejn.rmi.LocalComputeServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -177,12 +177,31 @@ class TournamentPowerAnalyzerTest {
 
     // Constructor validation
     /**
-     * Verifies that the constructor throws an exception if the strategy factory is null.
+     * Verifies that the constructor throws when the servers list is null.
      */
     @Test
-    void constructor_nullStrategyFactory_throwsException() {
+    void constructor_nullServers_throwsException() {
         List<List<String>> validBrackets = List.of(List.of("A", "B"));
-        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(null, validBrackets));
+        assertThrows(NullPointerException.class, () -> new TournamentPowerAnalyzer(null, validBrackets));
+    }
+
+    /**
+     * Verifies that the constructor throws when the servers list is empty.
+     */
+    @Test
+    void constructor_emptyServers_throwsException() {
+        List<List<String>> validBrackets = List.of(List.of("A", "B"));
+        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(List.of(), validBrackets));
+    }
+
+    /**
+     * Verifies that a valid constructor invocation succeeds.
+     */
+    @Test
+    void constructor_validArgs_succeeds() {
+        List<List<String>> validBrackets = List.of(List.of("A", "B"));
+        assertDoesNotThrow(() -> new TournamentPowerAnalyzer(
+                List.of(new LocalComputeServer("test-0")), validBrackets));
     }
 
     @BeforeEach

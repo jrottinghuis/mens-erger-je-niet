@@ -18,112 +18,96 @@ package com.rttnghs.mejn.statistics;
 
 import com.rttnghs.mejn.Tournament;
 import com.rttnghs.mejn.configuration.Config;
-import com.rttnghs.mejn.strategy.BaseStrategyFactory;
-import com.rttnghs.mejn.strategy.StrategyFactory;
+import com.rttnghs.mejn.rmi.BatchCallback;
+import com.rttnghs.mejn.rmi.BatchConfig;
+import com.rttnghs.mejn.rmi.BatchResult;
+import com.rttnghs.mejn.rmi.ComputeServer;
+import com.rttnghs.mejn.rmi.LocalComputeServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Sequential tournament runner with adaptive early stopping.
  *
  * <h2>Design</h2>
- * <p>Batches are dispatched up to {@code concurrency} at a time using a
- * <em>sliding window</em> of {@link CompletableFuture}s.  As each batch
- * completes its result is fed into per-strategy {@link RunningStats} (Welford
- * online algorithm), and the stop condition is re-evaluated.  This leaves at
- * most {@code concurrency} batches in-flight simultaneously — matching the
- * number of remote compute servers you intend to use.
+ * <p>Each {@link ComputeServer} in the provided list runs batches in a self-rescheduling
+ * loop: after completing a batch it calls back into {@link RunState#onBatchComplete}, and
+ * the boolean return value tells it whether to start another batch immediately.  This
+ * eliminates the per-batch scheduling overhead and maps directly onto the intended RMI
+ * callback model — the server reply to a callback doubles as the next-work decision,
+ * saving a full round-trip.
  *
- * <h2>RMI seam</h2>
- * <p>{@link #submitBatch()} is the single extension point for remote dispatch.
- * Override it (or inject a {@code BatchDispatcher} functional interface) to
- * send a batch to a remote server via RMI instead of running locally.  The
- * result type — a {@code Map<String, Double>} of normalized scores per
- * strategy — stays identical.
+ * <p>The main thread blocks on a {@link Phaser} and is woken exactly once when the stop
+ * condition is triggered, removing any polling loop.
  *
  * <h2>Stop condition</h2>
- * <p>After each completed batch the analyzer checks every adjacent pair of
- * strategies (ordered by current mean score).  A pair is <em>resolved</em>
- * when either:
+ * <p>After each completed batch the analyzer checks every adjacent pair of strategies
+ * (ordered by current mean score).  A pair is <em>resolved</em> when either:
  * <ul>
- *   <li>their mean difference is smaller than {@code mde} (practically
- *       equivalent — no need for more samples), or</li>
- *   <li>we have accumulated enough observations to detect that difference with
- *       95 % confidence <strong>and</strong> 80 % power — i.e.
+ *   <li>their mean difference is smaller than {@code mde} (practically equivalent), or</li>
+ *   <li>we have enough observations to detect that difference with 95 % confidence
+ *       <strong>and</strong> 80 % power — i.e.
  *       {@code n ≥ 2 × ((Z_α/2 + Z_β) × σ_pooled / Δ)²}.</li>
  * </ul>
- * <p>Sampling stops once <em>all</em> adjacent pairs are resolved, or the
- * optional {@code maxBatches} cap is hit.
+ * <p>Sampling stops once <em>all</em> adjacent pairs are resolved, or the optional
+ * {@code maxBatches} cap is hit.
  *
  * <h2>Batch size guidance</h2>
- * <p>For a local run 1 000–5 000 games/batch gives frequent variance updates
- * with low overhead.  For RMI dispatch, 5 000–10 000 games/batch amortises
- * the network round-trip while still updating the estimate every few seconds.
+ * <p>For a local run 1 000–5 000 games/batch gives frequent variance updates with low
+ * overhead.  For RMI dispatch, 5 000–10 000 games/batch amortises the network
+ * round-trip while still updating the estimate every few seconds.
  */
 public class TournamentPowerAnalyzer {
 
     private static final Logger logger = LogManager.getLogger(TournamentPowerAnalyzer.class);
 
-    /**
-     * Z for two-sided α = 0.05 (95 % confidence).
-     */
+    /** Z for two-sided α = 0.05 (95 % confidence). */
     public static final double Z_ALPHA_2 = 1.96;
 
-    /**
-     * Z for β = 0.20 (80 % power).
-     */
+    /** Z for β = 0.20 (80 % power). */
     public static final double Z_BETA = 0.841;
 
-    /**
-     * Combined Z factor: (Z_α/2 + Z_β)².
-     */
+    /** Combined Z factor: (Z_α/2 + Z_β)². */
     private static final double Z_FACTOR_SQ = Math.pow(Z_ALPHA_2 + Z_BETA, 2);
 
     // ── Configuration ─────────────────────────────────────────────────────────
 
-    private final StrategyFactory strategyFactory;
+    private final List<ComputeServer> servers;
     private final List<List<String>> brackets;
-    private final int concurrency;
     private final int playerCount;
 
-
     /**
-     * @param strategyFactory factory that resolves strategy names
-     * @param brackets        list of bracket strategy-name lists
-     * @param concurrency     maximum in-flight batches; set to the number of remote servers (1–N)
+     * Primary constructor.
+     *
+     * @param servers  compute servers to dispatch work to; one batch runs per server at a time
+     * @param brackets list of bracket strategy-name lists
      */
-    public TournamentPowerAnalyzer(StrategyFactory strategyFactory, List<List<String>> brackets, int concurrency) {
-        if (strategyFactory == null) {
-            throw new IllegalArgumentException("strategyFactory cannot be null");
-        }
+    public TournamentPowerAnalyzer(List<ComputeServer> servers, List<List<String>> brackets) {
+        Objects.requireNonNull(servers, "servers cannot be null");
+        if (servers.isEmpty()) throw new IllegalArgumentException("servers must not be empty");
         Objects.requireNonNull(brackets, "brackets cannot be null");
         if (brackets.isEmpty()) throw new IllegalArgumentException("brackets must not be empty");
-        if (concurrency < 1) throw new IllegalArgumentException("concurrency must be >= 1");
 
-        this.strategyFactory = strategyFactory;
+        this.servers = List.copyOf(servers);
         this.brackets = brackets;
-        this.concurrency = concurrency;
         this.playerCount = brackets.get(0).size();
     }
 
-    public TournamentPowerAnalyzer(StrategyFactory strategyFactory, List<List<String>> brackets) {
-        this(strategyFactory, brackets, Config.configuration.getInt("powerAnalyzerConcurrency", 4));
-    }
 
     // ── Running statistics ─────────────────────────────────────────────────────
 
     /**
      * Thread-safe online mean and variance tracker (Welford's algorithm).
      *
-     * <p>All accessors are {@code synchronized} so results can safely be read
-     * from the main thread while updates arrive from async batch completions.
+     * <p>All accessors are {@code synchronized} so results can safely be read from the
+     * main thread while updates arrive from server callback threads.
      */
     public static final class RunningStats {
 
@@ -221,155 +205,134 @@ public class TournamentPowerAnalyzer {
         return 1.0 / (1.0 + Math.exp(-1.7 * z));
     }
 
-    // ── Batch submission (RMI seam) ────────────────────────────────────────────
-
-    /**
-     * Submit one batch of tournaments and return a future that resolves to the
-     * normalized score per strategy.
-     *
-     * <p><strong>RMI hook</strong>: override or replace this method to dispatch
-     * the batch to a remote compute server.  The contract is: the future must
-     * eventually resolve to a {@code Map<String, Double>} where each value is
-     * the normalized mean score for that strategy over {@code gamesPerBatch}
-     * games (same scale as {@link com.rttnghs.mejn.statistics.TournamentStatistics}).
-     *
-     * @return future resolving to per-strategy normalized scores for this batch
-     */
-    protected CompletableFuture<Map<String, Double>> submitBatch() {
-        return CompletableFuture.supplyAsync(() -> {
-            EventCounter<String, Integer> batchCounts = new EventCounter<>();
-            Function<Integer, Integer> scorer = pos -> Score.get(pos, playerCount);
-
-            List<CompletableFuture<EventCounter<String, Integer>>> bracketFutures = new ArrayList<>(brackets.size());
-            for (List<String> bracket : brackets) {
-                Tournament t = new Tournament(strategyFactory, bracket, Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")));
-                bracketFutures.add(CompletableFuture.supplyAsync(t::play));
-            }
-            for (CompletableFuture<EventCounter<String, Integer>> f : bracketFutures) {
-                try {
-                    batchCounts.add(f.get());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Batch bracket interrupted", e);
-                } catch (ExecutionException e) {
-                    throw new RuntimeException("Batch bracket failed", e);
-                }
-            }
-            Map<String, Integer> intScores = EventCounter.getNormalizedScores(batchCounts, scorer, 100);
-            Map<String, Double> doubleScores = new TreeMap<>();
-            intScores.forEach((k, v) -> doubleScores.put(k, v.doubleValue()));
-            return doubleScores;
-        });
-    }
-
     // ── Main run loop ──────────────────────────────────────────────────────────
 
     /**
      * Run batches with adaptive early stopping.
      *
-     * <p>Up to {@code concurrency} batches are in-flight simultaneously (the
-     * sliding-window pattern).  After each batch completes its scores are
-     * incorporated into the running statistics and — once the warmup is done —
-     * the stop condition is evaluated.
+     * <p>Seeds each server with one {@code submitBatch} call, then blocks on a
+     * {@link Phaser} until the stop condition is met (or the optional timeout fires).
+     * Servers self-reschedule via the callback return value — no polling needed.
      *
      * @return the final {@link Result}
-     * @throws InterruptedException if interrupted while waiting for a batch
-     * @throws ExecutionException   if a batch future throws
+     * @throws InterruptedException if the main thread is interrupted while waiting
      */
-    public Result run() throws InterruptedException, ExecutionException {
+    public Result run() throws InterruptedException {
         Instant start = Instant.now();
 
-        Map<String, RunningStats> statsMap = new TreeMap<>();
-        int completedBatches = 0;
-        int batchesStarted = 0;
-        int batchesCanceled = 0;
-        StopReason stopReason = StopReason.MAX_BATCHES;
-        // For total games calculation
-        EventCounter<String, Integer> totalPlacements = new EventCounter<>();
+        int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch",
+                Config.configuration.getInt("games"));
+        BatchConfig config = new BatchConfig(brackets, gamesPerBatch);
 
-        // ── Sliding-window dispatch ──────────────────────────────────────────
-        record InFlight(int batchIndex, CompletableFuture<Map<String, Double>> future) {}
-        Set<InFlight> inFlight = new HashSet<>();
+        // One registered party = the main thread.  A server callback calls arrive()
+        // exactly once when the stop condition is first triggered.
+        Phaser phaser = new Phaser(1);
+        int waitPhase = phaser.getPhase();
 
-        // Seed the window: submit up to concurrency batches immediately.
-        int submitted = 0;
-        int initialSeed = Math.min(concurrency, Config.configuration.getInt("powerAnalyzerWarmupBatches", 5) + concurrency);
-        while (submitted < initialSeed && submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200)) {
-            inFlight.add(new InFlight(submitted, submitBatch()));
-            submitted++;
-            batchesStarted++;
+        RunState state = new RunState(config, phaser);
+
+        // Seed every server — each one self-reschedules until told to stop.
+        for (ComputeServer server : servers) {
+            server.submitBatch(config, state);
         }
 
-        while (!inFlight.isEmpty()) {
-            CompletableFuture<?>[] futures = inFlight.stream().map(InFlight::future).toArray(CompletableFuture[]::new);
-            try {
-                CompletableFuture.anyOf(futures).get(Config.configuration.getInt("tournamentPowerAnalyzer.batchTimeoutSeconds", 15), java.util.concurrent.TimeUnit.SECONDS);
-            } catch (java.util.concurrent.TimeoutException e) {
-                if (submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200) && inFlight.size() < concurrency * 2) {
-                    logger.debug("Batches are taking long; speculatively dispatching batch {}", submitted);
-                    inFlight.add(new InFlight(submitted, submitBatch()));
-                    submitted++;
-                    batchesStarted++;
-                }
-                continue;
-            }
-
-            List<InFlight> done = inFlight.stream().filter(f -> f.future().isDone()).toList();
-            for (InFlight head : done) {
-                inFlight.remove(head);
-                Map<String, Double> batchScores;
-                try {
-                    batchScores = head.future().get();
-                } catch (Exception e) {
-                    logger.warn("Batch {} failed: {}", head.batchIndex(), e.getMessage());
-                    batchesCanceled++;
-                    continue;
-                }
-                completedBatches++;
-
-                // Update running stats.
-                batchScores.forEach((strategy, score) -> statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
-
-                // For total games: try to get placements from batchScores if possible (not available here, so skip for now)
-
-                logger.debug("Batch {} complete: {}", completedBatches, formatScores(statsMap));
-
-                if (completedBatches % 5 == 0) {
-                    logger.info("After {} batches ({} games): {}", completedBatches, (long) completedBatches * Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games")), formatPowerSummary(statsMap, completedBatches));
-                }
-
-                if (completedBatches >= Config.configuration.getInt("powerAnalyzerWarmupBatches", 5)) {
-                    StopEvaluation eval = evaluateStop(statsMap, completedBatches);
-                    if (eval.shouldStop()) {
-                        stopReason = eval.reason();
-                        int numBrackets = brackets.size();
-                        int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games"));
-                        int tournamentsRun = completedBatches * numBrackets;
-                        long gamesRun = (long) tournamentsRun * gamesPerBatch;
-                        logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}", completedBatches, tournamentsRun, gamesRun, stopReason);
-                        inFlight.forEach(f -> f.future().cancel(true));
-                        batchesCanceled += inFlight.size();
-                        inFlight.clear();
-                        break;
-                    }
-                }
-            }
-
-            if (inFlight.isEmpty() && stopReason != StopReason.MAX_BATCHES) {
-                break;
-            }
-
-            while (submitted < Config.configuration.getInt("powerAnalyzerMaxBatches", 200) && inFlight.size() < concurrency) {
-                inFlight.add(new InFlight(submitted, submitBatch()));
-                submitted++;
-                batchesStarted++;
-            }
+        // Block until stop condition or wall-clock timeout.
+        int timeoutSeconds = Config.configuration.getInt("powerAnalyzerTimeoutSeconds", 3600);
+        try {
+            phaser.awaitAdvanceInterruptibly(waitPhase, timeoutSeconds, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            logger.warn("TournamentPowerAnalyzer timed out after {} seconds; stopping.", timeoutSeconds);
+            state.triggerStop(StopReason.MAX_BATCHES, state.completedBatches);
         }
 
         Duration elapsed = Duration.between(start, Instant.now());
-        int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch", Config.configuration.getInt("games"));
         int numBrackets = brackets.size();
-        return new Result(completedBatches, gamesPerBatch, Collections.unmodifiableMap(statsMap), buildPairAnalyses(statsMap, completedBatches), stopReason, elapsed, batchesStarted, batchesCanceled, playerCount, numBrackets);
+        int completed = state.completedBatches;
+        return new Result(
+                completed, gamesPerBatch,
+                Collections.unmodifiableMap(state.statsMap),
+                buildPairAnalyses(state.statsMap, completed),
+                state.stopReason, elapsed,
+                playerCount, numBrackets,
+                List.copyOf(servers));
+    }
+
+    // ── Per-run state (implements the callback) ────────────────────────────────
+
+    /**
+     * Holds all mutable state for a single {@link #run()} invocation and implements
+     * {@link BatchCallback} so it can be passed directly to the servers.
+     *
+     * <p>All mutation happens inside {@code synchronized(this)}, so concurrent server
+     * threads never race on statistics updates or stop-condition checks.
+     */
+    private class RunState implements BatchCallback {
+
+        final Map<String, RunningStats> statsMap = new TreeMap<>();
+        private final BatchConfig config;
+        private final Phaser phaser;
+
+        // guarded by synchronized(this)
+        int completedBatches = 0;
+        StopReason stopReason = StopReason.MAX_BATCHES;
+        private boolean stopped = false;
+
+        RunState(BatchConfig config, Phaser phaser) {
+            this.config = config;
+            this.phaser = phaser;
+        }
+
+        @Override
+        public synchronized boolean onBatchComplete(BatchResult result) {
+            // If stop was already signaled by another server's callback, park immediately.
+            if (stopped) return false;
+
+            completedBatches++;
+            result.scores().forEach((strategy, score) ->
+                    statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
+
+            logger.debug("Batch {} complete from {} ({}ms)",
+                    completedBatches, result.serverId(), result.elapsedMillis());
+
+            if (completedBatches % 5 == 0) {
+                int numBrackets = brackets.size();
+                long gamesRun = (long) completedBatches * numBrackets * config.gamesPerBatch();
+                logger.info("After {} batches ({} tournaments, {} games): {}",
+                        completedBatches, (long) completedBatches * numBrackets, gamesRun,
+                        formatPowerSummary(statsMap, completedBatches));
+            }
+
+            int warmupBatches = Config.configuration.getInt("powerAnalyzerWarmupBatches", 5);
+            int maxBatches = Config.configuration.getInt("powerAnalyzerMaxBatches", 200);
+
+            if (completedBatches >= warmupBatches) {
+                StopEvaluation eval = evaluateStop(statsMap, completedBatches);
+                if (eval.shouldStop()) {
+                    triggerStop(eval.reason(), completedBatches);
+                    return false;
+                }
+            }
+
+            if (completedBatches >= maxBatches) {
+                triggerStop(StopReason.MAX_BATCHES, completedBatches);
+                return false;
+            }
+
+            return true;
+        }
+
+        /** Signal stop exactly once; safe to call while holding or without the monitor. */
+        synchronized void triggerStop(StopReason reason, int completed) {
+            if (stopped) return;
+            stopped = true;
+            stopReason = reason;
+            int numBrackets = brackets.size();
+            int tournamentsRun = completed * numBrackets;
+            long gamesRun = (long) tournamentsRun * config.gamesPerBatch();
+            logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}",
+                    completed, tournamentsRun, gamesRun, reason);
+            phaser.arrive(); // unblock the main thread
+        }
     }
     // ── Stop condition evaluation ──────────────────────────────────────────────
 
@@ -378,8 +341,13 @@ public class TournamentPowerAnalyzer {
 
         // Log all deltas and variances for diagnostics
         for (PairAnalysis p : pairs) {
-            logger.info("DIAGNOSTIC: {} vs {}: delta={:.3f}, pooledStddev={:.3f}, pooledVariance={:.3f}, power={:.1f}%, resolved={}, practicallyEqual={}",
-                p.strategyA(), p.strategyB(), p.delta(), p.pooledStddev(), p.pooledVariance(), p.observedPower() * 100, p.resolved(), p.practicallyEqual());
+            logger.info("DIAGNOSTIC: {} vs {}: delta={}, pooledStddev={}, pooledVariance={}, power={}%, resolved={}, practicallyEqual={}",
+                    p.strategyA(), p.strategyB(),
+                    String.format("%.3f", p.delta()),
+                    String.format("%.3f", p.pooledStddev()),
+                    String.format("%.3f", p.pooledVariance()),
+                    String.format("%.1f", p.observedPower() * 100),
+                    p.resolved(), p.practicallyEqual());
         }
 
         // All pairs must be resolved for an early stop.
@@ -476,42 +444,81 @@ public class TournamentPowerAnalyzer {
     /**
      * Aggregated results from a full power-analyzer run.
      *
-     * @param completedBatches total number of batches executed
-     * @param gamesPerBatch    games per batch
+     * @param completedBatches total batches fully executed and incorporated into statistics
+     * @param gamesPerBatch    games per tournament
      * @param runningStats     per-strategy running statistics
      * @param pairAnalyses     final power analysis for each adjacent strategy pair
      * @param stopReason       why the run terminated
      * @param elapsed          wall-clock time
+     * @param playerCount      number of players per game
+     * @param numBrackets      number of brackets per batch
+     * @param servers          servers used in this run (for per-server reporting)
      */
-    public record Result(int completedBatches, int gamesPerBatch, Map<String, RunningStats> runningStats,
-                         List<PairAnalysis> pairAnalyses, StopReason stopReason, Duration elapsed,
-                         int batchesStarted, int batchesCanceled, int playerCount, int numBrackets) {
-        /**
-         * True total games played, calculated as the sum of all placements for all strategies divided by player count.
-         */
+    public record Result(
+            int completedBatches, int gamesPerBatch,
+            Map<String, RunningStats> runningStats,
+            List<PairAnalysis> pairAnalyses,
+            StopReason stopReason, Duration elapsed,
+            int playerCount, int numBrackets,
+            List<ComputeServer> servers) {
+
+        /** Total games played across all completed batches and brackets. */
         public long trueTotalGames() {
-            // Actual number of games played: (batchesStarted - batchesCanceled) × numBrackets × gamesPerBatch
-            return (long) (batchesStarted - batchesCanceled) * numBrackets * gamesPerBatch;
+            return (long) completedBatches * numBrackets * gamesPerBatch;
+        }
+
+        /** Sum of {@link ComputeServer#getBatchesStarted()} across all servers. */
+        public int totalBatchesStarted() {
+            return servers.stream().mapToInt(ComputeServer::getBatchesStarted).sum();
         }
 
         /**
-         * Formatted summary table.
+         * Batches started on all servers minus {@link #completedBatches}: batches that were
+         * running when the stop condition fired and completed after the stop was signaled.
          */
+        public int batchesOverrun() {
+            return totalBatchesStarted() - completedBatches;
+        }
+
+        /** Formatted summary table. */
         public String toSummary() {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%nTournamentPowerAnalyzer: %d batches × %,d games/batch × %d brackets  (total: %,d games)  stop=%s\n",
+            sb.append(String.format("%nTournamentPowerAnalyzer: %d batches × %,d games/batch × %d brackets  (total: %,d games)  stop=%s%n",
                     completedBatches, gamesPerBatch, numBrackets, trueTotalGames(), stopReason));
-            sb.append(String.format("Batches started: %d, Batches canceled: %d\n", batchesStarted, batchesCanceled));
+
+            // Per-server batch stats
+            sb.append(String.format("%-20s %14s %14s%n", "Server", "started", "completed"));
+            sb.append("-".repeat(50)).append(System.lineSeparator());
+            for (ComputeServer s : servers) {
+                sb.append(String.format("%-20s %14d %14d%n",
+                        s.getId(), s.getBatchesStarted(), s.getBatchesCompleted()));
+            }
+            sb.append(String.format("%-20s %14d %14d%n", "TOTAL", totalBatchesStarted(), completedBatches));
+            sb.append(System.lineSeparator());
+
+            // Strategy statistics
             sb.append(String.format("%-24s %7s %7s %7s %7s%n", "Strategy", "mean", "stddev", "stderr", "95%CI±"));
             sb.append("-".repeat(65)).append(System.lineSeparator());
-            runningStats.entrySet().stream().sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed()).forEach(e -> {
-                RunningStats s = e.getValue();
-                sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f%n", e.getKey(), s.mean(), s.stddev(), s.stderr(), s.moe95()));
-            });
+            runningStats.entrySet().stream()
+                    .sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed())
+                    .forEach(e -> {
+                        RunningStats s = e.getValue();
+                        sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f%n",
+                                e.getKey(), s.mean(), s.stddev(), s.stderr(), s.moe95()));
+                    });
             sb.append(System.lineSeparator());
-            sb.append(String.format("%-24s %-24s %6s %7s %7s %10s %10s %12s%n", "Strategy A", "Strategy B", "Δ", "power", "n_need", "equiv?", "resolved?", "variance"));
+
+            // Pair analysis
+            sb.append(String.format("%-24s %-24s %6s %7s %7s %10s %10s %12s%n",
+                    "Strategy A", "Strategy B", "Δ", "power", "n_need", "equiv?", "resolved?", "variance"));
             sb.append("-".repeat(112)).append(System.lineSeparator());
-            pairAnalyses.forEach(p -> sb.append(String.format("%-24s %-24s %6.2f %6.0f%% %7d %10s %10s %12.3f%n", p.strategyA(), p.strategyB(), p.delta(), p.observedPower() * 100, p.requiredBatches(), p.practicallyEqual() ? "YES" : "no", p.resolved() ? "YES" : "no", p.pooledVariance())));
+            pairAnalyses.forEach(p -> sb.append(String.format(
+                    "%-24s %-24s %6.2f %6.0f%% %7d %10s %10s %12.3f%n",
+                    p.strategyA(), p.strategyB(), p.delta(), p.observedPower() * 100,
+                    p.requiredBatches(),
+                    p.practicallyEqual() ? "YES" : "no",
+                    p.resolved() ? "YES" : "no",
+                    p.pooledVariance())));
             sb.append(String.format("%nElapsed: %s%n", elapsed));
             return sb.toString();
         }
@@ -522,24 +529,26 @@ public class TournamentPowerAnalyzer {
     /**
      * Run as a standalone program.  Configuration keys:
      * <ul>
-     *   <li>{@code games} — games per batch (default from config)</li>
-     *   <li>{@code powerAnalyzerWarmupBatches} — warmup rounds before stop check (default 5)</li>
+     *   <li>{@code powerAnalyzerGamesPerBatch} — games per tournament (falls back to {@code games})</li>
+     *   <li>{@code powerAnalyzerWarmupBatches} — batches before stop check (default 5)</li>
      *   <li>{@code powerAnalyzerMaxBatches} — hard cap on total batches (default 200)</li>
-     *   <li>{@code powerAnalyzerConcurrency} — in-flight batches / server count (default 4)</li>
+     *   <li>{@code powerAnalyzerConcurrency} — number of local servers to create (default 4)</li>
      *   <li>{@code powerAnalyzerMde} — minimum detectable effect on score scale (default 2.0)</li>
-     *   <li>{@code tournamentPowerAnalyzer.batchTimeoutSeconds} — maximum time to wait for a batch to complete, in seconds (default 15)</li>
+     *   <li>{@code powerAnalyzerTimeoutSeconds} — wall-clock timeout for the whole run (default 3600)</li>
      * </ul>
      */
-    public static void main(String[] args) throws InterruptedException, ExecutionException {
+    public static void main(String[] args) throws InterruptedException {
         List<String> strategyNames = Tournament.getStrategyNames();
         List<List<String>> brackets = Tournament.getStrategyNameBrackets(strategyNames);
 
         int concurrency = Config.configuration.getInt("powerAnalyzerConcurrency", 4);
 
-        logger.info("Starting TournamentPowerAnalyzer: concurrency={}", concurrency);
+        List<ComputeServer> servers = new ArrayList<>();
+        for (int i = 0; i < concurrency; i++) {
+            servers.add(new LocalComputeServer("local-" + i));
+        }
 
-        TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(new BaseStrategyFactory(), brackets, concurrency);
-
+        TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(servers, brackets);
         Result result = analyzer.run();
         logger.info("{}", result.toSummary());
     }

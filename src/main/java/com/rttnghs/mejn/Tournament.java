@@ -57,7 +57,7 @@ public class Tournament {
 	}
 
 	public EventCounter<String, Integer> play() {
-        logger.info("Starting {} games: {} Strategies: {}", games, Config.value, strategyNames);
+        // logger.info("Starting {} games: {} Strategies: {}", games, Config.value, strategyNames);
 		for (int i = 0; i < games; i++) {
 			Game game = new Game(strategyFactory, strategyNames);
 			EventCounter<String, Integer> gameFinishCounts = game.play();
