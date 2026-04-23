@@ -197,7 +197,7 @@ public class TournamentPowerAnalyzer {
                 Collections.unmodifiableMap(state.statsMap),
                 buildPairAnalyses(state.statsMap, completed),
                 state.stopReason, elapsed,
-                playerCount, numBrackets,
+                playerCount, numBrackets, mde,
                 List.copyOf(servers));
     }
 
@@ -241,9 +241,9 @@ public class TournamentPowerAnalyzer {
             if (completedBatches % 5 == 0) {
                 int numBrackets = brackets.size();
                 long gamesRun = (long) completedBatches * numBrackets * config.gamesPerBatch();
-                logger.info("After {} batches ({} tournaments, {} games): {}",
+                logger.info("After {} batches ({} tournaments, {} games). Effective MDE: {}: {}",
                         completedBatches, (long) completedBatches * numBrackets, gamesRun,
-                        formatPowerSummary(statsMap, completedBatches));
+                        String.format("%.2f", mde), formatPowerSummary(statsMap, completedBatches));
             }
 
             int warmupBatches = Config.configuration.getInt("powerAnalyzerWarmupBatches", 5);
@@ -274,8 +274,8 @@ public class TournamentPowerAnalyzer {
             int tournamentsRun = completed * numBrackets;
             long gamesRun = (long) tournamentsRun * config.gamesPerBatch();
             int inFlight = servers.size() - 1; // at most servers-1 batches still running
-            logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}. Up to {} batch(es) may complete with results discarded.",
-                    completed, tournamentsRun, gamesRun, reason, inFlight);
+            logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}. Effective MDE: {}. Up to {} batch(es) may complete with results discarded.",
+                    completed, tournamentsRun, gamesRun, reason, String.format("%.2f", mde), inFlight);
             phaser.arrive(); // unblock the main thread
         }
     }
@@ -389,6 +389,7 @@ public class TournamentPowerAnalyzer {
      * @param elapsed          wall-clock time
      * @param playerCount      number of players per game
      * @param numBrackets      number of brackets per batch
+     * @param effectiveMde     effective minimum detectable effect used for this run
      * @param servers          servers used in this run (for per-server reporting)
      */
     public record Result(
@@ -396,7 +397,7 @@ public class TournamentPowerAnalyzer {
             Map<String, RunningStats> runningStats,
             List<PairAnalysis> pairAnalyses,
             StopReason stopReason, Duration elapsed,
-            int playerCount, int numBrackets,
+            int playerCount, int numBrackets, double effectiveMde,
             List<ComputeServer> servers) {
 
         /** Total games played across all completed batches and brackets. */
@@ -422,6 +423,7 @@ public class TournamentPowerAnalyzer {
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("%nTournamentPowerAnalyzer: %d batches × %,d games/batch × %d brackets  (total: %,d games)  stop=%s%n",
                     completedBatches, gamesPerBatch, numBrackets, trueTotalGames(), stopReason));
+            sb.append(String.format("Effective MDE: %.2f%n", effectiveMde));
 
             // Per-server batch stats
             sb.append(String.format("%-20s %14s %14s%n", "Server", "started", "completed"));

@@ -17,15 +17,81 @@
 package com.rttnghs.mejn.statistics;
 
 import com.rttnghs.mejn.configuration.Config;
+import com.rttnghs.mejn.rmi.BatchCallback;
+import com.rttnghs.mejn.rmi.BatchConfig;
+import com.rttnghs.mejn.rmi.BatchResult;
+import com.rttnghs.mejn.rmi.ComputeServer;
 import com.rttnghs.mejn.rmi.LocalComputeServer;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.Serial;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TournamentPowerAnalyzerTest {
+
+    private static final class TestComputeServer implements ComputeServer {
+        private final AtomicInteger started = new AtomicInteger();
+        private final AtomicInteger completed = new AtomicInteger();
+        private final Map<String, Double> scores;
+
+        private TestComputeServer(Map<String, Double> scores) {
+            this.scores = scores;
+        }
+
+        @Override
+        public String getId() {
+            return "test-server";
+        }
+
+        @Override
+        public void submitBatch(BatchConfig config, BatchCallback callback) {
+            boolean continueWork = true;
+            while (continueWork) {
+                started.incrementAndGet();
+                completed.incrementAndGet();
+                continueWork = callback.onBatchComplete(new BatchResult(getId(), scores, Instant.now(), Instant.now()));
+            }
+        }
+
+        @Override
+        public int getBatchesStarted() {
+            return started.get();
+        }
+
+        @Override
+        public int getBatchesCompleted() {
+            return completed.get();
+        }
+    }
+
+    private static final class TestAppender extends AbstractAppender {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private final List<String> messages = new ArrayList<>();
+
+        private TestAppender(String name) {
+            super(name, null, null, false, Property.EMPTY_ARRAY);
+        }
+
+        @Override
+        public void append(LogEvent event) {
+            messages.add(event.getMessage().getFormattedMessage());
+        }
+    }
 
     // requiredBatches
 
@@ -162,6 +228,99 @@ class TournamentPowerAnalyzerTest {
         List<List<String>> validBrackets = List.of(List.of("A", "B"));
         assertDoesNotThrow(() -> new TournamentPowerAnalyzer(
                 List.of(new LocalComputeServer("test-0")), validBrackets, 20.0));
+    }
+
+    /**
+     * Verifies that the summary reports the effective MDE used for the run.
+     */
+    @Test
+    void resultSummary_includesEffectiveMde() {
+        TournamentPowerAnalyzer.Result result = new TournamentPowerAnalyzer.Result(
+                1,
+                5_000,
+                java.util.Map.of(),
+                java.util.List.of(),
+                TournamentPowerAnalyzer.StopReason.SUFFICIENT_POWER,
+                java.time.Duration.ZERO,
+                4,
+                6,
+                20.0,
+                java.util.List.of(new LocalComputeServer("test-0"))
+        );
+
+        assertTrue(result.toSummary().contains("Effective MDE: 20.00"));
+    }
+
+    /**
+     * Verifies that the early-stop log line includes the effective MDE used for the run.
+     */
+    @Test
+    void earlyStopLog_includesEffectiveMde() throws InterruptedException {
+        Config.configuration.setProperty("powerAnalyzerWarmupBatches", 1);
+        Config.configuration.setProperty("powerAnalyzerMaxBatches", 5);
+        Config.configuration.setProperty("powerAnalyzerGamesPerBatch", 100);
+        Config.configuration.setProperty("powerAnalyzerTimeoutSeconds", 10);
+
+        TestAppender appender = new TestAppender("test-appender");
+        appender.start();
+        LoggerContext context = LoggerContext.getContext(false);
+        org.apache.logging.log4j.core.Logger logger = context.getLogger(TournamentPowerAnalyzer.class.getName());
+        Level originalLevel = logger.getLevel();
+        logger.addAppender(appender);
+        logger.setLevel(Level.INFO);
+
+        try {
+            TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(
+                    List.of(new TestComputeServer(Map.of("A", 100.0, "B", 90.0))),
+                    List.of(List.of("A", "B")),
+                    20.0);
+
+            analyzer.run();
+
+            assertTrue(appender.messages.stream().anyMatch(message ->
+                            message.contains("Early stop after 1 batches") && message.contains("Effective MDE: 20.00")),
+                    () -> "Expected early-stop log with effective MDE, got: " + appender.messages);
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(originalLevel);
+            appender.stop();
+        }
+    }
+
+    /**
+     * Verifies that the periodic progress log line includes the effective MDE used for the run.
+     */
+    @Test
+    void progressLog_includesEffectiveMde() throws InterruptedException {
+        Config.configuration.setProperty("powerAnalyzerWarmupBatches", 10);
+        Config.configuration.setProperty("powerAnalyzerMaxBatches", 5);
+        Config.configuration.setProperty("powerAnalyzerGamesPerBatch", 100);
+        Config.configuration.setProperty("powerAnalyzerTimeoutSeconds", 10);
+
+        TestAppender appender = new TestAppender("test-progress-appender");
+        appender.start();
+        LoggerContext context = LoggerContext.getContext(false);
+        org.apache.logging.log4j.core.Logger logger = context.getLogger(TournamentPowerAnalyzer.class.getName());
+        Level originalLevel = logger.getLevel();
+        logger.addAppender(appender);
+        logger.setLevel(Level.INFO);
+
+        try {
+            TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(
+                    List.of(new TestComputeServer(Map.of("A", 100.0, "B", 70.0))),
+                    List.of(List.of("A", "B")),
+                    20.0);
+
+            analyzer.run();
+
+            assertTrue(appender.messages.stream().anyMatch(message ->
+                            message.contains("After 5 batches") && message.contains("Effective MDE: 20.00")),
+                    () -> "Expected progress log with effective MDE, got: " + appender.messages);
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(originalLevel);
+            appender.stop();
+        }
     }
 
     @BeforeEach
