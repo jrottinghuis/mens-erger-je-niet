@@ -259,8 +259,9 @@ public class TournamentPowerAnalyzer {
             int numBrackets = brackets.size();
             int tournamentsRun = completed * numBrackets;
             long gamesRun = (long) tournamentsRun * config.gamesPerBatch();
-            logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}",
-                    completed, tournamentsRun, gamesRun, reason);
+            int inFlight = servers.size() - 1; // at most servers-1 batches still running
+            logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}. Up to {} batch(es) may complete with results discarded.",
+                    completed, tournamentsRun, gamesRun, reason, inFlight);
             phaser.arrive(); // unblock the main thread
         }
     }
@@ -416,6 +417,10 @@ public class TournamentPowerAnalyzer {
                         s.getId(), s.getBatchesStarted(), s.getBatchesCompleted()));
             }
             sb.append(String.format("%-20s %14d %14d%n", "TOTAL", totalBatchesStarted(), completedBatches));
+            if (batchesOverrun() > 0) {
+                sb.append(String.format("  (%d batch(es) completed after stop was signaled; results discarded)%n",
+                        batchesOverrun()));
+            }
             sb.append(System.lineSeparator());
 
             // Strategy statistics
