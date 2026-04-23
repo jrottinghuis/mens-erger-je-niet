@@ -68,14 +68,11 @@ public class TournamentPowerAnalyzer {
 
     private static final Logger logger = LogManager.getLogger(TournamentPowerAnalyzer.class);
 
-    /** Z for two-sided α = 0.05 (95 % confidence). */
-    public static final double Z_ALPHA_2 = 1.96;
-
     /** Z for β = 0.20 (80 % power). */
     public static final double Z_BETA = 0.841;
 
     /** Combined Z factor: (Z_α/2 + Z_β)². */
-    private static final double Z_FACTOR_SQ = Math.pow(Z_ALPHA_2 + Z_BETA, 2);
+    private static final double Z_FACTOR_SQ = Math.pow(RunningStats.Z_ALPHA_2 + Z_BETA, 2);
 
     // ── Configuration ─────────────────────────────────────────────────────────
 
@@ -97,76 +94,9 @@ public class TournamentPowerAnalyzer {
 
         this.servers = List.copyOf(servers);
         this.brackets = brackets;
-        this.playerCount = brackets.get(0).size();
+        this.playerCount = brackets.getFirst().size();
     }
 
-
-    // ── Running statistics ─────────────────────────────────────────────────────
-
-    /**
-     * Thread-safe online mean and variance tracker (Welford's algorithm).
-     *
-     * <p>All accessors are {@code synchronized} so results can safely be read from the
-     * main thread while updates arrive from server callback threads.
-     */
-    public static final class RunningStats {
-
-        private int n = 0;
-        private double mean = 0.0;
-        private double m2 = 0.0; // running sum of squared deviations
-
-        /**
-         * Incorporate a new observation.
-         */
-        public synchronized void update(double value) {
-            n++;
-            double delta = value - mean;
-            mean += delta / n;
-            double delta2 = value - mean;
-            m2 += delta * delta2;
-        }
-
-        public synchronized int count() {
-            return n;
-        }
-
-        public synchronized double mean() {
-            return mean;
-        }
-
-        /**
-         * Sample variance (Bessel-corrected). Returns 0 if fewer than 2 observations.
-         */
-        public synchronized double variance() {
-            return n < 2 ? 0.0 : m2 / (n - 1);
-        }
-
-        public synchronized double stddev() {
-            return Math.sqrt(variance());
-        }
-
-        public synchronized double stderr() {
-            return n == 0 ? 0.0 : stddev() / Math.sqrt(n);
-        }
-
-        public synchronized double moe95() {
-            return Z_ALPHA_2 * stderr();
-        }
-
-        /**
-         * Lower bound of the 95 % CI.
-         */
-        public synchronized double ciLow() {
-            return mean - moe95();
-        }
-
-        /**
-         * Upper bound of the 95 % CI.
-         */
-        public synchronized double ciHigh() {
-            return mean + moe95();
-        }
-    }
 
     // ── Power analysis helpers ─────────────────────────────────────────────────
 
@@ -200,7 +130,7 @@ public class TournamentPowerAnalyzer {
     public static double observedPower(int n, double delta, double pooledStdDev) {
         if (n < 2 || pooledStdDev <= 0 || delta <= 0) return 0.0;
         // z = sqrt(n/2) * delta / sigma - Z_alpha/2
-        double z = Math.sqrt(n / 2.0) * delta / pooledStdDev - Z_ALPHA_2;
+        double z = Math.sqrt(n / 2.0) * delta / pooledStdDev - RunningStats.Z_ALPHA_2;
         // Φ(z) approximation using a logistic sigmoid (accurate to ~0.5%)
         return 1.0 / (1.0 + Math.exp(-1.7 * z));
     }
@@ -388,14 +318,6 @@ public class TournamentPowerAnalyzer {
 
     // ── Formatting helpers ─────────────────────────────────────────────────────
 
-    private static String formatScores(Map<String, RunningStats> statsMap) {
-        StringBuilder sb = new StringBuilder();
-        statsMap.entrySet().stream().sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed()).forEach(e -> {
-            RunningStats s = e.getValue();
-            sb.append(String.format("%s=%.1f±%.1f ", e.getKey(), s.mean(), s.moe95()));
-        });
-        return sb.toString().strip();
-    }
 
     private String formatPowerSummary(Map<String, RunningStats> statsMap, int n) {
         List<PairAnalysis> pairs = buildPairAnalyses(statsMap, n);
@@ -502,7 +424,7 @@ public class TournamentPowerAnalyzer {
             runningStats.entrySet().stream()
                     .sorted(Comparator.comparingDouble((Map.Entry<String, RunningStats> e) -> e.getValue().mean()).reversed())
                     .forEach(e -> {
-                        RunningStats s = e.getValue();
+                        RunningStats.Snapshot s = e.getValue().snapshot();
                         sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f%n",
                                 e.getKey(), s.mean(), s.stddev(), s.stderr(), s.moe95()));
                     });
