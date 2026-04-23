@@ -79,22 +79,36 @@ public class TournamentPowerAnalyzer {
     private final List<ComputeServer> servers;
     private final List<List<String>> brackets;
     private final int playerCount;
+    private final double mde;
 
     /**
      * Primary constructor.
      *
      * @param servers  compute servers to dispatch work to; one batch runs per server at a time
      * @param brackets list of bracket strategy-name lists
+     * @param mde      minimum detectable effect on the normalized score scale
      */
-    public TournamentPowerAnalyzer(List<ComputeServer> servers, List<List<String>> brackets) {
+    public TournamentPowerAnalyzer(List<ComputeServer> servers, List<List<String>> brackets, double mde) {
         Objects.requireNonNull(servers, "servers cannot be null");
         if (servers.isEmpty()) throw new IllegalArgumentException("servers must not be empty");
         Objects.requireNonNull(brackets, "brackets cannot be null");
         if (brackets.isEmpty()) throw new IllegalArgumentException("brackets must not be empty");
+        if (!Double.isFinite(mde) || mde < 0.0) throw new IllegalArgumentException("mde must be finite and >= 0");
 
         this.servers = List.copyOf(servers);
         this.brackets = brackets;
         this.playerCount = brackets.getFirst().size();
+        this.mde = mde;
+    }
+
+    /**
+     * Convenience constructor that uses the configured default MDE.
+     *
+     * @param servers  compute servers to dispatch work to; one batch runs per server at a time
+     * @param brackets list of bracket strategy-name lists
+     */
+    public TournamentPowerAnalyzer(List<ComputeServer> servers, List<List<String>> brackets) {
+        this(servers, brackets, Config.configuration.getDouble("powerAnalyzerMde", 2.0));
     }
 
 
@@ -307,7 +321,7 @@ public class TournamentPowerAnalyzer {
             double pooledVariance = (sA.variance() + sB.variance()) / 2.0;
             double pooledStddev = Math.sqrt(pooledVariance);
 
-            boolean practicallyEqual = delta < Config.configuration.getDouble("powerAnalyzerMde", 2.0);
+            boolean practicallyEqual = delta < mde;
             int reqBatches = practicallyEqual ? 0 : requiredBatches(delta, pooledStddev);
             double power = observedPower(n, delta, pooledStddev);
             boolean resolved = practicallyEqual || (n >= reqBatches && power >= 0.80);

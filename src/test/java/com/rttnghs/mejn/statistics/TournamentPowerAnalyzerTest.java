@@ -135,6 +135,16 @@ class TournamentPowerAnalyzerTest {
     }
 
     /**
+     * Verifies that the constructor throws when the explicit MDE is negative.
+     */
+    @Test
+    void constructor_negativeMde_throwsException() {
+        List<List<String>> validBrackets = List.of(List.of("A", "B"));
+        assertThrows(IllegalArgumentException.class, () -> new TournamentPowerAnalyzer(
+                List.of(new LocalComputeServer("test-0")), validBrackets, -1.0));
+    }
+
+    /**
      * Verifies that a valid constructor invocation succeeds.
      */
     @Test
@@ -142,6 +152,16 @@ class TournamentPowerAnalyzerTest {
         List<List<String>> validBrackets = List.of(List.of("A", "B"));
         assertDoesNotThrow(() -> new TournamentPowerAnalyzer(
                 List.of(new LocalComputeServer("test-0")), validBrackets));
+    }
+
+    /**
+     * Verifies that a valid constructor invocation with an explicit MDE succeeds.
+     */
+    @Test
+    void constructor_validArgsAndExplicitMde_succeeds() {
+        List<List<String>> validBrackets = List.of(List.of("A", "B"));
+        assertDoesNotThrow(() -> new TournamentPowerAnalyzer(
+                List.of(new LocalComputeServer("test-0")), validBrackets, 20.0));
     }
 
     @BeforeEach
