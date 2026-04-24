@@ -42,6 +42,8 @@ class ConfigXmlValidationTest {
 
     private void validateXmlAgainstSchema(String xmlFile, String schemaFile) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
         Schema schema = factory.newSchema(new File(schemaFile));
         Validator validator = schema.newValidator();
         validator.validate(new StreamSource(new File(xmlFile)));
