@@ -62,7 +62,7 @@ class TournamentPowerAnalyzerTest {
             while (continueWork) {
                 started.incrementAndGet();
                 completed.incrementAndGet();
-                continueWork = callback.onBatchComplete(new BatchResult(getId(), scores, Instant.now(), Instant.now()));
+                continueWork = callback.onBatchComplete(new BatchResult(getId(), config.generationId(), scores, Instant.now(), Instant.now()));
             }
         }
 
@@ -245,10 +245,11 @@ class TournamentPowerAnalyzerTest {
                 4,
                 6,
                 20.0,
-                java.util.List.of(new LocalComputeServer("test-0"))
+                java.util.List.of(new ComputeServer.StatsSnapshot("test-0", 1, 1, 0, 0, 0, 0))
         );
 
         assertTrue(result.toSummary().contains("Effective MDE: 20.00"));
+        assertTrue(result.toSummary().contains("staleSub"));
     }
 
     /**
@@ -320,6 +321,54 @@ class TournamentPowerAnalyzerTest {
             logger.removeAppender(appender);
             logger.setLevel(originalLevel);
             appender.stop();
+        }
+    }
+
+    /**
+     * Verifies that results from a stale generation are ignored.
+     */
+    @Test
+    void staleGenerationResult_isIgnored() throws InterruptedException {
+        Object originalTimeout = Config.configuration.getProperty("powerAnalyzerTimeoutSeconds");
+        ComputeServer staleServer = new ComputeServer() {
+            @Override
+            public String getId() {
+                return "stale-server";
+            }
+
+            @Override
+            public void submitBatch(BatchConfig config, BatchCallback callback) {
+                callback.onBatchComplete(new BatchResult(getId(), config.generationId() + 1, Map.of("A", 100.0, "B", 0.0), Instant.now(), Instant.now()));
+            }
+
+            @Override
+            public int getBatchesStarted() {
+                return 1;
+            }
+
+            @Override
+            public int getBatchesCompleted() {
+                return 1;
+            }
+        };
+
+        try {
+            Config.configuration.setProperty("powerAnalyzerTimeoutSeconds", 0);
+            TournamentPowerAnalyzer analyzer = new TournamentPowerAnalyzer(
+                    List.of(staleServer),
+                    List.of(List.of("A", "B")),
+                    20.0);
+
+            TournamentPowerAnalyzer.Result result = analyzer.run();
+
+            assertEquals(0, result.completedBatches());
+            assertEquals(TournamentPowerAnalyzer.StopReason.MAX_BATCHES, result.stopReason());
+        } finally {
+            if (originalTimeout == null) {
+                Config.configuration.clearProperty("powerAnalyzerTimeoutSeconds");
+            } else {
+                Config.configuration.setProperty("powerAnalyzerTimeoutSeconds", originalTimeout);
+            }
         }
     }
 

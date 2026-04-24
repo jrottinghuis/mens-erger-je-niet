@@ -29,13 +29,15 @@ import java.util.Map;
  * <p>Serializable so it can be transmitted over RMI when the remote transport layer
  * is added.
  *
- * @param serverId    stable identifier of the server that ran the batch
- * @param scores      per-strategy normalized mean scores for this batch
- * @param startedAt   wall-clock instant when the batch started
- * @param completedAt wall-clock instant when the batch completed
+ * @param serverId     stable identifier of the server that ran the batch
+ * @param generationId logical run identifier of the batch that produced this result
+ * @param scores       per-strategy normalized mean scores for this batch
+ * @param startedAt    wall-clock instant when the batch started
+ * @param completedAt  wall-clock instant when the batch completed
  */
 public record BatchResult(
         String serverId,
+        int generationId,
         Map<String, Double> scores,
         Instant startedAt,
         Instant completedAt

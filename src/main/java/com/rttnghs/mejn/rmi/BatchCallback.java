@@ -27,6 +27,11 @@ package com.rttnghs.mejn.rmi;
  * Returning {@code false} parks the server; the coordinator will call
  * {@link ComputeServer#submitBatch} again when it wants more work.
  *
+ * <h2>Generation supersession</h2>
+ * <p>Each {@link BatchResult} carries a {@code generationId}.  If a result belongs to a
+ * stale generation, implementations should ignore it and return {@code false} so the
+ * server stops self-rescheduling that older run at the next batch boundary.
+ *
  * <h2>Thread safety</h2>
  * <p>Implementations must be thread-safe: multiple servers may invoke this
  * concurrently from different threads.

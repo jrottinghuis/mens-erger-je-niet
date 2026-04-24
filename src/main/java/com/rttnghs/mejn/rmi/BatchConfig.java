@@ -28,11 +28,21 @@ import java.util.List;
  * is added.  The brackets hold strategy <em>names</em> (not instances), so the
  * server resolves them locally via its own {@code StrategyFactory}.
  *
- * @param brackets     list of bracket strategy-name lists; each bracket corresponds to
- *                     one {@link com.rttnghs.mejn.Tournament} run per batch
+ * @param brackets      list of bracket strategy-name lists; each bracket corresponds to
+ *                      one {@link com.rttnghs.mejn.Tournament} run per batch
  * @param gamesPerBatch number of games each tournament plays
+ * @param generationId  logical run identifier used to supersede older work without an
+ *                      explicit cancel RPC; a newer generation may replace an older one
+ *                      at the next batch boundary on the same server.
+ *                      <strong>Must be monotonically increasing</strong> across submitted
+ *                      runs for a given coordinator/server set. {@link LocalComputeServer}
+ *                      compares generation IDs numerically ({@code newer > older}) when
+ *                      deciding whether work is stale, so reusing or decreasing IDs can
+ *                      cause valid work to be ignored or stale work to continue longer
+ *                      than intended. The intended range is the full signed {@code int}
+ *                      space, typically starting at {@link Integer#MIN_VALUE}.
  */
-public record BatchConfig(List<List<String>> brackets, int gamesPerBatch) implements Serializable {
+public record BatchConfig(List<List<String>> brackets, int gamesPerBatch, int generationId) implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

@@ -24,6 +24,9 @@ package com.rttnghs.mejn.rmi;
  * The result is delivered asynchronously via the provided {@link BatchCallback}.
  * The callback's return value determines whether another batch should start right
  * away (see {@link BatchCallback} for the continuation protocol).
+ * A newer {@link BatchConfig#generationId()} may supersede an older one on the same
+ * server; implementations should let the older generation finish at most its current
+ * batch, then stop rescheduling it and switch to the newer generation.
  *
  * <h2>RMI note</h2>
  * <p>This interface will extend {@code java.rmi.Remote} once the transport layer is
@@ -31,6 +34,31 @@ package com.rttnghs.mejn.rmi;
  * stand-in until then.
  */
 public interface ComputeServer {
+
+    /**
+     * Immutable point-in-time view of a server's cumulative statistics.
+     *
+     * @param serverId                stable server identifier
+     * @param batchesStarted          total batches started since server creation
+     * @param batchesCompleted        total batches fully completed since server creation
+     * @param staleSubmissionsIgnored stale submit requests ignored because a newer
+     *                                generation had already been observed
+     * @param supersededResultsDropped completed batch results dropped locally because the
+     *                                 generation became stale before callback delivery
+     * @param abortedBatches          batches aborted locally during execution after
+     *                                supersession/cancellation was detected
+     * @param chunkFuturesCanceled    queued chunk futures canceled due to newer-generation
+     *                                supersession
+     */
+    record StatsSnapshot(
+            String serverId,
+            int batchesStarted,
+            int batchesCompleted,
+            int staleSubmissionsIgnored,
+            int supersededResultsDropped,
+            int abortedBatches,
+            int chunkFuturesCanceled) {
+    }
 
     /**
      * Stable identifier for this server (e.g. {@code "local-0"} or
@@ -61,5 +89,12 @@ public interface ComputeServer {
      * (i.e. {@link BatchCallback#onBatchComplete} has been called and returned).
      */
     int getBatchesCompleted();
+
+    /**
+     * Immutable point-in-time snapshot of this server's statistics.
+     */
+    default StatsSnapshot statsSnapshot() {
+        return new StatsSnapshot(getId(), getBatchesStarted(), getBatchesCompleted(), 0, 0, 0, 0);
+    }
 }
 

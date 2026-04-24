@@ -32,6 +32,7 @@ import java.util.*;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Sequential tournament runner with adaptive early stopping.
@@ -67,6 +68,7 @@ import java.util.concurrent.TimeoutException;
 public class TournamentPowerAnalyzer {
 
     private static final Logger logger = LogManager.getLogger(TournamentPowerAnalyzer.class);
+    private static final AtomicInteger NEXT_GENERATION_ID = new AtomicInteger(Integer.MIN_VALUE);
 
     /** Z for β = 0.20 (80 % power). */
     public static final double Z_BETA = 0.841;
@@ -163,17 +165,20 @@ public class TournamentPowerAnalyzer {
      */
     public Result run() throws InterruptedException {
         Instant start = Instant.now();
+        int generationId = NEXT_GENERATION_ID.getAndIncrement();
+        logger.info("Starting TournamentPowerAnalyzer generation {} with {} server(s) and effective MDE {}",
+                generationId, servers.size(), String.format("%.2f", mde));
 
         int gamesPerBatch = Config.configuration.getInt("powerAnalyzerGamesPerBatch",
                 Config.configuration.getInt("games"));
-        BatchConfig config = new BatchConfig(brackets, gamesPerBatch);
+        BatchConfig config = new BatchConfig(brackets, gamesPerBatch, generationId);
 
         // One registered party = the main thread.  A server callback calls arrive()
         // exactly once when the stop condition is first triggered.
         Phaser phaser = new Phaser(1);
         int waitPhase = phaser.getPhase();
 
-        RunState state = new RunState(config, phaser);
+        RunState state = new RunState(config, phaser, generationId);
 
         // Seed every server — each one self-reschedules until told to stop.
         for (ComputeServer server : servers) {
@@ -198,7 +203,7 @@ public class TournamentPowerAnalyzer {
                 buildPairAnalyses(state.statsMap, completed),
                 state.stopReason, elapsed,
                 playerCount, numBrackets, mde,
-                List.copyOf(servers));
+                servers.stream().map(ComputeServer::statsSnapshot).toList());
     }
 
     // ── Per-run state (implements the callback) ────────────────────────────────
@@ -215,19 +220,27 @@ public class TournamentPowerAnalyzer {
         final Map<String, RunningStats> statsMap = new TreeMap<>();
         private final BatchConfig config;
         private final Phaser phaser;
+        private final int generationId;
 
         // guarded by synchronized(this)
         int completedBatches = 0;
         StopReason stopReason = StopReason.MAX_BATCHES;
         private boolean stopped = false;
 
-        RunState(BatchConfig config, Phaser phaser) {
+        RunState(BatchConfig config, Phaser phaser, int generationId) {
             this.config = config;
             this.phaser = phaser;
+            this.generationId = generationId;
         }
 
         @Override
         public synchronized boolean onBatchComplete(BatchResult result) {
+            if (result.generationId() != generationId) {
+                logger.debug("Ignoring stale result from generation {} for current generation {} on server {}",
+                        result.generationId(), generationId, result.serverId());
+                return false;
+            }
+
             // If stop was already signaled by another server's callback, park immediately.
             if (stopped) return false;
 
@@ -235,14 +248,14 @@ public class TournamentPowerAnalyzer {
             result.scores().forEach((strategy, score) ->
                     statsMap.computeIfAbsent(strategy, _ -> new RunningStats()).update(score));
 
-            logger.debug("Batch {} complete from {} ({}ms)",
-                    completedBatches, result.serverId(), result.elapsedMillis());
+            logger.debug("Generation {} batch {} complete from {} ({}ms)",
+                    generationId, completedBatches, result.serverId(), result.elapsedMillis());
 
             if (completedBatches % 5 == 0) {
                 int numBrackets = brackets.size();
                 long gamesRun = (long) completedBatches * numBrackets * config.gamesPerBatch();
-                logger.info("After {} batches ({} tournaments, {} games). Effective MDE: {}: {}",
-                        completedBatches, (long) completedBatches * numBrackets, gamesRun,
+                logger.info("Generation {}: After {} batches ({} tournaments, {} games). Effective MDE: {}: {}",
+                        generationId, completedBatches, (long) completedBatches * numBrackets, gamesRun,
                         String.format("%.2f", mde), formatPowerSummary(statsMap, completedBatches));
             }
 
@@ -274,8 +287,8 @@ public class TournamentPowerAnalyzer {
             int tournamentsRun = completed * numBrackets;
             long gamesRun = (long) tournamentsRun * config.gamesPerBatch();
             int inFlight = servers.size() - 1; // at most servers-1 batches still running
-            logger.info("Early stop after {} batches ({} tournaments, {} games). Reason: {}. Effective MDE: {}. Up to {} batch(es) may complete with results discarded.",
-                    completed, tournamentsRun, gamesRun, reason, String.format("%.2f", mde), inFlight);
+            logger.info("Generation {}: Early stop after {} batches ({} tournaments, {} games). Reason: {}. Effective MDE: {}. Up to {} batch(es) may complete with results discarded.",
+                    generationId, completed, tournamentsRun, gamesRun, reason, String.format("%.2f", mde), inFlight);
             phaser.arrive(); // unblock the main thread
         }
     }
@@ -390,7 +403,7 @@ public class TournamentPowerAnalyzer {
      * @param playerCount      number of players per game
      * @param numBrackets      number of brackets per batch
      * @param effectiveMde     effective minimum detectable effect used for this run
-     * @param servers          servers used in this run (for per-server reporting)
+     * @param serverStats      per-server statistics snapshots captured at the end of the run
      */
     public record Result(
             int completedBatches, int gamesPerBatch,
@@ -398,16 +411,16 @@ public class TournamentPowerAnalyzer {
             List<PairAnalysis> pairAnalyses,
             StopReason stopReason, Duration elapsed,
             int playerCount, int numBrackets, double effectiveMde,
-            List<ComputeServer> servers) {
+            List<ComputeServer.StatsSnapshot> serverStats) {
 
         /** Total games played across all completed batches and brackets. */
         public long trueTotalGames() {
             return (long) completedBatches * numBrackets * gamesPerBatch;
         }
 
-        /** Sum of {@link ComputeServer#getBatchesStarted()} across all servers. */
+        /** Sum of started batches across all servers. */
         public int totalBatchesStarted() {
-            return servers.stream().mapToInt(ComputeServer::getBatchesStarted).sum();
+            return serverStats.stream().mapToInt(ComputeServer.StatsSnapshot::batchesStarted).sum();
         }
 
         /**
@@ -426,13 +439,23 @@ public class TournamentPowerAnalyzer {
             sb.append(String.format("Effective MDE: %.2f%n", effectiveMde));
 
             // Per-server batch stats
-            sb.append(String.format("%-20s %14s %14s%n", "Server", "started", "completed"));
-            sb.append("-".repeat(50)).append(System.lineSeparator());
-            for (ComputeServer s : servers) {
-                sb.append(String.format("%-20s %14d %14d%n",
-                        s.getId(), s.getBatchesStarted(), s.getBatchesCompleted()));
+            sb.append(String.format("%-20s %10s %10s %10s %10s %10s %10s%n",
+                    "Server", "started", "completed", "staleSub", "dropRes", "aborted", "cancelled"));
+            sb.append("-".repeat(86)).append(System.lineSeparator());
+            for (ComputeServer.StatsSnapshot s : serverStats) {
+                sb.append(String.format("%-20s %10d %10d %10d %10d %10d %10d%n",
+                        s.serverId(), s.batchesStarted(), s.batchesCompleted(),
+                        s.staleSubmissionsIgnored(), s.supersededResultsDropped(),
+                        s.abortedBatches(), s.chunkFuturesCanceled()));
             }
-            sb.append(String.format("%-20s %14d %14d%n", "TOTAL", totalBatchesStarted(), completedBatches));
+            sb.append(String.format("%-20s %10d %10d %10d %10d %10d %10d%n",
+                    "TOTAL",
+                    totalBatchesStarted(),
+                    completedBatches,
+                    serverStats.stream().mapToInt(ComputeServer.StatsSnapshot::staleSubmissionsIgnored).sum(),
+                    serverStats.stream().mapToInt(ComputeServer.StatsSnapshot::supersededResultsDropped).sum(),
+                    serverStats.stream().mapToInt(ComputeServer.StatsSnapshot::abortedBatches).sum(),
+                    serverStats.stream().mapToInt(ComputeServer.StatsSnapshot::chunkFuturesCanceled).sum()));
             if (batchesOverrun() > 0) {
                 sb.append(String.format("  (%d batch(es) completed after stop was signaled; results discarded)%n",
                         batchesOverrun()));

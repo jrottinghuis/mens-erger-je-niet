@@ -25,13 +25,16 @@ import com.rttnghs.mejn.strategy.StrategyFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Serial;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,7 +42,7 @@ import java.util.function.Function;
 
 /**
  * In-process {@link ComputeServer} implementation that runs tournament brackets in
- * parallel using a shared {@link ExecutorService}.
+ * parallel using dedicated dispatch and chunk executors.
  *
  * <h2>Self-rescheduling work loop</h2>
  * <p>Once seeded via {@link #submitBatch}, a server worker thread runs batches in a
@@ -58,18 +61,43 @@ public class LocalComputeServer implements ComputeServer {
     private static final Logger logger = LogManager.getLogger(LocalComputeServer.class);
 
     /**
-     * Shared work-stealing pool used by all {@code LocalComputeServer} instances for
-     * running brackets in parallel.  A work-stealing pool matches the use-case well:
-     * bracket tasks are independent and roughly equal in cost, so idle threads can
-     * steal queued tasks from busy ones, yielding better CPU utilisation than a
-     * fixed or cached pool when many brackets run concurrently.
+     * Shared executor for dispatch loops.  Dispatch work is light but potentially
+     * long-lived, so it is kept separate from chunk execution to avoid mixing control-
+     * plane and compute-plane work in the same pool.
      */
-    private static final ExecutorService SHARED_POOL = Executors.newWorkStealingPool();
+    private static final ExecutorService DISPATCH_EXECUTOR = Executors.newCachedThreadPool();
+
+    /**
+     * Shared work-stealing pool used by all {@code LocalComputeServer} instances for
+     * running tournament chunks in parallel.  Chunk tasks are independent and roughly
+     * equal in cost, so idle threads can steal queued work from busy ones.
+     */
+    private static final ExecutorService CHUNK_EXECUTOR = Executors.newWorkStealingPool();
 
     private final String id;
     private final StrategyFactory strategyFactory;
     private final AtomicInteger batchesStarted = new AtomicInteger();
     private final AtomicInteger batchesCompleted = new AtomicInteger();
+    private final AtomicInteger staleSubmissionsIgnored = new AtomicInteger();
+    private final AtomicInteger supersededResultsDropped = new AtomicInteger();
+    private final AtomicInteger abortedBatches = new AtomicInteger();
+    private final AtomicInteger chunkFuturesCanceled = new AtomicInteger();
+    private final Object stateLock = new Object();
+    private BatchConfig pendingConfig;
+    private BatchCallback pendingCallback;
+    private boolean workerRunning;
+    private int activeGenerationId = Integer.MIN_VALUE;
+    private int latestGenerationId = Integer.MIN_VALUE;
+    private int activeChunkGenerationId = Integer.MIN_VALUE;
+    private List<CompletableFuture<EventCounter<String, Integer>>> activeChunkFutures = List.of();
+
+    private record PendingWork(BatchConfig config, BatchCallback callback) {
+    }
+
+    private static final class SupersededGenerationException extends RuntimeException {
+        @Serial
+        private static final long serialVersionUID = 1L;
+    }
 
     /**
      * @param id              stable identifier for this server instance
@@ -98,29 +126,162 @@ public class LocalComputeServer implements ComputeServer {
      * Accepts the batch configuration and immediately returns.  A worker thread begins
      * the self-rescheduling loop: it keeps running batches until the coordinator signals
      * stop by returning {@code false} from {@link BatchCallback#onBatchComplete}.
+     *
+     * <p>A newer generation supersedes any older pending generation on this server.
+     * The currently running generation is allowed to finish its <em>current</em> batch,
+     * but will not self-reschedule once a newer generation has been submitted.
      */
     @Override
     public void submitBatch(BatchConfig config, BatchCallback callback) {
-        SHARED_POOL.submit(() -> runLoop(config, callback));
+        synchronized (stateLock) {
+            if (config.generationId() < latestGenerationId) {
+                staleSubmissionsIgnored.incrementAndGet();
+                logger.debug("Server {} ignoring stale generation {} (latest seen: {})",
+                        id, config.generationId(), latestGenerationId);
+                return;
+            }
+            boolean newerGeneration = config.generationId() > latestGenerationId;
+            latestGenerationId = config.generationId();
+
+            if (newerGeneration) {
+                cancelActiveChunkFuturesForOlderGeneration(config.generationId());
+            }
+
+            if (workerRunning && activeGenerationId == config.generationId()) {
+                logger.debug("Server {} ignoring duplicate submit for active generation {}",
+                        id, config.generationId());
+                return;
+            }
+
+            pendingConfig = config;
+            pendingCallback = callback;
+
+            if (!workerRunning) {
+                workerRunning = true;
+                DISPATCH_EXECUTOR.submit(this::runDispatchLoop);
+            }
+        }
     }
 
     /**
-     * Self-rescheduling loop: run one batch, post the result, and continue as long as the
-     * coordinator returns {@code true}.  The loop runs entirely on one worker thread,
-     * avoiding thread hand-offs between consecutive batches on the same server.
+     * Dispatch loop: run exactly one generation at a time, while allowing a newer
+     * generation to supersede the current one at the next batch boundary.
      */
-    private void runLoop(BatchConfig config, BatchCallback callback) {
+    private void runDispatchLoop() {
+        while (true) {
+            PendingWork pendingWork = takePendingWork();
+            if (pendingWork == null) {
+                logger.debug("Server {} dispatch loop idling", id);
+                return;
+            }
+
+            logger.debug("Server {} starting generation {}", id, pendingWork.config().generationId());
+            runGeneration(pendingWork.config(), pendingWork.callback());
+        }
+    }
+
+    /**
+     * Self-rescheduling loop for one generation: run batches until the coordinator says
+     * stop or a newer generation supersedes this one.
+     */
+    private void runGeneration(BatchConfig config, BatchCallback callback) {
         boolean continueWork = true;
         while (continueWork) {
             Instant startedAt = Instant.now();
             batchesStarted.incrementAndGet();
-            Map<String, Double> scores = runOneBatch(config);
+            Map<String, Double> scores;
+            try {
+                scores = runOneBatch(config);
+            } catch (SupersededGenerationException e) {
+                abortedBatches.incrementAndGet();
+                logger.debug("Server {} aborting generation {} during batch execution after supersession",
+                        id, config.generationId());
+                break;
+            }
             Instant completedAt = Instant.now();
             batchesCompleted.incrementAndGet();
-            BatchResult result = new BatchResult(id, scores, startedAt, completedAt);
-            continueWork = callback.onBatchComplete(result);
+
+            long latestSeenGeneration = latestSeenGenerationId();
+            if (isSuperseded(config.generationId())) {
+                supersededResultsDropped.incrementAndGet();
+                logger.debug("Server {} dropping stale result for generation {} (latest seen: {})",
+                        id, config.generationId(), latestSeenGeneration);
+                break;
+            }
+
+            BatchResult result = new BatchResult(id, config.generationId(), scores, startedAt, completedAt);
+
+            boolean callbackRequestedContinue = callback.onBatchComplete(result);
+            continueWork = callbackRequestedContinue && !isSuperseded(config.generationId());
         }
-        logger.debug("Server {} idling after {} completed batches", id, batchesCompleted.get());
+        logger.debug("Server {} parked generation {} after {} completed batches",
+                id, config.generationId(), batchesCompleted.get());
+    }
+
+    private PendingWork takePendingWork() {
+        synchronized (stateLock) {
+            if (pendingConfig == null) {
+                workerRunning = false;
+                activeGenerationId = Integer.MIN_VALUE;
+                return null;
+            }
+            BatchConfig config = pendingConfig;
+            BatchCallback callback = pendingCallback;
+            pendingConfig = null;
+            pendingCallback = null;
+            activeGenerationId = config.generationId();
+            return new PendingWork(config, callback);
+        }
+    }
+
+    private boolean isSuperseded(int generationId) {
+        synchronized (stateLock) {
+            return latestGenerationId > generationId;
+        }
+    }
+
+    private int latestSeenGenerationId() {
+        synchronized (stateLock) {
+            return latestGenerationId;
+        }
+    }
+
+    private void registerActiveChunkFutures(int generationId, List<CompletableFuture<EventCounter<String, Integer>>> chunkFutures) {
+        synchronized (stateLock) {
+            activeChunkGenerationId = generationId;
+            activeChunkFutures = new ArrayList<>(chunkFutures);
+        }
+    }
+
+    private void clearActiveChunkFutures(int generationId) {
+        synchronized (stateLock) {
+            if (activeChunkGenerationId == generationId) {
+                activeChunkGenerationId = Integer.MIN_VALUE;
+                activeChunkFutures = List.of();
+            }
+        }
+    }
+
+    private void cancelActiveChunkFuturesForOlderGeneration(int newerGenerationId) {
+        List<CompletableFuture<EventCounter<String, Integer>>> futuresToCancel = Collections.emptyList();
+        int generationToCancel = Integer.MIN_VALUE;
+        synchronized (stateLock) {
+            if (activeChunkGenerationId != Integer.MIN_VALUE && activeChunkGenerationId < newerGenerationId) {
+                generationToCancel = activeChunkGenerationId;
+                futuresToCancel = new ArrayList<>(activeChunkFutures);
+            }
+        }
+        if (!futuresToCancel.isEmpty()) {
+            int canceled = 0;
+            logger.debug("Server {} canceling {} queued chunk future(s) for superseded generation {} in favor of {}",
+                    id, futuresToCancel.size(), generationToCancel, newerGenerationId);
+            for (CompletableFuture<EventCounter<String, Integer>> future : futuresToCancel) {
+                if (future.cancel(false)) {
+                    canceled++;
+                }
+            }
+            chunkFuturesCanceled.addAndGet(canceled);
+        }
     }
 
     private Map<String, Double> runOneBatch(BatchConfig config) {
@@ -142,19 +303,30 @@ public class LocalComputeServer implements ComputeServer {
                 int chunkGames = Math.min(gamesPerChunk, remaining);
                 remaining -= chunkGames;
                 Tournament t = new Tournament(strategyFactory, bracket, chunkGames);
-                chunkFutures.add(CompletableFuture.supplyAsync(t::play, SHARED_POOL));
+                chunkFutures.add(CompletableFuture.supplyAsync(t::play, CHUNK_EXECUTOR));
             }
         }
 
-        for (CompletableFuture<EventCounter<String, Integer>> f : chunkFutures) {
-            try {
-                batchCounts.add(f.get());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Batch chunk interrupted", e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException("Batch chunk failed", e);
+        registerActiveChunkFutures(config.generationId(), chunkFutures);
+        cancelActiveChunkFuturesForOlderGeneration(latestSeenGenerationId());
+        CompletableFuture<Void> allChunks = CompletableFuture.allOf(chunkFutures.toArray(CompletableFuture[]::new));
+
+        try {
+            allChunks.join();
+            for (CompletableFuture<EventCounter<String, Integer>> f : chunkFutures) {
+                batchCounts.add(f.join());
             }
+        } catch (CompletionException | CancellationException e) {
+            if (isSuperseded(config.generationId())) {
+                throw new SupersededGenerationException();
+            }
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw new RuntimeException("Batch chunk failed", cause == null ? e : cause);
+        } finally {
+            clearActiveChunkFutures(config.generationId());
         }
 
         Map<String, Integer> intScores = EventCounter.getNormalizedScores(batchCounts, scorer, 100);
@@ -171,6 +343,18 @@ public class LocalComputeServer implements ComputeServer {
     @Override
     public int getBatchesCompleted() {
         return batchesCompleted.get();
+    }
+
+    @Override
+    public StatsSnapshot statsSnapshot() {
+        return new StatsSnapshot(
+                id,
+                batchesStarted.get(),
+                batchesCompleted.get(),
+                staleSubmissionsIgnored.get(),
+                supersededResultsDropped.get(),
+                abortedBatches.get(),
+                chunkFuturesCanceled.get());
     }
 }
 
