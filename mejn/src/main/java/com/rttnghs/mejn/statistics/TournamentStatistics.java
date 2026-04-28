@@ -287,7 +287,7 @@ public class TournamentStatistics {
      * {@code tournamentRounds} property; the number of games per round from the
      * {@code games} property.
      */
-    public static void main(String[] args) throws InterruptedException, ExecutionException {
+    static void main(String[] args) throws InterruptedException, ExecutionException {
         List<String> strategyNames = Tournament.getStrategyNames();
         List<List<String>> brackets = Tournament.getStrategyNameBrackets(strategyNames);
         int gamesPerRound = Config.configuration.getInt("games");

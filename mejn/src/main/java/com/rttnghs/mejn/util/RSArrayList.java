@@ -49,7 +49,7 @@ public class RSArrayList<E> extends ArrayList<E> implements RSList<E> {
 	private static final long serialVersionUID = 2100071895313519943L;
 
 	/**
-	 * See {@link #ArrayList()}
+	 * See {@link java.util.ArrayList()}
 	 */
 	public RSArrayList() {
 		super();

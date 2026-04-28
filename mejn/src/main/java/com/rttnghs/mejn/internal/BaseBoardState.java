@@ -16,7 +16,6 @@
  */
 package com.rttnghs.mejn.internal;
 
-import static com.rttnghs.mejn.Layer.EVENT;
 import static com.rttnghs.mejn.Layer.HOME;
 
 import java.util.*;

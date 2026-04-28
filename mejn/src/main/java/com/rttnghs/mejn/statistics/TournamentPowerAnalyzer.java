@@ -503,7 +503,7 @@ public class TournamentPowerAnalyzer {
      *   <li>{@code powerAnalyzerTimeoutSeconds} — wall-clock timeout for the whole run (default 3600)</li>
      * </ul>
      */
-    public static void main(String[] args) throws InterruptedException {
+    static void main(String[] args) throws InterruptedException {
         List<String> strategyNames = Tournament.getStrategyNames();
         List<List<String>> brackets = Tournament.getStrategyNameBrackets(strategyNames);
 

@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class ManualStrategy extends BaseStrategy implements Strategy {
 

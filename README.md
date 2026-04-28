@@ -159,6 +159,7 @@ The GUI is built using JavaFX. The Main class launches MainApplication, which co
 MainApplication uses several View classes and a single Controller class that interacts with a Board object. The Board object is used to keep track of the game state and determine the legal moves for the current player. The GUI is updated based on the current state of the Board object.
 The board is laid out in several PositionViews, which re-position themselves based on the width of the window as it is re-sized.
 
+ 
  ## Classes
 
  * __Layer__ : {BEGIN, EVENT, HOME}
@@ -285,9 +286,11 @@ Using reflection, or introspection to observe or manipulate other players' strat
 
  ## Future work
 
-1. Add implementation for Differential Evolution to train ranking strategies
+1. ~~Add implementation for Differential Evolution to train ranking strategies~~ — in progress in [tournament-de](../tournament-de/README.md)
 2. Add implementation for Neural network and training of neural networks
 3. Add UI to allow configured strategies to play in a tournament and show the results in a live graph
+4. Move `TournamentPowerAnalyzer` to [tournament-de](../tournament-de) and refactor to accept all tuning parameters as constructor arguments.
+5. Delete `com.rttnghs.mejn.rmi.*` once the RMI layer is fully migrated to [tournament-de](../tournament-de).
 
  ## License
 

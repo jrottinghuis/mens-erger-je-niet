@@ -177,7 +177,7 @@ class BoardTest {
 		List<Move> allowedMoves = board.getAllowedMoves();
 
 		assertEquals(1, allowedMoves.size());
-		assertThrows(UnsupportedOperationException.class, () -> allowedMoves.remove(0));
+		assertThrows(UnsupportedOperationException.class, allowedMoves::removeFirst);
 	}
 
 }

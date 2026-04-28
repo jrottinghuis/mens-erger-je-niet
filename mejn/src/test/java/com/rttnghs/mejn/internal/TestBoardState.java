@@ -33,7 +33,6 @@ public class TestBoardState extends BaseBoardState {
 	 * Not built for robustness. Used only for test cases.
 	 *
 	 * @param boardStateString boardStateString.toString formatted board state.
-	 * @param dotsPerPlayer
 	 * @return new Test Board State
 	 */
 	protected static BoardState of(String boardStateString, int dotsPerPlayer) {
@@ -44,7 +43,9 @@ public class TestBoardState extends BaseBoardState {
 		// For example:
 		// (40)[P0={H0,H1,H2,H3};P1={B4,B4,B4,E25};P2={E16,E19,H22,H23};P3={B24,B24,E34,H33}]
 
-		matcher.matches();
+		if (!matcher.matches()) {
+            throw new IllegalArgumentException("boardStateString=" + boardStateString);
+        }
 
 		int boardSize = Integer.parseInt(matcher.group(1));
 		int pawnsPerPlayer = 0;
@@ -61,7 +62,9 @@ public class TestBoardState extends BaseBoardState {
 			List<Position> playerState = new ArrayList<>();
 			playterStateMatcher = playerStatePattern.matcher(playerStateString);
 
-			playterStateMatcher.matches();
+			if (!playterStateMatcher.matches()) {
+                throw new IllegalArgumentException("playerStateString=" + playerStateString);
+            }
 
 			int playerIndex = Integer.parseInt(playterStateMatcher.group(1));
 			String[] positionStrings = playterStateMatcher.group(2).split(",");

@@ -81,8 +81,8 @@ class DiscreteProbabilityDistributionTest {
 	final void testDiscreteProbabilityDistribution() {
 		// Distribution that always rolls 1 should always return the first item added.
 		DiscreteProbabilityDistribution<String> distribution1 = new TestDiscreteProbabilityDistribution(1);
-		assertEquals(null, distribution1.select());
-		assertEquals(null, distribution1.select());
+        assertNull(distribution1.select());
+        assertNull(distribution1.select());
 
 		distribution1.add("A", 1);
 		assertEquals("A", distribution1.select());
@@ -97,8 +97,8 @@ class DiscreteProbabilityDistributionTest {
 
 		// Distribution that always rolls 2 should always return the first item added.
 		DiscreteProbabilityDistribution<String> distribution2 = new TestDiscreteProbabilityDistribution(2);
-		assertEquals(null, distribution2.select());
-		assertEquals(null, distribution2.select());
+        assertNull(distribution2.select());
+        assertNull(distribution2.select());
 
 		distribution2.add("A", 1);
 		assertEquals("A", distribution2.select());
@@ -115,8 +115,8 @@ class DiscreteProbabilityDistributionTest {
 
 		// Distribution that always rolls 2 should always return the first item added.
 		DiscreteProbabilityDistribution<String> distribution3 = new TestDiscreteProbabilityDistribution(3);
-		assertEquals(null, distribution3.select());
-		assertEquals(null, distribution3.select());
+        assertNull(distribution3.select());
+        assertNull(distribution3.select());
 
 		distribution3.add("A", 1);
 		assertEquals("A", distribution3.select());

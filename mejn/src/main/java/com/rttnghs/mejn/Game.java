@@ -146,10 +146,9 @@ public class Game {
 
 	/**
 	 * Play a single game.
-	 * 
-	 * @param args command line arguments
-	 */
-	public static void main(String[] args) {
+	 *
+     */
+	public static void main() {
 		Instant start = Instant.now();
         // logger.info("Starting game: {}", Config.value);
 		List<String> strategies = Arrays.asList("RandomStrategy", "FarStrategy", "RankingStrategy",

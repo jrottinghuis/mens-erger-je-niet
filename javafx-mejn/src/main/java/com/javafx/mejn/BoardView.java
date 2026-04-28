@@ -338,7 +338,7 @@ class BoardView {
 
         // Home positions
         for (int j = 0; j < 4; j++) {
-            homePositions.get(0).add(j, getPositionView(j, Layer.HOME, 6, 10 - j, boardPane));
+            homePositions.getFirst().add(j, getPositionView(j, Layer.HOME, 6, 10 - j, boardPane));
         }
         for (int j = 0; j < 4; j++) {
             homePositions.get(1).add(j, getPositionView(DOTS_PER_PLAYER + j, Layer.HOME, 2 + j, 6, boardPane));
@@ -350,8 +350,8 @@ class BoardView {
             homePositions.get(3).add(j, getPositionView(3*DOTS_PER_PLAYER + j, Layer.HOME, 10 - j, 6, boardPane));
         }
 
-        beginPositions.get(0).add(0, getPositionView(34, Layer.BEGIN, 1, 11, boardPane));
-        beginPositions.get(0).add(1, getPositionView(34, Layer.BEGIN, 1, 10, boardPane));
+        beginPositions.getFirst().add(0, getPositionView(34, Layer.BEGIN, 1, 11, boardPane));
+        beginPositions.getFirst().add(1, getPositionView(34, Layer.BEGIN, 1, 10, boardPane));
         beginPositions.get(0).add(2, getPositionView(34, Layer.BEGIN, 2, 10, boardPane));
         beginPositions.get(0).add(3, getPositionView(34, Layer.BEGIN, 2, 11, boardPane));
         beginPositions.get(1).add(0, getPositionView(4, Layer.BEGIN, 1, 2, boardPane));
@@ -615,7 +615,7 @@ class BoardView {
                 }
                 // We should not get here, but return a sensible value
                 logger.error("Could not find home position for player {} at home position {}", playerIndex, position);
-                return boardView.homePositions.get(playerIndex).get(0);
+                return boardView.homePositions.get(playerIndex).getFirst();
             }
             case BEGIN -> {
                 if (isBeginOccupied) {

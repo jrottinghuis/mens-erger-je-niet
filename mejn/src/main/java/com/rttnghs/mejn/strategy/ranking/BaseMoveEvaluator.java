@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import com.rttnghs.mejn.BoardState;
 import com.rttnghs.mejn.Move;

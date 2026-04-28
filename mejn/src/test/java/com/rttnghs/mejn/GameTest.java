@@ -65,7 +65,7 @@ class GameTest {
 
 	@Test
 	final void testMain() {
-		Game.main(null);
+		Game.main();
 	}
 
 }

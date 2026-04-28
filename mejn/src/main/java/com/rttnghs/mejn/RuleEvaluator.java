@@ -45,7 +45,7 @@ public class RuleEvaluator {
     /**
      * Not out of bounds.
      *
-     * @param move
+     * @param move to check
      * @return false for all BEGIN layers that are not the start. True for all
      * other.
      */

@@ -20,7 +20,6 @@ import static com.rttnghs.mejn.Layer.EVENT;
 import static com.rttnghs.mejn.Layer.HOME;
 
 import java.util.Collection;
-import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

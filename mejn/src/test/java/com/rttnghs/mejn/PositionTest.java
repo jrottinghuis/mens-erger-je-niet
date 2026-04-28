@@ -103,7 +103,6 @@ class PositionTest {
         assertNotEquals(forty, forty.normalize(40));
 
 		// Forty wraps to start in a 40 board.
-        assertEquals(forty.normalize(40), start);
         assertEquals(start, forty.normalize(40));
 
 		// Double-normalized is equal to itself.

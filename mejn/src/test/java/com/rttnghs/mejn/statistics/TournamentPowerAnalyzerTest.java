@@ -23,7 +23,6 @@ import com.rttnghs.mejn.rmi.BatchResult;
 import com.rttnghs.mejn.rmi.ComputeServer;
 import com.rttnghs.mejn.rmi.LocalComputeServer;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -78,8 +77,6 @@ class TournamentPowerAnalyzerTest {
     }
 
     private static final class TestAppender extends AbstractAppender {
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         private final List<String> messages = new ArrayList<>();
 

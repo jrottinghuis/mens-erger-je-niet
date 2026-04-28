@@ -63,10 +63,9 @@ public class MainApplication extends Application {
 
     /**
      * @param primaryStage the primary stage for the application
-     * @throws Exception when things go south
      */
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("Mens erger je niet!");
 
@@ -102,7 +101,7 @@ public class MainApplication extends Application {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    static void main(String[] args) {
         launch(args);
     }
 
