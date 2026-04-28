@@ -15,3 +15,7 @@
  * limitations under the License.
  */
  rootProject.name = 'mens-erger-je-niet'
+
+include 'mejn'
+include 'javafx-mejn'
+

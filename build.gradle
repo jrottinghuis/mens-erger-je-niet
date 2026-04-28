@@ -14,161 +14,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
- // See also https://docs.gradle.org/current/userguide/getting_started.html
- plugins {
-    // Apply the java-library plugin for API and implementation separation.
-    id 'java'
-    id 'org.gradle.jvm-test-suite' // Adds task test
-    id 'eclipse' // Adds tasks eclipse , cleanEclipse, cleanEclipseProject, cleanEclipseClasspath, , eclipseProject, eclipseClasspath, eclipseJdt
-    id 'idea' // Adds tasks idea, openIdea, and cleanIdea tasks
-    id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'application' // Adds task run
-}
 
-group = 'com.rttnghs'
-version = '2.1.0-SNAPSHOT'
+// Root project — no Java sources of its own.
+// All source code lives in the :mejn and :javafx-mejn subprojects.
+// See also https://docs.gradle.org/current/userguide/getting_started.html
+plugins {
+    id 'org.openjfx.javafxplugin' version '0.1.0' apply false
+    id 'eclipse'
+    id 'idea'
+}
 
 def junitVersion = '6.0.3'
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_25
-}
+allprojects {
+    group = 'com.rttnghs'
+    version = '2.2.0-SNAPSHOT'
 
-javafx {
-    version = '25'
-    modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics' ]
-    // Build for current platform, or linux, linux-aarch64, mac, {win or windows}, {osx,mac, or macos}, {osx-aarch64, mac-aarch64, or macos-aarch64}
-    //platform = 'win'
-}
-
-repositories {
-    // Use Maven Central for resolving dependencies.
-    mavenCentral()
-}
-
-dependencies {
-    // Use JUnit Jupiter for testing.
-    testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
-
-    testImplementation "org.junit.platform:junit-platform-suite:${junitVersion}"
-
-    implementation 'org.apache.commons:commons-collections4:4.5.0'
-    implementation 'org.apache.logging.log4j:log4j-api:2.25.4'
-    implementation 'org.apache.logging.log4j:log4j-core:2.25.4'
-    // Process sources using `log4j-core` providing `org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor` that generates `Log4j2Plugins.dat` -->
-    annotationProcessor('org.apache.logging.log4j:log4j-core:2.25.4')
-
-    // Used for configuration loading
-    implementation 'org.apache.commons:commons-configuration2:2.13.0'
-    // Added only for bump up dependency for commons-lang3 used by commons-configuration2
-    implementation 'org.apache.commons:commons-lang3:3.20.0'
-    // Used by configuration builders
-    implementation 'commons-beanutils:commons-beanutils:1.11.0'
-}
-
-testing {
-    //noinspection GroovyAssignabilityCheck
-    suites {
-        test {
-            useJUnitJupiter()
-        }
-
-        //noinspection GroovyAssignabilityCheck
-        integrationTest(JvmTestSuite) {
-            dependencies {
-                implementation project()
-            }
-
-            targets {
-                configureEach {
-                    testTask.configure {
-                        shouldRunAfter(test)
-                    }
-                }
-            }
-        }
+    repositories {
+        mavenCentral()
     }
 }
 
-tasks.named('check') {
-    dependsOn(testing.suites.integrationTest)
+// ── Root-level convenience tasks ─────────────────────────────────────────────
+// Delegate common tasks to the JavaFX UI subproject so `./gradlew run` and
+// `./gradlew installDist` work from the project root without specifying a path.
+tasks.register('run') {
+    dependsOn ':javafx-mejn:run'
 }
 
-application {
-    mainClass = 'com.javafx.mejn.Main'
-    applicationDefaultJvmArgs = [
-        '--enable-native-access=javafx.graphics',
-        '--sun-misc-unsafe-memory-access=allow'
-    ]
+tasks.register('installDist') {
+    dependsOn ':javafx-mejn:installDist'
 }
 
-jar {
-    manifest {
-        attributes(
-                'Main-Class': 'com.javafx.mejn.Main',
-                'Automatic-Module-Name': 'com.rttnghs.mejn',
-                'Add-Modules': 'javafx.controls,javafx.graphics,javafx.fxml'
-        )
+tasks.register('assembleDist') {
+    dependsOn ':javafx-mejn:assembleDist'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_25
     }
-}
 
-// Supppress annotation processing messages during compilation
-tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs += ["-Xlint:-processing"]
-    // Provide stable coordinates for Log4j GraalVM metadata generation.
-    options.compilerArgs += [
-            "-Alog4j.graalvm.groupId=${project.group}",
-            "-Alog4j.graalvm.artifactId=${project.name}"
-    ]
-}
+    dependencies {
+        testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+        testImplementation "org.junit.platform:junit-platform-suite:${junitVersion}"
+        testRuntimeOnly "org.junit.platform:junit-platform-launcher:${junitVersion}"
+    }
 
-tasks.register('runGame', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.Game'
-
-    // arguments to pass to the application
-    args 'appArg1'
-}
-
-tasks.register('runStatistics', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.statistics.TournamentStatistics'
-
-    // arguments to pass to the application
-    args 'appArg1'
-
-}
-
-tasks.register('runPowerAnalyzer', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.statistics.TournamentPowerAnalyzer'
-
-    // arguments to pass to the application
-    args 'appArg1'
-
-}
-
-tasks.register('runTournament', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.Tournament'
-
-    // arguments to pass to the application
-    args 'appArg1'
-
-}
-
-tasks.register('runConfig', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.configuration.Config'
-
-    // arguments to pass to the application
-    args 'appArg1'
-
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.compilerArgs += ["-Xlint:-processing"]
+    }
 }

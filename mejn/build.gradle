@@ -1,0 +1,135 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Core MEJN subproject: game logic, strategy, statistics, configuration.
+// No JavaFX dependency. Sources live in the root src/ tree, filtered by package.
+// Uses java-library so that commons-configuration2 (part of Config's public API) is
+// exposed on the compile classpath of dependents (e.g. :javafx-mejn).
+apply plugin: 'java-library'
+apply plugin: 'org.gradle.jvm-test-suite'
+
+// ── Source sets ──────────────────────────────────────────────────────────────
+// Resources are in standard locations, no need for custom sourceSets config.
+
+// ── Dependencies ─────────────────────────────────────────────────────────────
+dependencies {
+    implementation 'org.apache.commons:commons-collections4:4.5.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.25.4'
+    implementation 'org.apache.logging.log4j:log4j-core:2.25.4'
+    // Runs the Log4j plugin / GraalVM metadata annotation processor at compile time.
+    annotationProcessor 'org.apache.logging.log4j:log4j-core:2.25.4'
+
+    // commons-configuration2.Configuration is part of Config's public API (static field),
+    // so dependents (:javafx-mejn) need it on their compile classpath — use api.
+    api 'org.apache.commons:commons-configuration2:2.13.0'
+    // Explicit bump for commons-lang3 pulled in transitively by commons-configuration2.
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
+    // Required by commons-configuration2 builders.
+    implementation 'commons-beanutils:commons-beanutils:1.11.0'
+}
+
+// ── Annotation processor args (Log4j GraalVM metadata) ───────────────────────
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            "-Alog4j.graalvm.groupId=${project.group}",
+            "-Alog4j.graalvm.artifactId=${project.name}"
+    ]
+}
+
+// ── Test suites ───────────────────────────────────────────────────────────────
+testing {
+    //noinspection GroovyAssignabilityCheck
+    suites {
+        test {
+            useJUnitJupiter()
+        }
+
+        //noinspection GroovyAssignabilityCheck
+        integrationTest(JvmTestSuite) {
+            dependencies {
+                implementation project()
+            }
+            targets {
+                configureEach {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn(testing.suites.integrationTest)
+}
+
+// ── JAR manifest ─────────────────────────────────────────────────────────────
+// Build a space-separated Class-Path of all runtime dependency jars, assuming
+// they sit alongside this jar (e.g. inside the distribution lib/ directory).
+jar {
+    dependsOn configurations.runtimeClasspath
+    manifest {
+        attributes(
+                'Automatic-Module-Name': 'com.rttnghs.mejn',
+                'Main-Class': 'com.rttnghs.mejn.Game',
+                'Class-Path': configurations.runtimeClasspath.collect { it.name }.join(' ')
+        )
+    }
+}
+
+// ── Headless run tasks ────────────────────────────────────────────────────────
+// Config.java uses new File("mejn-config.xml") — filesystem-relative, not classpath.
+// All run tasks must have processResources on their classpath output dir as CWD
+// so the XML config files are found at runtime.
+def resourcesDir = layout.buildDirectory.dir('resources/main')
+
+tasks.register('runGame', JavaExec) {
+    dependsOn processResources
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.Game'
+    workingDir = resourcesDir
+}
+
+tasks.register('runStatistics', JavaExec) {
+    dependsOn processResources
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.statistics.TournamentStatistics'
+    workingDir = resourcesDir
+}
+
+tasks.register('runPowerAnalyzer', JavaExec) {
+    dependsOn processResources
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.statistics.TournamentPowerAnalyzer'
+    workingDir = resourcesDir
+}
+
+tasks.register('runTournament', JavaExec) {
+    dependsOn processResources
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.Tournament'
+    workingDir = resourcesDir
+}
+
+tasks.register('runConfig', JavaExec) {
+    dependsOn processResources
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.configuration.Config'
+    workingDir = resourcesDir
+}
+

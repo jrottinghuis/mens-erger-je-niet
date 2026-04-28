@@ -28,10 +28,14 @@ class RankingStrategyTournamentTest {
 
     // Minimal genome: a single-element parameter list (weight = 1).
     private static List<Integer> genome(int... values) {
-        List<Integer> list = new java.util.ArrayList<>();
-        for (int v : values) list.add(v);
-        return list;
-    }
+		List<Integer> list = new java.util.ArrayList<>();
+		for (int v : values) list.add(v);
+		// SomeMoveValuator requires at least 6 parameters (accesses index 5).
+		while (list.size() < 6) {
+			list.add(0);
+		}
+		return list;
+	}
 
     @Test
     void runBracket_returnsSizeMatchingGenomeCount() {
@@ -100,4 +104,3 @@ class RankingStrategyTournamentTest {
         assertEquals(2, method.getParameterCount());
     }
 }
-
