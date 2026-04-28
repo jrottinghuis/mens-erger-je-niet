@@ -58,4 +58,3 @@ tasks.withType(JavaCompile).configureEach {
             "-Alog4j.graalvm.artifactId=${project.name}"
     ]
 }
-

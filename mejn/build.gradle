@@ -79,57 +79,49 @@ tasks.named('check') {
 }
 
 // ── JAR manifest ─────────────────────────────────────────────────────────────
-// Build a space-separated Class-Path of all runtime dependency jars, assuming
-// they sit alongside this jar (e.g. inside the distribution lib/ directory).
+// Copy runtime dependencies next to the jar so that Class-Path entries resolve.
+// Resources (log4j2.properties, config XML, etc.) are bundled inside the jar by
+// processResources — no separate resourceDir on the Class-Path is needed.
+tasks.register('copyDependencies', Copy) {
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir('libs/lib')
+}
+
 jar {
-    dependsOn configurations.runtimeClasspath
+    dependsOn copyDependencies
     manifest {
         attributes(
                 'Automatic-Module-Name': 'com.rttnghs.mejn',
-                'Main-Class': 'com.rttnghs.mejn.Game',
-                'Class-Path': configurations.runtimeClasspath.collect { it.name }.join(' ')
+                'Main-Class'          : 'com.rttnghs.mejn.Game',
+                'Class-Path'          : configurations.runtimeClasspath.files
+                        .collect { "lib/${it.name}" }.join(' ')
         )
     }
 }
 
 // ── Headless run tasks ────────────────────────────────────────────────────────
-// Config.java uses new File("mejn-config.xml") — filesystem-relative, not classpath.
-// All run tasks must have processResources on their classpath output dir as CWD
-// so the XML config files are found at runtime.
-def resourcesDir = layout.buildDirectory.dir('resources/main')
-
 tasks.register('runGame', JavaExec) {
-    dependsOn processResources
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.rttnghs.mejn.Game'
-    workingDir = resourcesDir
 }
 
 tasks.register('runStatistics', JavaExec) {
-    dependsOn processResources
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.rttnghs.mejn.statistics.TournamentStatistics'
-    workingDir = resourcesDir
 }
 
 tasks.register('runPowerAnalyzer', JavaExec) {
-    dependsOn processResources
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.rttnghs.mejn.statistics.TournamentPowerAnalyzer'
-    workingDir = resourcesDir
 }
 
 tasks.register('runTournament', JavaExec) {
-    dependsOn processResources
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.rttnghs.mejn.Tournament'
-    workingDir = resourcesDir
 }
 
 tasks.register('runConfig', JavaExec) {
-    dependsOn processResources
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.rttnghs.mejn.configuration.Config'
-    workingDir = resourcesDir
 }
 
