@@ -98,6 +98,10 @@ tasks.named('check') {
 
 application {
     mainClass = 'com.javafx.mejn.Main'
+    applicationDefaultJvmArgs = [
+        '--enable-native-access=javafx.graphics',
+        '--sun-misc-unsafe-memory-access=allow'
+    ]
 }
 
 jar {
