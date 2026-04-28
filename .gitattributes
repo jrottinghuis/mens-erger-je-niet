@@ -1,6 +1,8 @@
 #
 # https://help.github.com/articles/dealing-with-line-endings/
 #
+# Handle all files automatically and normalize to LF in the repo
+* text=auto
 # These are explicitly windows files and should use crlf
 *.bat           text eol=crlf
 
