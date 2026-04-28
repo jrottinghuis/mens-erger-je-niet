@@ -23,8 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
-import com.rttnghs.mejn.Die;
-import com.rttnghs.mejn.configuration.Config;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Individual represents a candidate solution in Differential Evolution is
@@ -34,8 +33,8 @@ import com.rttnghs.mejn.configuration.Config;
  */
 public class Individual {
 
-	// TODO: read this from a config
-	public static final int maxValue = Config.configuration.getInt("individualVariableMax");
+			// TODO: make this configurable elsewhere if needed
+			public static final int maxValue = 10;
 	private final ArrayList<Integer> vector;
 
 	/**
@@ -64,13 +63,11 @@ public class Individual {
 			throw new IllegalArgumentException("Dimension: " + dimension + " must be > 1");
 		}
 		vector = new ArrayList<>(dimension);
-		// Die is 1-based, we need a zero based random number
-		Die die = new Die(maxValue * 2);
-		for (int i = 0; i < dimension; i++) {
-			// Shift the random number back to [-maxValue, maxValue)
-			int randomInRange = (die.roll() - (maxValue + 1));
-			vector.add(i, randomInRange);
-		}
+						for (int i = 0; i < dimension; i++) {
+							// Generate random integer in [-maxValue, maxValue)
+							int randomInRange = ThreadLocalRandom.current().nextInt(-maxValue, maxValue);
+							vector.add(i, randomInRange);
+						}
 		name = vector.stream().toList().toString();
 	}
 
@@ -172,7 +169,7 @@ public class Individual {
 
 		ArrayList<Integer> mutation = new ArrayList<>(vector.size());
 		ArrayList<Integer> trial = new ArrayList<>(vector.size());
-		Die crossoverRandomizer = new Die(100);
+						// Use ThreadLocalRandom for crossover
 
 		// Generate mutation vector
 		for (int i = 0; i < vector.size(); i++) {
@@ -181,18 +178,18 @@ public class Individual {
 		}
 
 		// Do crossover
-		for (int i = 0; i < vector.size(); i++) {
-			if (crossoverRandomizer.roll() <= crossOverRatePercent) {
-				trial.add(i, mutation.get(i));
-			} else {
-				trial.add(i, vector.get(i));
-			}
-		}
+						for (int i = 0; i < vector.size(); i++) {
+							if (ThreadLocalRandom.current().nextInt(100) < crossOverRatePercent) {
+								trial.add(i, mutation.get(i));
+							} else {
+								trial.add(i, vector.get(i));
+							}
+						}
 
 		// Pick at least one mutation, to ensure a different individual if best !=
 		// random1, != random 2
-		int randomIndex = new Die(mutation.size()).roll() - 1;
-		trial.add(randomIndex, mutation.get(randomIndex));
+						int randomIndex = ThreadLocalRandom.current().nextInt(mutation.size());
+						trial.add(randomIndex, mutation.get(randomIndex));
 
 		return new Individual(mutation);
 	}

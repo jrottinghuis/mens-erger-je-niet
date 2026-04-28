@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import com.rttnghs.mejn.Die;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Used to keep track of a population of individuals.
@@ -46,10 +46,7 @@ public class Population {
 	private final int scalingFactorPercent = 50;
 	private final int crossOverRatePercent = 50;
 
-	/**
-	 * Pick a random population number; Subtract 1 for a random population index.
-	 */
-	private final Die populationDie = new Die(populationSize);
+
 
 	/**
 	 * @param dimension the dimension of {@link Individual}s in this population.
@@ -144,21 +141,20 @@ public class Population {
 	 * @return a random individual from the population, excluding all of the listed
 	 *         individuals
 	 */
-	private Individual selectRandomIndividual(Individual... excluded) {
-
-		Individual selected = null;
-		while (selected == null) {
-			selected = population.get(populationDie.roll() - 1);
-			// Check if the selected individual is in the excluded list
-            for (Individual individual : excluded) {
-                if (selected == individual) {
-                    // Discard this individual
-                    selected = null;
-                    break; // for loop
-                }
-            }
-		}
-		return selected;
-	}
+			private Individual selectRandomIndividual(Individual... excluded) {
+				Individual selected = null;
+				while (selected == null) {
+					selected = population.get(ThreadLocalRandom.current().nextInt(populationSize));
+					// Check if the selected individual is in the excluded list
+					for (Individual individual : excluded) {
+						if (selected == individual) {
+							// Discard this individual
+							selected = null;
+							break;
+						}
+					}
+				}
+				return selected;
+			}
 
 }
