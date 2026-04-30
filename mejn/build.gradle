@@ -1,3 +1,10 @@
+// ── RMI server run task ───────────────────────────────────────────────────────
+tasks.register('runRemoteTournamentServer', JavaExec) {
+    group = 'application'
+    description = 'Starts the RemoteTournamentServer RMI server.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.rmi.RemoteTournamentServer'
+}
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
