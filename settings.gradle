@@ -14,8 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- rootProject.name = 'mens-erger-je-niet'
+
+rootProject.name = 'mens-erger-je-niet'
 
 include 'mejn'
 include 'javafx-mejn'
+
+// Include local rmi-muxer project as composite build
+includeBuild '../rmi-muxer'
 
