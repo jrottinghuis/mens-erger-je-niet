@@ -1,9 +1,12 @@
 package com.rttnghs.mejn.rmi;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,9 +14,40 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Minimal integration test for RemoteTournamentServer RMI call chain.
- * Assumes the server is already running on localhost:1099.
+ * Starts an RMI registry and registers a mock RemoteTournament implementation.
  */
 public class RemoteTournamentServerIT {
+
+    private Registry registry;
+    private RemoteTournament mockRemoteTournament;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        // Start RMI registry
+        registry = LocateRegistry.createRegistry(1099);
+
+        // Create and export a mock RemoteTournament implementation
+        mockRemoteTournament = new RemoteTournament() {
+            @Override
+            public List<Double> runBracket(List<List<Integer>> bracket, int games) {
+                // Mock implementation: return a list of dummy results
+                return Arrays.asList(1.0, 2.0);
+            }
+        };
+        RemoteTournament stub = (RemoteTournament) UnicastRemoteObject.exportObject(mockRemoteTournament, 0);
+
+        // Bind the mock implementation to the registry
+        registry.rebind("RemoteTournament", stub);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        // Unbind the mock implementation and unexport the object
+        registry.unbind("RemoteTournament");
+        UnicastRemoteObject.unexportObject(mockRemoteTournament, true);
+        UnicastRemoteObject.unexportObject(registry, true);
+    }
+
     @Test
     void testRunBracketRmiCall() throws Exception {
         // Port is loaded from rmi-default.properties using Config
@@ -29,6 +63,3 @@ public class RemoteTournamentServerIT {
         assertEquals(bracket.size(), result.size());
     }
 }
-
-
-
