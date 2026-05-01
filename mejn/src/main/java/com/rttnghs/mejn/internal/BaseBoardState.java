@@ -37,7 +37,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class BaseBoardState implements BoardState {
 
-	private static final Logger logger = LogManager.getLogger(BoardState.class);
+	private static final Logger logger = LogManager.getLogger(BaseBoardState.class);
 
 	/**
 	 * This state is meant to be immutable and should not be modified.

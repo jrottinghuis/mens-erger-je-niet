@@ -32,7 +32,7 @@ import com.rttnghs.mejn.strategy.BaseStrategyFactory;
 class PlayerTest {
 
 	@BeforeAll
-	static void setUpBeforeClass() throws Exception {
+	static void setUpBeforeClass() {
 	}
 
 	@Test

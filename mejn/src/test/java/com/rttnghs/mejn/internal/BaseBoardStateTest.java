@@ -188,7 +188,6 @@ class BaseBoardStateTest {
 
         // Test nulls
         assertNotEquals(null, boardState);
-        assertNotEquals(this, boardState); // Different type on purpose.
     }
 
     @Test

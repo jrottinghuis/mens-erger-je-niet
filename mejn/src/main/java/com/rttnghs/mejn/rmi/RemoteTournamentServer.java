@@ -53,7 +53,7 @@ public class RemoteTournamentServer extends UnicastRemoteObject implements Remot
         return tournament.runBracket(genomeBracket, games);
     }
 
-    public static void main(String[] args) throws Exception {
+    static void main(String[] args) throws Exception {
         // Port is loaded from rmi-default.properties using Config
         int port = com.rttnghs.mejn.configuration.Config.configuration.getInt("rmi.port", 1099);
 

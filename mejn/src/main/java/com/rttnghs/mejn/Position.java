@@ -21,6 +21,7 @@ import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Location on the board, determined by layer and the spot (number indicating
@@ -93,7 +94,7 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
 	 * Compares the position first on layer, then on spot.
 	 */
 	@Override
-	public int compareTo(Position that) {
+	public int compareTo(@NonNull Position that) {
 		return Objects.compare(this, that, Comparator.comparing(Position::layer).thenComparing(Position::spot));
 	}
 
@@ -113,6 +114,7 @@ public record Position(Layer layer, int spot) implements Comparable<Position> {
     }
 
 	@Override
+	@NonNull
 	public String toString() {
 		return layer.toChar() + String.valueOf(spot);
 	}

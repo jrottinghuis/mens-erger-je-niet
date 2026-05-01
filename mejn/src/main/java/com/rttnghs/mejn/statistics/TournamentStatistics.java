@@ -166,9 +166,9 @@ public class TournamentStatistics {
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("%nTournamentStatistics: %d rounds × %,d games/round  (total games: %,d)%n", rounds, gamesPerRound, (long) rounds * gamesPerRound));
             sb.append(String.format("%-24s %7s %7s %7s %7s %7s %7s %7s  %7s  %8s%n", "Strategy", "mean", "stddev", "stderr", "±95%CI", "min", "max", "median", "CoV%", "n@10%rMOE"));
-            sb.append("-".repeat(105)).append(System.lineSeparator());
+            sb.repeat("-", 105).append(System.lineSeparator());
             strategyStats.values().stream().sorted(Comparator.comparingDouble(StrategyStats::mean).reversed()).forEach(ss -> sb.append(String.format("%-24s %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f  %6.1f%%  %8d%n", ss.strategy(), ss.mean(), ss.stddev(), ss.stderr(), ss.moe95(), ss.min(), ss.max(), ss.median(), ss.coefficientOfVariation() * 100.0, ss.roundsRequiredFor10PctRelativeMoe())));
-            sb.append("-".repeat(105)).append(System.lineSeparator());
+            sb.repeat("-", 105).append(System.lineSeparator());
             sb.append(String.format("%-24s %7s %7s %7s %7s%n", "Strategy", "1st avg", "2nd avg", "3rd avg", "4th avg"));
             strategyStats.values().stream().sorted(Comparator.comparingDouble(StrategyStats::mean).reversed()).forEach(ss -> sb.append(String.format("%-24s %7.1f %7.1f %7.1f %7.1f%n", ss.strategy(), ss.meanFirstPlaces(), ss.meanSecondPlaces(), ss.meanThirdPlaces(), ss.meanFourthPlaces())));
             sb.append(String.format("%nElapsed: %s%n", elapsed));

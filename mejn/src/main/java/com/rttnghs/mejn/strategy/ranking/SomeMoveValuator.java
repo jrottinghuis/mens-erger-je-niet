@@ -83,7 +83,7 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 	 * 
 	 * @param move the move to evaluate
 	 *  @param boardState the board state
-	 * @return
+	 * @return how much we valuate striking ourselves, presumably a negative value if we like avoiding this.
 	 */
 	private int valuateSelfStrike(Move move, BoardState boardState) {
 		// Determine who is at the to position.
@@ -102,7 +102,7 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 	 *
 	 * @param move the move to evaluate
 	 * @param boardState the board state
-	 * @return
+	 * @return how much we valuate moving into a safe home position.
 	 */
 	private int valuateHome(Move move, BoardState  boardState) {
 		if (move.to().layer() == HOME) {
@@ -123,9 +123,9 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 	 *
 	 * @param move the move to evaluate
 	 * @param boardState the board state
-	 * @return
+	 * @return how much we valuate getting to the particular spot
 	 */
-	private int valueateSpot(Move move, BoardState boardState) {
+	private int valueSpot(Move move, BoardState boardState) {
 		if (move.to().layer() == EVENT) {
 			// Inversely proportional to how far the pawn is. Hence prefer to move the last
 			// pawn first
@@ -134,8 +134,8 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 			// How important it is to be far from start. Add one to avoid multiply by 0 = 1;
 			int fromStartWeight = (fromStartParam * (move.to().spot() + 1)) / 10;
 			// How important it is to be far from home
-			int fromHomehWeight = (fromHomeParam * (boardState.getBoardSize() + 1 - move.to().spot())) / 10;
-			return fromStartWeight + fromHomehWeight;
+			int fromHomeWeight = (fromHomeParam * (boardState.getBoardSize() + 1 - move.to().spot())) / 10;
+			return fromStartWeight + fromHomeWeight;
 			// Total points after 10000 games: {RandomStrategy=1234984,
 			// SomeRankingStrategy=905016}
 			// Total wins after 10000 games: {RandomStrategy=4254, SomeRankingStrategy=5746}
@@ -158,7 +158,7 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 	public Integer valuate(Move move, BoardState boardState) {
 		// Add them all up.
         return valuateSelfStrike(move, boardState) + valuateHome(move, boardState)
-                + valueateSpot(move, boardState);
+                + valueSpot(move, boardState);
 	}
 
 }

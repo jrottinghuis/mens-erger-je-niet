@@ -217,10 +217,10 @@ Strategies for a tournament are a little more structured. See [mejn/src/main/res
 
 The project is split into two Gradle submodules:
 
-| Module | Artifact | Purpose |
-|---|---|---|
-| `mejn` | `mejn-{version}.jar` | Core game logic, strategies, statistics, configuration. No JavaFX dependency. |
-| `javafx-mejn` | `javafx-mejn-{version}.jar` | JavaFX graphical user interface. Depends on `mejn`. |
+| Module        | Artifact                    | Purpose                                                                       |
+|---------------|-----------------------------|-------------------------------------------------------------------------------|
+| `mejn`        | `mejn-{version}.jar`        | Core game logic, strategies, statistics, configuration. No JavaFX dependency. |
+| `javafx-mejn` | `javafx-mejn-{version}.jar` | JavaFX graphical user interface. Depends on `mejn`.                           |
 
 The `javafx-mejn` module produces the runnable distribution with launch scripts named `mens-erger-je-niet`.
 

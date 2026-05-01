@@ -16,6 +16,8 @@
  */
 package com.rttnghs.mejn;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -74,11 +76,12 @@ public record Move(Position from, Position to) implements Comparable<Move> {
     }
 
 	@Override
-	public int compareTo(Move that) {
+	public int compareTo(@NonNull Move that) {
 		return Objects.compare(this, that, Comparator.comparing(Move::from).thenComparing(Move::to));
 	}
 
 	@Override
+	@NonNull
 	public String toString() {
 		return "<" + from + "->" + to + ">";
 	}
@@ -95,8 +98,8 @@ public record Move(Position from, Position to) implements Comparable<Move> {
 	/**
 	 * Handy in lambdas, for example in stream processing.
 	 * 
-	 * @param spots
-	 * @param boardSize
+	 * @param spots how many spots to move
+	 * @param boardSize the size of the board
 	 * @return Function that can shift moves.
 	 */
 	public static UnaryOperator<Move> shifter(int spots, int boardSize) {
