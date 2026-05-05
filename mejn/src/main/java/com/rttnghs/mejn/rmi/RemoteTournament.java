@@ -24,5 +24,5 @@ import java.util.List;
  * RMI interface for remote tournament evaluation.
  */
 public interface RemoteTournament extends Remote {
-    List<Double> runBracket(List<List<Integer>> genomeBracket, int games) throws RemoteException;
+    List<Integer> runBracket(List<List<Integer>> genomeBracket, int games) throws RemoteException;
 }

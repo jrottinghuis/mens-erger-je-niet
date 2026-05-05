@@ -49,11 +49,14 @@ public class RemoteTournamentServer extends UnicastRemoteObject implements Remot
     }
 
     @Override
-    public List<Double> runBracket(List<List<Integer>> genomeBracket, int games) throws RemoteException {
+    public List<Integer> runBracket(List<List<Integer>> genomeBracket, int games) throws RemoteException {
         return tournament.runBracket(genomeBracket, games);
     }
 
     static void main(String[] args) throws Exception {
+
+        // This is merely a prototype. The real implementation will come from rmi.protocol.impl
+
         // Port is loaded from rmi-default.properties using Config
         int port = com.rttnghs.mejn.configuration.Config.configuration.getInt("rmi.port", 1099);
 

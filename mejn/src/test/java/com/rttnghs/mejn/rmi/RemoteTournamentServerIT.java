@@ -29,9 +29,9 @@ public class RemoteTournamentServerIT {
         // Create and export a mock RemoteTournament implementation
         mockRemoteTournament = new RemoteTournament() {
             @Override
-            public List<Double> runBracket(List<List<Integer>> bracket, int games) {
+            public List<Integer> runBracket(List<List<Integer>> bracket, int games) {
                 // Mock implementation: return a list of dummy results
-                return Arrays.asList(1.0, 2.0);
+                return Arrays.asList(1, 2);
             }
         };
         RemoteTournament stub = (RemoteTournament) UnicastRemoteObject.exportObject(mockRemoteTournament, 0);
@@ -58,7 +58,7 @@ public class RemoteTournamentServerIT {
         RemoteTournament remote = (RemoteTournament) registry.lookup("RemoteTournament");
         List<List<Integer>> bracket = Arrays.asList(Arrays.asList(0, 1), Arrays.asList(2, 3));
         int games = 1;
-        List<Double> result = remote.runBracket(bracket, games);
+        List<Integer> result = remote.runBracket(bracket, games);
         assertNotNull(result);
         assertEquals(bracket.size(), result.size());
     }
