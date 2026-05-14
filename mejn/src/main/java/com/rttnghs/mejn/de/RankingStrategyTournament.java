@@ -30,19 +30,19 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Bridges MEJN's Tournament infrastructure to the {@code tournament-de}
- * {@code LocalComputeServer} via Java reflection.
+ * Bridges MEJN's Tournament infrastructure to a tournament-de worker via Java
+ * reflection.
  *
- * <p>Discovered at runtime by {@code LocalComputeServer} (in tournament-de)
- * using the configured class-name key {@code tournamentRunnerClass}. There is
+ * <p>Discovered at runtime by the worker implementation in tournament-de using
+ * the configured class-name key {@code tournamentRunnerClass}. There is
  * intentionally no compile-time dependency on tournament-de; the contract is
- * purely structural — the method signature
+ * purely structural - the method signature
  * {@code List<Double> runBracket(List<List<Integer>>, int)}.
  *
  * <p>Each inner list in {@code genomeBracket} is the parameter vector for one
  * {@link SomeRankingStrategy} participant. All participants play each other in a
  * single {@link Tournament}. Scores are normalized using {@link Score} and
- * returned as a {@code List<Double>} indexed by genome position.
+ * {@link EventCounter}, then returned in genome position order.
  *
  * <p>No MEJN {@code Config} is read here; all inputs arrive as parameters so
  * this class can be invoked headlessly from a tournament-de worker JVM.
@@ -109,7 +109,7 @@ public class RankingStrategyTournament {
         Function<Integer, Integer> scorer = pos -> Score.get(pos, playerCount);
         Map<String, Integer> normalizedScores = EventCounter.getNormalizedScores(finishCounts, scorer, 100);
 
-        // Rebuild List<Double> in genome-position order.
+        // Rebuild the result in genome-position order.
         List<Double> result = new ArrayList<>(playerCount);
         for (String name : strategyNames) {
             result.add(normalizedScores.getOrDefault(name, 0).doubleValue());
