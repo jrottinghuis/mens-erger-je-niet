@@ -22,6 +22,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,17 +42,23 @@ import java.util.List;
  * <p>The <code>rmi.host</code> property is no longer used.</p>
  */
 public class RemoteTournamentServer extends UnicastRemoteObject implements RemoteTournament {
-    private final RankingStrategyTournament tournament;
+     private final RankingStrategyTournament tournament;
 
-    public RemoteTournamentServer() throws RemoteException {
-        super();
-        this.tournament = new RankingStrategyTournament();
-    }
+     public RemoteTournamentServer() throws RemoteException {
+         super();
+         this.tournament = new RankingStrategyTournament();
+     }
 
-    @Override
-    public List<Integer> runBracket(List<List<Integer>> genomeBracket, int games) throws RemoteException {
-        return tournament.runBracket(genomeBracket, games);
-    }
+     @Override
+     public List<Integer> runBracket(List<List<Integer>> genomeBracket, int games) throws RemoteException {
+         List<Double> doubleScores = tournament.runBracket(genomeBracket, games);
+         // Convert List<Double> to List<Integer>
+         ArrayList<Integer> intScores = new ArrayList<>(doubleScores.size());
+         for (Double score : doubleScores) {
+             intScores.add(score.intValue());
+         }
+         return intScores;
+     }
 
     static void main(String[] args) throws Exception {
 
