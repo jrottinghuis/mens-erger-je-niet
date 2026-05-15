@@ -26,27 +26,26 @@ class RankingStrategyTournamentTest {
 
     private final RankingStrategyTournament runner = new RankingStrategyTournament();
 
-    // Minimal genome: a single-element parameter list (weight = 1).
-    private static List<Integer> genome(int... values) {
-		List<Integer> list = new java.util.ArrayList<>();
-		for (int v : values) list.add(v);
-		// SomeMoveValuator requires at least 6 parameters (accesses index 5).
-		while (list.size() < 6) {
-			list.add(0);
-		}
-		return list;
-	}
+    // Builds a competitor parameter list, padding to the minimum required by SomeRankingStrategy.
+    private static List<Integer> competitor(int... values) {
+        List<Integer> list = new java.util.ArrayList<>();
+        for (int v : values) list.add(v);
+        while (list.size() < 6) {
+            list.add(0);
+        }
+        return list;
+    }
 
     @Test
-    void runBracket_returnsSizeMatchingGenomeCount() {
-        List<List<Integer>> bracket = List.of(genome(1), genome(2), genome(3), genome(4));
+    void runBracket_returnsSizeMatchingCompetitorCount() {
+        List<List<Integer>> bracket = List.of(competitor(1), competitor(2), competitor(3), competitor(4));
         List<Double> scores = runner.runBracket(bracket, 10);
         assertEquals(4, scores.size());
     }
 
     @Test
     void runBracket_allScoresNonNegative() {
-        List<List<Integer>> bracket = List.of(genome(1), genome(2), genome(3), genome(4));
+        List<List<Integer>> bracket = List.of(competitor(1), competitor(2), competitor(3), competitor(4));
         List<Double> scores = runner.runBracket(bracket, 20);
         scores.forEach(s -> assertTrue(s >= 0.0, "Score should be non-negative: " + s));
     }
@@ -54,19 +53,16 @@ class RankingStrategyTournamentTest {
     @Test
     void runBracket_atLeastOneNonZeroScore() {
         // With 4 players and 20 games someone will have scored.
-        List<List<Integer>> bracket = List.of(genome(5), genome(3), genome(7), genome(2));
+        List<List<Integer>> bracket = List.of(competitor(5), competitor(3), competitor(7), competitor(2));
         List<Double> scores = runner.runBracket(bracket, 20);
         boolean anyNonZero = scores.stream().anyMatch(s -> s > 0.0);
-        assertTrue(anyNonZero, "At least one genome should have a non-zero score");
+        assertTrue(anyNonZero, "At least one competitor should have a non-zero score");
     }
 
     @Test
-    void runBracket_twoBracketPlayers() {
+    void runBracket_twoCompetitors() {
         // Minimum valid bracket: 2 players.
-        // How many players can play a MEJN game depends on Game/Tournament internals,
-        // but 4 players is the classic setup; this tests a 2-player scenario if supported.
-        // If not supported by the game engine this test documents the constraint.
-        List<List<Integer>> bracket = List.of(genome(1, 2), genome(3, 4));
+        List<List<Integer>> bracket = List.of(competitor(1, 2), competitor(3, 4));
         assertDoesNotThrow(() -> runner.runBracket(bracket, 5));
     }
 
@@ -84,16 +80,44 @@ class RankingStrategyTournamentTest {
 
     @Test
     void runBracket_throwsOnZeroGames() {
-        List<List<Integer>> bracket = List.of(genome(1), genome(2), genome(3), genome(4));
+        List<List<Integer>> bracket = List.of(competitor(1), competitor(2), competitor(3), competitor(4));
         assertThrows(IllegalArgumentException.class,
                 () -> runner.runBracket(bracket, 0));
     }
 
     @Test
     void runBracket_throwsOnNegativeGames() {
-        List<List<Integer>> bracket = List.of(genome(1), genome(2), genome(3), genome(4));
+        List<List<Integer>> bracket = List.of(competitor(1), competitor(2), competitor(3), competitor(4));
         assertThrows(IllegalArgumentException.class,
                 () -> runner.runBracket(bracket, -1));
+    }
+
+    @Test
+    void runBracket_throwsOnTooFewParameters() {
+        // 5 params is one short - SomeMoveValuator requires 6.
+        List<List<Integer>> bracket = List.of(List.of(1, 2, 3, 4, 5), competitor(1));
+        assertThrows(IllegalArgumentException.class,
+                () -> runner.runBracket(bracket, 5));
+    }
+
+    @Test
+    void isValidCompetitor_trueForSufficientParams() {
+        assertTrue(runner.isValidCompetitor(competitor(1, 2, 3)));
+    }
+
+    @Test
+    void isValidCompetitor_falseForTooFewParams() {
+        assertFalse(runner.isValidCompetitor(List.of(1, 2, 3, 4, 5)));
+    }
+
+    @Test
+    void isValidCompetitor_falseForNull() {
+        assertFalse(runner.isValidCompetitor(null));
+    }
+
+    @Test
+    void isValidCompetitor_falseForEmptyList() {
+        assertFalse(runner.isValidCompetitor(List.of()));
     }
 
     @Test

@@ -82,6 +82,33 @@ public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayL
         logger.info(() -> "TournamentBatchServer initialized: chunkSize=%d".formatted(chunkSize));
     }
 
+    @Override
+    protected boolean validateTask(TournamentBatch batch) {
+        if (batch == null) {
+            logger.warning("Received null batch");
+            return false;
+        }
+        List<List<Integer>> competitors = batch.competitors();
+        if (competitors == null || competitors.isEmpty()) {
+            logger.warning("Batch has no competitors");
+            return false;
+        }
+        if (batch.repetitions() <= 0) {
+            logger.warning("Batch has non-positive repetitions: %d".formatted(batch.repetitions()));
+            return false;
+        }
+
+        // Validate each competitor's parameters for SomeRankingStrategy/SomeMoveValuator
+        for (int i = 0; i < competitors.size(); i++) {
+            final int index = i;
+            if (!tournament.isValidCompetitor(competitors.get(i))) {
+                logger.warning(() -> "Competitor %d has invalid parameters".formatted(index));
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Splits a tournament batch into smaller chunks with proportionally fewer repetitions.
      *
@@ -153,4 +180,3 @@ public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayL
         return pool;
     }
 }
-

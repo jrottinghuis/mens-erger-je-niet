@@ -39,10 +39,10 @@ import java.util.function.Function;
  * purely structural - the method signature
  * {@code List<Double> runBracket(List<List<Integer>>, int)}.
  *
- * <p>Each inner list in {@code genomeBracket} is the parameter vector for one
+ * <p>Each inner list in {@code competitors} is the parameter vector for one
  * {@link SomeRankingStrategy} participant. All participants play each other in a
  * single {@link Tournament}. Scores are normalized using {@link Score} and
- * {@link EventCounter}, then returned in genome position order.
+ * {@link EventCounter}, then returned in competitor position order.
  *
  * <p>No MEJN {@code Config} is read here; all inputs arrive as parameters so
  * this class can be invoked headlessly from a tournament-de worker JVM.
@@ -50,39 +50,65 @@ import java.util.function.Function;
 public class RankingStrategyTournament {
 
     /**
-     * Run one bracket of games and return a normalized score per genome.
+     * Returns {@code true} if {@code params} can be used to construct a valid
+     * {@link SomeRankingStrategy}. Validation is performed by attempting an actual
+     * construction; any {@link IllegalArgumentException} thrown by the strategy or
+     * its evaluator is treated as invalid.
      *
-     * <p>Strategy names are assigned as {@code "genome-0"}, {@code "genome-1"},
-     * etc., matching the position in {@code genomeBracket}. The returned list is
+     * <p>Callers such as {@code TournamentBatchServer.validateTask} should invoke
+     * this per competitor before submitting a batch, so invalid work is rejected
+     * early at the server boundary.
+     *
+     * @param params the parameter vector to probe; may be {@code null}.
+     * @return {@code true} if construction succeeded; {@code false} otherwise.
+     */
+    public boolean isValidCompetitor(List<Integer> params) {
+        if (params == null) {
+            return false;
+        }
+        try {
+            new SomeRankingStrategy("probe", params);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Run one bracket of games and return a normalized score per competitor.
+     *
+     * <p>Strategy names are assigned as {@code "competitor-0"}, {@code "competitor-1"},
+     * etc., matching the position in {@code competitors}. The returned list is
      * in the same order.
      *
-     * @param genomeBracket list of genome vectors; one {@link SomeRankingStrategy}
+     * @param competitors list of parameter vectors; one {@link SomeRankingStrategy}
      *                      is created per entry.
      * @param games         number of games to play in the tournament.
-     * @return normalized scores indexed by genome position in {@code genomeBracket}.
+     * @return normalized scores indexed by competitor position in {@code competitors}.
      *         Values are in the range {@code [0, Score.winningScore(playerCount)]}.
-     * @throws IllegalArgumentException if {@code genomeBracket} is empty or
-     *                                  {@code games} is not positive.
+     * @throws IllegalArgumentException if {@code competitors} is empty,
+     *                                  if any competitor has an invalid number of parameters,
+     *                                  or if {@code games} is not positive.
      */
-    public List<Double> runBracket(List<List<Integer>> genomeBracket, int games) {
-        if (genomeBracket == null || genomeBracket.isEmpty()) {
-            throw new IllegalArgumentException("genomeBracket must not be null or empty");
+    public List<Double> runBracket(List<List<Integer>> competitors, int games) {
+        if (competitors == null || competitors.isEmpty()) {
+            throw new IllegalArgumentException("competitors must not be null or empty");
         }
         if (games <= 0) {
             throw new IllegalArgumentException("games must be positive, got: " + games);
         }
 
-        int playerCount = genomeBracket.size();
+        int playerCount = competitors.size();
 
         // Build strategy name list and pre-construct each SomeRankingStrategy.
-        // Names are "genome-<index>" to keep a stable mapping back to result indices.
+        // Names are "competitor-<index>" to keep a stable mapping back to result indices.
         List<String> strategyNames = new ArrayList<>(playerCount);
         Map<String, SomeRankingStrategy> strategyMap = new HashMap<>(playerCount);
 
         for (int i = 0; i < playerCount; i++) {
-            String name = "genome-" + i;
+            String name = "competitor-" + i;
             strategyNames.add(name);
-            strategyMap.put(name, new SomeRankingStrategy(name, genomeBracket.get(i)));
+            strategyMap.put(name, new SomeRankingStrategy(name, competitors.get(i)));
         }
 
         // Inline StrategyFactory backed by the pre-built map; no Config dependency.
@@ -109,7 +135,7 @@ public class RankingStrategyTournament {
         Function<Integer, Integer> scorer = pos -> Score.get(pos, playerCount);
         Map<String, Integer> normalizedScores = EventCounter.getNormalizedScores(finishCounts, scorer, 100);
 
-        // Rebuild the result in genome-position order.
+        // Rebuild the result in competitor-position order.
         List<Double> result = new ArrayList<>(playerCount);
         for (String name : strategyNames) {
             result.add(normalizedScores.getOrDefault(name, 0).doubleValue());
