@@ -64,8 +64,8 @@ public class SomeMoveValuator extends BaseMoveEvaluator {
 
 	public SomeMoveValuator(Collection<Integer> params) {
 		super(params);
-		if (parameters.size() < 5) {
-			throw new IllegalArgumentException("SomeMoveValuator needs to have at least 5 parameters.");
+		if (parameters.size() < 6) {
+			throw new IllegalArgumentException("SomeMoveValuator needs to have at least 6 parameters.");
 		}
 		this.selftStrikeParam = this.parameters.get(0);
 		this.otherStrikeParam = this.parameters.get(1);
