@@ -14,130 +14,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
- // See also https://docs.gradle.org/current/userguide/getting_started.html
- plugins {
-    // Apply the java-library plugin for API and implementation separation.
-    id 'java'
-    id 'jvm-test-suite' // Adds task test
-    id 'eclipse' // Adds tasks eclipse , cleanEclipse, cleanEclipseProject, cleanEclipseClasspath, , eclipseProject, eclipseClasspath, eclipseJdt
-    id 'idea' // Adds tasks idea, openIdea, and cleanIdea tasks
-    id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'application' // Adds task run
+
+// Root project — no Java sources of its own.
+// All source code lives in the :mejn and :javafx-mejn subprojects.
+// See also https://docs.gradle.org/current/userguide/getting_started.html
+plugins {
+    id 'org.openjfx.javafxplugin' version '0.1.0' apply false
+    id 'eclipse'
+    id 'idea'
 }
 
-group = 'com.rttnghs'
-version = '1.0.2-SNAPSHOT'
+def junitVersion = '6.0.3'
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_22
-}
+allprojects {
+    group = 'com.rttnghs'
+    version = '2.2.0-SNAPSHOT'
 
-javafx {
-    version = '22'
-    modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics' ]
-    // Build for current platform, or linux, linux-aarch64, mac, {win or windows}, {osx,mac, or macos}, {osx-aarch64, mac-aarch64, or macos-aarch64}
-    //platform = 'win'
-}
-
-repositories {
-    // Use Maven Central for resolving dependencies.
-    mavenCentral()
-}
-
-dependencies {
-    // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    testImplementation 'org.junit.platform:junit-platform-suite:1.9.1'
-
-    implementation 'org.apache.commons:commons-collections4:4.4'
-    implementation 'org.apache.logging.log4j:log4j-api:2.24.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.24.0'
-    // Process sources using `log4j-core` providing `org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor` that generates `Log4j2Plugins.dat` -->
-    annotationProcessor('org.apache.logging.log4j:log4j-core:2.24.0')
-
-    // Used for configuration loading
-    implementation 'org.apache.commons:commons-configuration2:2.11.0'
-    // Added only for bump up dependency for commons-configuration to non-vulnerable version
-    implementation 'org.apache.commons:commons-text:1.12.0'
-    // Used by configuration builders
-    implementation 'commons-beanutils:commons-beanutils:1.9.4'
-
-}
-
-testing {
-    suites {
-        test {
-            useJUnitJupiter()
-        }
-        integrationTest(JvmTestSuite) {
-            dependencies {
-                implementation project()
-            }
-
-            targets {
-                configureEach {
-                    testTask.configure {
-                        shouldRunAfter(test)
-                    }
-                }
-            }
-        }
+    repositories {
+        mavenCentral()
     }
 }
 
-tasks.named('check') {
-    dependsOn(testing.suites.integrationTest)
+// ── Root-level convenience tasks ─────────────────────────────────────────────
+// Delegate common tasks to the JavaFX UI subproject so `./gradlew run` and
+// `./gradlew installDist` work from the project root without specifying a path.
+tasks.register('run') {
+    dependsOn ':javafx-mejn:run'
 }
 
-application {
-    mainClass = 'com.javafx.mejn.Main'
+tasks.register('installDist') {
+    dependsOn ':javafx-mejn:installDist'
 }
 
-jar {
-    manifest {
-        attributes(
-                'Main-Class': 'com.javafx.mejn.Main',
-                'Automatic-Module-Name': 'com.rttnghs.mejn',
-                'Add-Modules': 'javafx.controls,javafx.graphics,javafx.fxml'
-        )
+tasks.register('assembleDist') {
+    dependsOn ':javafx-mejn:assembleDist'
+}
+
+// Optional RMI convenience task - only registered when :mejn-rmi is included.
+if (findProject(':mejn-rmi') != null) {
+    tasks.register('runRmiServer') {
+        dependsOn ':mejn-rmi:runRemoteTournamentServer'
     }
 }
 
-// Supppress annotation processing messages during compilation
-tasks.withType(JavaCompile) {
-    options.compilerArgs += ["-Xlint:-processing"]
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_25
+    }
+
+    dependencies {
+        testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+        testImplementation "org.junit.platform:junit-platform-suite:${junitVersion}"
+        testRuntimeOnly "org.junit.platform:junit-platform-launcher:${junitVersion}"
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.compilerArgs += ["-Xlint:-processing"]
+    }
 }
-
-tasks.register('runGame', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.Game'
-
-    // arguments to pass to the application
-    args 'appArg1'
-}
-
-tasks.register('runTournament', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.Tournament'
-
-    // arguments to pass to the application
-    args 'appArg1'
-
-}
-
-tasks.register('runConfig', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    mainClass = 'com.rttnghs.mejn.configuration.Config'
-
-    // arguments to pass to the application
-    args 'appArg1'
-
-}
-
-

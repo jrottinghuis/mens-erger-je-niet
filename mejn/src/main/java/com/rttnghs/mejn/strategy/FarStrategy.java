@@ -14,16 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.rttnghs.mejn.strategy;
 
-rootProject.name = 'mens-erger-je-niet'
+import java.util.List;
 
-include 'mejn'
-include 'javafx-mejn'
+import com.rttnghs.mejn.BoardState;
+import com.rttnghs.mejn.Move;
 
-// Include the optional RMI module and rmi-muxer composite build only when opted in.
-// To enable: set includeRmi=true in gradle.properties (requires ../rmi-muxer to be cloned).
-if (settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
-    includeBuild '../rmi-muxer'
-    include 'mejn-rmi'
+/**
+ * Always selects the pawn that is the farthest along the board.
+ */
+public class FarStrategy extends BaseStrategy implements Strategy {
+
+	public FarStrategy(String name) {
+		super(name, null);
+	}
+	
+	/**
+	 * From Interface. 
+	 */
+	@Override
+	public Move choose(List<Move> choices, BoardState boardState) {
+		return autoChoose(choices, boardState);
+	}
+
+	@Override
+	public Move multiChoose(List<Move> choices, BoardState boardState) {
+		return choices.getLast();
+	}
+
+	@Override
+	public void finalize(int position) {
+		// Nothing to do here.
+	}
+
 }
-

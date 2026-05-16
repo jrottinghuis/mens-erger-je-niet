@@ -14,16 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.rttnghs.mejn;
 
-rootProject.name = 'mens-erger-je-niet'
+import java.util.concurrent.ThreadLocalRandom;
 
-include 'mejn'
-include 'javafx-mejn'
+/**
+ *
+ * @param faces How many faces this die has.
+ */
+public record Die(int faces) {
 
-// Include the optional RMI module and rmi-muxer composite build only when opted in.
-// To enable: set includeRmi=true in gradle.properties (requires ../rmi-muxer to be cloned).
-if (settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
-    includeBuild '../rmi-muxer'
-    include 'mejn-rmi'
+    /**
+     * Die will roll between 1 and faces (including).
+     *
+     * @param faces upper limit of what this die can roll.
+     * @throws IllegalArgumentException when faces is < 1.
+     */
+    public Die {
+        if (faces < 1) {
+            throw new IllegalArgumentException("Cannot have a die with <1 faces");
+        }
+    }
+
+    /**
+     * Roll the die. Returns a random value between 1 and faces (including).
+     */
+    public int roll() {
+        return ThreadLocalRandom.current().nextInt(faces) + 1;
+    }
+
 }
-

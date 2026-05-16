@@ -14,16 +14,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-rootProject.name = 'mens-erger-je-niet'
-
-include 'mejn'
-include 'javafx-mejn'
-
-// Include the optional RMI module and rmi-muxer composite build only when opted in.
-// To enable: set includeRmi=true in gradle.properties (requires ../rmi-muxer to be cloned).
-if (settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
-    includeBuild '../rmi-muxer'
-    include 'mejn-rmi'
-}
-
+package com.rttnghs.mejn;

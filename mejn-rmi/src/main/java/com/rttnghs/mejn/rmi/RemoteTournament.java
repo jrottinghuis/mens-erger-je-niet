@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.rttnghs.mejn.rmi;
 
-rootProject.name = 'mens-erger-je-niet'
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.List;
 
-include 'mejn'
-include 'javafx-mejn'
-
-// Include the optional RMI module and rmi-muxer composite build only when opted in.
-// To enable: set includeRmi=true in gradle.properties (requires ../rmi-muxer to be cloned).
-if (settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
-    includeBuild '../rmi-muxer'
-    include 'mejn-rmi'
+/**
+ * RMI interface for remote tournament evaluation.
+ */
+public interface RemoteTournament extends Remote {
+    List<Integer> runBracket(List<List<Integer>> genomeBracket, int games) throws RemoteException;
 }
-

@@ -14,16 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.javafx.mejn;
 
-rootProject.name = 'mens-erger-je-niet'
+/**
+ * The main class of the application, but one that doesn't extend from Application, in order to avoid
+ * "Error: JavaFX runtime components are missing" when running the application from the command line.
+ */
+public class Main {
 
-include 'mejn'
-include 'javafx-mejn'
-
-// Include the optional RMI module and rmi-muxer composite build only when opted in.
-// To enable: set includeRmi=true in gradle.properties (requires ../rmi-muxer to be cloned).
-if (settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
-    includeBuild '../rmi-muxer'
-    include 'mejn-rmi'
+    /**
+     * @param args the command line arguments
+     */
+    static void main(String[] args) {
+        MainApplication.launch(MainApplication.class, args);
+    }
 }
-

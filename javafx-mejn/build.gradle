@@ -1,0 +1,60 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// JavaFX UI subproject for mens-erger-je-niet.
+// Sources live in the shared root src/ tree, filtered to com.javafx.** packages.
+apply plugin: 'org.openjfx.javafxplugin'
+apply plugin: 'application'
+
+// ── Source sets ──────────────────────────────────────────────────────────────
+// Resources are in standard locations, no need for custom sourceSets config.
+// No test sources: all tests are in :mejn
+
+// ── JavaFX ────────────────────────────────────────────────────────────────────
+javafx {
+    version = '25'
+    modules = ['javafx.base', 'javafx.controls', 'javafx.graphics']
+}
+
+// ── Application ───────────────────────────────────────────────────────────────
+application {
+    // Keep distribution scripts named after the product, not the Gradle subproject.
+    applicationName = 'mens-erger-je-niet'
+    mainClass = 'com.javafx.mejn.Main'
+    applicationDefaultJvmArgs = [
+            '--enable-native-access=javafx.graphics',
+            '--sun-misc-unsafe-memory-access=allow'
+    ]
+}
+
+// ── Dependencies ─────────────────────────────────────────────────────────────
+dependencies {
+    // All MEJN game logic, strategies, config, and resources.
+    implementation project(':mejn')
+    // TextAreaAppender uses log4j-core directly (custom appender).
+    implementation 'org.apache.logging.log4j:log4j-api:2.25.4'
+    implementation 'org.apache.logging.log4j:log4j-core:2.25.4'
+    annotationProcessor 'org.apache.logging.log4j:log4j-core:2.25.4'
+}
+
+// ── Annotation processor args (Log4j GraalVM metadata) ───────────────────────
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            "-Alog4j.graalvm.groupId=${project.group}",
+            "-Alog4j.graalvm.artifactId=${project.name}"
+    ]
+}

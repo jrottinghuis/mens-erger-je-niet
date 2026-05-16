@@ -1,0 +1,128 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Core MEJN subproject: game logic, strategy, statistics, configuration.
+// No JavaFX dependency. Sources live in the root src/ tree, filtered by package.
+// Uses java-library so that commons-configuration2 (part of Config's public API) is
+// exposed on the compile classpath of dependents (e.g. :javafx-mejn).
+apply plugin: 'java-library'
+apply plugin: 'org.gradle.jvm-test-suite'
+
+// ── Source sets ──────────────────────────────────────────────────────────────
+// Resources are in standard locations, no need for custom sourceSets config.
+
+// ── Dependencies ─────────────────────────────────────────────────────────
+dependencies {
+    implementation 'org.apache.commons:commons-collections4:4.5.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.25.4'
+    implementation 'org.apache.logging.log4j:log4j-core:2.25.4'
+    // Runs the Log4j plugin / GraalVM metadata annotation processor at compile time.
+    annotationProcessor 'org.apache.logging.log4j:log4j-core:2.25.4'
+
+    // commons-configuration2.Configuration is part of Config's public API (static field),
+    // so dependents (:javafx-mejn) need it on their compile classpath — use api.
+    api 'org.apache.commons:commons-configuration2:2.13.0'
+    // Explicit bump for commons-lang3 pulled in transitively by commons-configuration2.
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
+    // Required by commons-configuration2 builders.
+    implementation 'commons-beanutils:commons-beanutils:1.11.0'
+
+}
+
+// ── Annotation processor args (Log4j GraalVM metadata) ───────────────────────
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            "-Alog4j.graalvm.groupId=${project.group}",
+            "-Alog4j.graalvm.artifactId=${project.name}"
+    ]
+}
+
+// ── Test suites ───────────────────────────────────────────────────────────────
+testing {
+    //noinspection GroovyAssignabilityCheck
+    suites {
+        test {
+            useJUnitJupiter()
+        }
+
+        //noinspection GroovyAssignabilityCheck
+        integrationTest(JvmTestSuite) {
+            dependencies {
+                implementation project()
+            }
+            targets {
+                configureEach {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn(testing.suites.integrationTest)
+}
+
+// ── JAR manifest ─────────────────────────────────────────────────────────────
+// Copy runtime dependencies next to the jar so that Class-Path entries resolve.
+// Resources (log4j2.properties, config XML, etc.) are bundled inside the jar by
+// processResources — no separate resourceDir on the Class-Path is needed.
+tasks.register('copyDependencies', Copy) {
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir('libs/lib')
+}
+
+jar {
+    dependsOn copyDependencies
+    manifest {
+        attributes(
+                'Automatic-Module-Name': 'com.rttnghs.mejn',
+                'Main-Class'          : 'com.rttnghs.mejn.Game',
+                'Class-Path'          : configurations.runtimeClasspath.files
+                        .collect { "lib/${it.name}" }.join(' ')
+        )
+    }
+}
+
+// ── Headless run tasks ────────────────────────────────────────────────────────
+tasks.register('runGame', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.Game'
+}
+
+tasks.register('runStatistics', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.statistics.TournamentStatistics'
+}
+
+tasks.register('runPowerAnalyzer', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.statistics.TournamentPowerAnalyzer'
+}
+
+tasks.register('runTournament', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.Tournament'
+}
+
+tasks.register('runConfig', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.configuration.Config'
+}
+

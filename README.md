@@ -11,7 +11,7 @@ It is relatively easy to create a strategy that ranks possible moves and that is
 The game is played with two, or four players on the following board:
 
 <img
-  src="src/main/resources/images/MensErgerJeNietBoard.jpg"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietBoard.jpg"
   alt="Mens erger je niet board"
   title="Four player board"
   style="display: inline-block; margin: 0 auto; max-width: 300px">
@@ -19,7 +19,7 @@ The game is played with two, or four players on the following board:
 Two players play one another from opposite corners. The reverse side of the physical game board can be used for 3 or 6 players, evenly spread around th board. Note the reduced fields per player:
 
 <img
-  src="src/main/resources/images/MensErgerJeNietBoard_6.svg.png"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietBoard_6.svg.png"
   alt="Six player, Mens erger je niet board"
   title="Six player board"
   style="display: inline-block; margin: 0 auto; max-width: 300px"/>
@@ -33,9 +33,9 @@ When a player rolls a six and none of their pawns are in their Begin area, in ot
 
 If another player is already in the position that your pawn would land in, you strike their pawn and send that pawn back to it's beginning position "B". Once a pawn is on one of the final home positions, they are safe from strikes. On some version of the board, the home position are marked with lower letters "a", and in some versions, "b", "c", and "d" respectively. On the four player board above only the first home position is marked, and on the image of the six-player board, none are marked. In short, you start at "B", then go to "A" then finish at "a", makes sense?
 
-If a player has their pawn right in front of the home ("a") position and would theoretically land on another pawn that is already in a home position, that is not considered a legal move and they have to choose another pawn to move, or forfeit that turn. In other words, a pawn can land on a home spot only if that spot is not already occupied. Pawns can move forward towards an open home position.
+If a player has their pawn right in front of the home ("a") position and would theoretically land on another pawn that is already in a home position, that is not considered a legal move; they have to choose another pawn to move, or forfeit that turn. In other words, a pawn can land on a home spot only if that spot is not already occupied. Pawns can move forward towards an open home position.
 
-Whether or not a player can strike their own pawn anywhere on the regular board should be agreed upon ahead of time. Even though players are unlikely to choose to strike themselves, there can be situations when this is the only option. Note that no pawn can be removed from a home position.
+Whether a player can strike their own pawn anywhere on the regular board should be agreed upon ahead of time. Even though players are unlikely to choose to strike themselves, there can be situations when this is the only option. Note that no pawn can be removed from a home position.
 
  # Graphical User Interface
 The Graphical User Interface (GUI) contains two tabs. The first tab is the game board for four players, each with a configurable strategy.
@@ -44,8 +44,8 @@ The second tab is a console log area that is used for debugging purposes. Any er
 
  ## Game Board
 
-A die in the appears in the corner of the player whos turn it is.
-A dotted line in the color of the current player around a position indicates a option for a move for that player. For manual strategies, the user can click on this position to select it.
+A die in the appears in the corner of the player whose turn it is.
+A dotted line in the color of the current player around a position indicates an option for a move for that player. For manual strategies, the user can click on this position to select it.
 A solid line in the color of that player indicated that this position has been chosen as the next move to make.
 For example, on the board below, the blue player (using a "ManualStrategy") threw a value of 2, has two options:
 1. move the pawn two positions forward from E6 to E8.
@@ -53,7 +53,7 @@ For example, on the board below, the blue player (using a "ManualStrategy") thre
   - In option 1, the blue player happens to strike the green player to send its pawn home.
   - In option 2, the blue player would strike the yellow player.
 <img
-  src="src/main/resources/images/MensErgerJeNietOptions.png"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietOptions.png"
   alt="Mens erger je niet game board options."
   title="Game options"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -62,7 +62,7 @@ A few die rolls later, the green player rolls a 5, and has only one option, to m
 In this screen capture, the position numbers have been turned off. The mouse hoovers over the B in the green players begin section,
 showing that the green player is using the "FarStrategy" strategy.
 <img
-src="src/main/resources/images/MensErgerJeNietSelection.png"
+src="javafx-mejn/src/main/resources/images/MensErgerJeNietSelection.png"
 alt="Mens erger je niet game board move selection."
 title="Move selection"
 style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -72,7 +72,7 @@ When a player has all their pawns in the home area they are finished. A number i
 In the example below, the red player won, followed by the blue player coming in second place. The yellow and green players are still playing.
 
 <img
-src="src/main/resources/images/MensErgerJeNietFinished.png"
+src="javafx-mejn/src/main/resources/images/MensErgerJeNietFinished.png"
 alt="Mens erger je niet game board move selection."
 title="Move selection"
 style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -86,11 +86,11 @@ Note that if there is more than one option, the game will always pause.
 2. Playback Speed. This is where you can configure how fast the game will proceed in "Play" mode. Once the game is paused, you can proceed one step at a time.
 3. Show Position Numbers. This toggles the numbers on the board. This can be useful for debugging, or for learning the game.
 4. Strategies. This window allows users to select the strategies they want each player to use.
-By default the blue player in the bottom left is configured to be the "ManualStrategy" which allows the user to select a move by clicking on the board.
+By default, the blue player in the bottom left is configured to be the "ManualStrategy" which allows the user to select a move by clicking on the board.
 By mousing-over the "B" in each players home area, the user can see the strategy that is currently configured for that player.
 
 <img
-src="src/main/resources/images/MensErgerJeNietStrategyConfiguration.png"
+src="javafx-mejn/src/main/resources/images/MensErgerJeNietStrategyConfiguration.png"
 alt="Mens erger je niet game board move selection."
 title="Move selection"
 style="display: inline-block; margin: 0 auto; max-width: 600px">
@@ -99,7 +99,7 @@ If you would like to play with fewer than four players, for example two manual p
 In the example below, only the blue and green players are playing one another.
 
 <img
-src="src/main/resources/images/MensErgerJeNietStrategyManualOnlyConfiguration.png"
+src="javafx-mejn/src/main/resources/images/MensErgerJeNietStrategyManualOnlyConfiguration.png"
 alt="Mens erger je niet game board move selection."
 title="Move selection"
 style="display: inline-block; margin: 0 auto; max-width: 600px">
@@ -113,7 +113,7 @@ When playing a physical board game, the location of the pawns on the board and h
 In order to reference an exact location on the board, let's take the perspective of the blue player in the bottom left hand corner. Given that there are ten spots for each player, and four players on this board, there are forty total spots, marked from 0 to 39.
 
 <img
-  src="src/main/resources/images/MensErgerJeNietNumberedSpots.png"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietNumberedSpots.png"
   alt="Board with numbered spots"
   title="Numbered spots"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -123,7 +123,7 @@ Upon rolling a six, the blue player starts a pawn on field A, marked with 0. If 
 Following similar modulo logic, the blue player's starting position is equivalent to 34. After all, they have to roll a 6 to get from 34 to 0: $(34+6) mod 40 = 0$. However, no player can hit the pawns in the begin area. We can think of the begin spots as a different layer, perhaps below the regular playing field as depicted below:
 
 <img
-  src="src/main/resources/images/MensErgerJeNietBeginLayer.png"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietBeginLayer.png"
   alt="Board with begin layer"
   title="Begin layer"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -132,7 +132,7 @@ The blue "begin" layer spots 35..39 are depicted with a dotted border, because t
 Again, following the same logic for different players, we can see that yellow starts at B4, green at B14, and red at B24. These starting positions are unique in two ways: first, only the respective color can occupy them. This is similar to the home fields. Moreover, more than one pawn can be on the same begin field.
 
 <img
-  src="src/main/resources/images/MensErgerJeNietBeginAndEventLayers.png"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietBeginAndEventLayers.png"
   alt="Board with begin and event layers"
   title="Begin and event layers"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -140,7 +140,7 @@ Again, following the same logic for different players, we can see that yellow st
  In this last diagram, each color's begin position is shown, but not the illegal positions. Now that we have introduced two mutually exclusive layers for begin B and event E, we can also introduce a layer for the home positions, H. From E39, a blue pawn will take one step into H0, two steps into H1, three steps into H2, and four steps into H3.
 
 <img
-  src="src/main/resources/images/MensErgerJeNietHomeLayer.png"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietHomeLayer.png"
   alt="Mens erger je niet home layer."
   title="Home layers"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -149,7 +149,7 @@ Just like we can think of the begin layer below the event layer, we can think of
 Putting this all together we get the following complete board:
 
 <img
-  src="src/main/resources/images/MensErgerJeNietGameBoard.png"
+  src="javafx-mejn/src/main/resources/images/MensErgerJeNietGameBoard.png"
   alt="Mens erger je niet game board."
   title="Gameboard"
   style="display: inline-block; margin: 0 auto; max-width: 1200px">
@@ -159,6 +159,7 @@ The GUI is built using JavaFX. The Main class launches MainApplication, which co
 MainApplication uses several View classes and a single Controller class that interacts with a Board object. The Board object is used to keep track of the game state and determine the legal moves for the current player. The GUI is updated based on the current state of the Board object.
 The board is laid out in several PositionViews, which re-position themselves based on the width of the window as it is re-sized.
 
+ 
  ## Classes
 
  * __Layer__ : {BEGIN, EVENT, HOME}
@@ -169,7 +170,7 @@ The board is laid out in several PositionViews, which re-position themselves bas
  * __History__ : Used to keep track of list of events, for example moves or scores. Accessible in forward or reverse order.
  * __BoardState__ :  A board state is essentially a list of positions for each player.
  * __Player__ :  Arranges interaction between board and a strategy. Uses the strategy to choose one of the provided possible moves. Positions of BoardState and list of allowed moves to choose from are shifted such that each strategy thinks they are playing from the bottom left position, starting at E0. This way there are not four equivalent, and functionally identical versions of each board state depending on whether a strategy is player 1, 2, 3, or 4.
- * __Score__ : Used to assign an integer value to zero, first, second, third, fourth etc player finish place using the scoring system proposed by Sitarz [[1]](#1).
+ * __Score__ : Used to assign an integer value to zero, first, second, third, fourth etc. player finish place using the scoring system proposed by Sitarz [[1]](#1).
  * __RuleEvaluator__ :  Used to apply the rules, determine if moves are allowed etc.
  * __Tournament__ : Used to play multiple games and keep track of score.
 
@@ -186,7 +187,7 @@ A few example strategies that can be used as a benchmark have been included. Acc
 
  # Configuration
 
-A user can provide a `mejn-user.properties` file on the classpath, or use the following [default properties](src/main/resources/mejn-default.properties):
+A user can provide a `mejn-user.properties` file on the classpath, or use the following [default properties](mejn/src/main/resources/mejn-default.properties):
 
     #
     # Board Settings
@@ -209,12 +210,26 @@ A user can provide a `mejn-user.properties` file on the classpath, or use the fo
     games = 10000
 
 For a regular six player game, set the following properties:  `playerCount = 6` and `dotsPerPlayer = 8`
-Strategies for a tournament are a little more structured. See [src/main/resources/mejn-strategy-config.xml](src/main/resources/mejn-strategy-config.xml) and it's corresponding [schema](src/main/resources/mejn-strategy-config.xsd). Strategies can be configured by name, providing the fully qualified classname of the implementation, and a set of parameters passed.
+Strategies for a tournament are a little more structured. See [mejn/src/main/resources/mejn-strategy-config.xml](mejn/src/main/resources/mejn-strategy-config.xml) and its corresponding [schema](mejn/src/main/resources/mejn-strategy-config.xsd). Strategies can be configured by name, providing the fully qualified classname of the implementation, and a set of parameters passed.
 
+
+ ## Project Structure
+
+The project is split into Gradle submodules:
+
+| Module        | Artifact                    | Purpose                                                                                          |
+|---------------|-----------------------------|--------------------------------------------------------------------------------------------------|
+| `mejn`        | `mejn-{version}.jar`        | Core game logic, strategies, statistics, configuration. No JavaFX or RMI dependency.            |
+| `javafx-mejn` | `javafx-mejn-{version}.jar` | JavaFX graphical user interface. Depends on `mejn`.                                             |
+| `mejn-rmi`    | `mejn-rmi-{version}.jar`    | Optional RMI server that exposes tournament evaluation over the network. Depends on `mejn` and the [rmi-muxer](../rmi-muxer) sibling project. |
+
+The `javafx-mejn` module produces the runnable distribution with launch scripts named `mens-erger-je-niet`.
+
+The `mejn-rmi` module is **not included by default**. See the [RMI module](#rmi-module) section below.
 
  ## Build
 
- The project is coded in Java (requires version 22+) and uses [gradle](https://docs.gradle.org/) for building, testing, and running. For example:
+ The project is coded in Java (requires version 25+) and uses [Gradle](https://docs.gradle.org/) for building, testing, and running. For example:
 
      /mens-erger-je-niet% gradle test
 
@@ -230,9 +245,23 @@ You can launch the GUI through:
 
      /mens-erger-je-niet% gradle run
 
+You can build and install the full distribution (scripts + all jars) through:
+
+     /mens-erger-je-niet% gradle installDist
+
+This installs to `javafx-mejn/build/install/mens-erger-je-niet/`. The generated launch scripts are:
+
+     javafx-mejn/build/install/mens-erger-je-niet/bin/mens-erger-je-niet       # Unix
+     javafx-mejn/build/install/mens-erger-je-niet/bin/mens-erger-je-niet.bat   # Windows
+
 You can pass parameters to gradle as follows:
 
 	/mens-erger-je-niet% GRADLE_OPTS="-Xms1024m -Xmx2048m" time gradle runTournament
+
+To target a specific submodule, prefix the task with its module name:
+
+     /mens-erger-je-niet% gradle :mejn:test
+     /mens-erger-je-niet% gradle :javafx-mejn:run
 
 To import the project into Eclipse, use:
 
@@ -242,9 +271,26 @@ For IntelliJ fans use:
 
      /mens-erger-je-niet% gradle idea
 
+ ## RMI module
+
+The `mejn-rmi` subproject exposes tournament evaluation as an RMI service, intended for use with the [rmi-muxer](../rmi-muxer) project. It is excluded from the default build so that the project can be cloned and built standalone without needing `rmi-muxer`.
+
+**Prerequisites:** clone [rmi-muxer](../rmi-muxer) as a sibling directory (`../rmi-muxer`).
+
+**Opt in** by setting `includeRmi=true` in `gradle.properties`, or pass it on the command line:
+
+     /mens-erger-je-niet% gradle -PincludeRmi=true :mejn-rmi:build
+
+To start the RMI server:
+
+     /mens-erger-je-niet% gradle -PincludeRmi=true runRmiServer
+
  ## Logging
 
-Log4j is used for logging. The default configuration [src/main/resources/log4j2.properties](src/main/resources/log4j2.properties) a log file `target/rolling-logs/log4j-mejn.log` with up to 7 days of archives in `target/rolling-logs/log4j-mejn.log`
+Log4j is used for logging. Logging configuration is split between the two modules:
+
+- **`mejn`** (`mejn/src/main/resources/log4j2.properties`): headless configuration with a console appender and a rolling file appender. Log files are written to `target/rolling-logs/log4j-mejn.log` with up to 7 days of archives.
+- **`javafx-mejn`** (`javafx-mejn/src/main/resources/log4j2.properties`): extends the core configuration with a `TextAreaAppender` that routes log output to the console tab in the UI. This file takes precedence over the `mejn` one when the GUI is running.
 
 
  ## Contributing
@@ -252,14 +298,16 @@ Log4j is used for logging. The default configuration [src/main/resources/log4j2.
 Contributions are welcome. Please open an issue if you see a problem, or better yet, create a fork and generate a pull request.
 In order to avoid massive formatting changes, please see [Code Formatting](https://www.jetbrains.com/help/idea/migrating-from-eclipse-to-intellij-idea.html#CodeFormatting) if IntelliJ is your IDE of choice.
 
-I would love to see other strategies implemented. There is currently no limit in time or computational resources that a strategy can take to make a decision. There are currently also no rules (yet) as to whether strategies are allowed to collaborate to gang up on other strategies.
+I would love to see other strategies implemented. There is currently no limit in time or computational resources that a strategy can take to make a decision. There are currently also no rules (yet)  whether strategies are allowed to collaborate to gang up on other strategies.
 Using reflection, or introspection to observe or manipulate other players' strategies will be considered cheating.
 
  ## Future work
 
-1. Add implementation for Differential Evolution to train ranking strategies
+1. ~~Add implementation for Differential Evolution to train ranking strategies~~ — in progress in [tournament-de](../tournament-de/README.md)
 2. Add implementation for Neural network and training of neural networks
 3. Add UI to allow configured strategies to play in a tournament and show the results in a live graph
+4. ~~Move `TournamentPowerAnalyzer` to [tournament-de](../tournament-de) and refactor to accept all tuning parameters as constructor arguments.~~
+5. ~~Delete `com.rttnghs.mejn.rmi.*` once the RMI layer is fully migrated to [tournament-de](../tournament-de)~~ — moved to the optional `:mejn-rmi` subproject.
 
  ## License
 
@@ -275,7 +323,7 @@ Using reflection, or introspection to observe or manipulate other players' strat
 
    Applied Mathematics Letters Volume 26, Issue 4, April 2013, Pages 408-412
 
-   [https://doi.org/10.1016/j.aml.2012.10.014](https://doi.org/10.1016/j.aml.2012.10.014)
+   [https://doi.org/10.1016/j.aml.2012.10.014](https://doi.org/10.1016/j.aml.2012.10.014)</a>
 
  * <a id="2">[2] Ben van der Genugten & Marcel Das (2020).
 
@@ -283,4 +331,4 @@ Using reflection, or introspection to observe or manipulate other players' strat
 
    STAtOR Jaargang 20, nummer 2, juni 2019 pages 4-9
 
-   https://www.vvsor.nl/wp-content/uploads/2018/01/STAtOR-2019-2-1-40-spreads-LR.pdf
+   https://www.vvsor.nl/wp-content/uploads/2018/01/STAtOR-2019-2-1-40-spreads-LR.pdf</a>
