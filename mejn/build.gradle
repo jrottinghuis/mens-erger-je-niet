@@ -1,10 +1,3 @@
-// ── RMI server run task ───────────────────────────────────────────────────────
-tasks.register('runRemoteTournamentServer', JavaExec) {
-    group = 'application'
-    description = 'Starts the RemoteTournamentServer RMI server.'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'com.rttnghs.mejn.rmi.RemoteTournamentServer'
-}
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -48,8 +41,6 @@ dependencies {
     // Required by commons-configuration2 builders.
     implementation 'commons-beanutils:commons-beanutils:1.11.0'
 
-    // RMI protocol infrastructure from rmi-muxer composite build
-    api 'com.rttnghs:rmi'
 }
 
 // ── Annotation processor args (Log4j GraalVM metadata) ───────────────────────

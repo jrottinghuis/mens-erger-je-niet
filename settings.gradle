@@ -20,6 +20,10 @@ rootProject.name = 'mens-erger-je-niet'
 include 'mejn'
 include 'javafx-mejn'
 
-// Include local rmi-muxer project as composite build
-includeBuild '../rmi-muxer'
+// Include the optional RMI module and rmi-muxer composite build only when opted in.
+// To enable: set includeRmi=true in gradle.properties (requires ../rmi-muxer to be cloned).
+if (settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
+    includeBuild '../rmi-muxer'
+    include 'mejn-rmi'
+}
 

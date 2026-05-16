@@ -50,6 +50,13 @@ tasks.register('assembleDist') {
     dependsOn ':javafx-mejn:assembleDist'
 }
 
+// Optional RMI convenience task - only registered when :mejn-rmi is included.
+if (findProject(':mejn-rmi') != null) {
+    tasks.register('runRmiServer') {
+        dependsOn ':mejn-rmi:runRemoteTournamentServer'
+    }
+}
+
 subprojects {
     apply plugin: 'java'
 

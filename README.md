@@ -215,14 +215,17 @@ Strategies for a tournament are a little more structured. See [mejn/src/main/res
 
  ## Project Structure
 
-The project is split into two Gradle submodules:
+The project is split into Gradle submodules:
 
-| Module        | Artifact                    | Purpose                                                                       |
-|---------------|-----------------------------|-------------------------------------------------------------------------------|
-| `mejn`        | `mejn-{version}.jar`        | Core game logic, strategies, statistics, configuration. No JavaFX dependency. |
-| `javafx-mejn` | `javafx-mejn-{version}.jar` | JavaFX graphical user interface. Depends on `mejn`.                           |
+| Module        | Artifact                    | Purpose                                                                                          |
+|---------------|-----------------------------|--------------------------------------------------------------------------------------------------|
+| `mejn`        | `mejn-{version}.jar`        | Core game logic, strategies, statistics, configuration. No JavaFX or RMI dependency.            |
+| `javafx-mejn` | `javafx-mejn-{version}.jar` | JavaFX graphical user interface. Depends on `mejn`.                                             |
+| `mejn-rmi`    | `mejn-rmi-{version}.jar`    | Optional RMI server that exposes tournament evaluation over the network. Depends on `mejn` and the [rmi-muxer](../rmi-muxer) sibling project. |
 
 The `javafx-mejn` module produces the runnable distribution with launch scripts named `mens-erger-je-niet`.
+
+The `mejn-rmi` module is **not included by default**. See the [RMI module](#rmi-module) section below.
 
  ## Build
 
@@ -268,6 +271,20 @@ For IntelliJ fans use:
 
      /mens-erger-je-niet% gradle idea
 
+ ## RMI module
+
+The `mejn-rmi` subproject exposes tournament evaluation as an RMI service, intended for use with the [rmi-muxer](../rmi-muxer) project. It is excluded from the default build so that the project can be cloned and built standalone without needing `rmi-muxer`.
+
+**Prerequisites:** clone [rmi-muxer](../rmi-muxer) as a sibling directory (`../rmi-muxer`).
+
+**Opt in** by setting `includeRmi=true` in `gradle.properties`, or pass it on the command line:
+
+     /mens-erger-je-niet% gradle -PincludeRmi=true :mejn-rmi:build
+
+To start the RMI server:
+
+     /mens-erger-je-niet% gradle -PincludeRmi=true runRmiServer
+
  ## Logging
 
 Log4j is used for logging. Logging configuration is split between the two modules:
@@ -289,8 +306,8 @@ Using reflection, or introspection to observe or manipulate other players' strat
 1. ~~Add implementation for Differential Evolution to train ranking strategies~~ — in progress in [tournament-de](../tournament-de/README.md)
 2. Add implementation for Neural network and training of neural networks
 3. Add UI to allow configured strategies to play in a tournament and show the results in a live graph
-4. Move `TournamentPowerAnalyzer` to [tournament-de](../tournament-de) and refactor to accept all tuning parameters as constructor arguments.
-5. Delete `com.rttnghs.mejn.rmi.*` once the RMI layer is fully migrated to [tournament-de](../tournament-de).
+4. ~~Move `TournamentPowerAnalyzer` to [tournament-de](../tournament-de) and refactor to accept all tuning parameters as constructor arguments.~~
+5. ~~Delete `com.rttnghs.mejn.rmi.*` once the RMI layer is fully migrated to [tournament-de](../tournament-de)~~ — moved to the optional `:mejn-rmi` subproject.
 
  ## License
 
