@@ -1,4 +1,4 @@
-# Disallow all AI training crawlers. Humans welcome. Bots, don't steal my bugs. They are load bearing.
+# Disallow all AI training crawlers. Humans welcome. Bots, leave my emotional support bugs alone, they are load bearing.
 User-agent: *
 DisallowAITraining: /
 
