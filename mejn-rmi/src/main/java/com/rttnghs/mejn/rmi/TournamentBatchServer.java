@@ -62,9 +62,9 @@ import java.util.logging.Logger;
  *   <li>{@code rmi.maxPendingTasks} - queue depth before rejection (default 5)</li>
  *   <li>{@code rmi.chunkSize} - repetitions per parallel chunk (default 50)</li>
  * </ul>
- * The bind name in the registry is {@code TournamentBatchServer}.
- * The RMI stub hostname is controlled by the standard
- * {@code -Djava.rmi.server.hostname=your.host} JVM argument.
+ * The bind name in the registry is {@code TournamentBatchServer-<suffix>}, where the
+ * suffix is supplied as a command-line argument (default {@code 0}, giving
+ * {@code TournamentBatchServer-0}).
  */
 public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayList<Integer>> {
 
@@ -208,19 +208,29 @@ public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayL
      * Connects to an already-running RMI registry and binds this server into it.
      * Blocks until the process is killed.
      *
-     * <p>The registry <em>must</em> be started before invoking this method - for
-     * example with {@code rmiregistry <port>} or via the rmi-muxer coordinator.
-     * If no registry is found on the configured port the server exits immediately
-     * with a clear error message.
+     * <p>Accepts an optional command-line argument that is appended to the bind name:
+     * <pre>
+     *   TournamentBatchServer [suffix]
+     * </pre>
+     * The server is registered as {@code TournamentBatchServer-<suffix>}, defaulting to
+     * {@code TournamentBatchServer-0} when no argument is given. Use distinct suffixes
+     * when running multiple servers against the same registry.
+     *
+     * <p>The registry <em>must</em> be started before invoking this method - use the
+     * {@code startRmiRegistry} Gradle task or start {@code rmiregistry} manually with
+     * the rmi-muxer jar on its classpath. The server exits immediately with a clear
+     * error message if no registry is found on the configured port.
      *
      * <p>Configuration is read from {@link Config} (rmi-default.properties bundled in
      * the rmi-muxer jar, overridable via system properties or rmi-override.properties).
      */
     public static void main(String[] args) throws Exception {
+        String suffix  = args.length > 0 ? args[0] : "0";
+        String bindName = "TournamentBatchServer-" + suffix;
+
         int port       = Config.RMI_REGISTRY_PORT;
         int maxPending = Config.RMI_MAX_PENDING_TASKS;
         int chunkSize  = Config.RMI_CHUNK_SIZE;
-        String bindName = System.getProperty("rmi.bindName", "TournamentBatchServer");
 
         // Connect to the existing registry - fail fast if it is not running.
         Registry registry = LocateRegistry.getRegistry(port);
@@ -228,8 +238,8 @@ public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayL
             registry.list(); // forces a real connection; throws if no registry is up
         } catch (RemoteException e) {
             logger.severe(() ->
-                "No RMI registry found on port %d. Start one first (e.g. 'rmiregistry %d'). Error: %s"
-                    .formatted(port, port, e.getMessage()));
+                "No RMI registry found on port %d. Start one first with 'gradle startRmiRegistry'. Error: %s"
+                    .formatted(port, e.getMessage()));
             System.exit(1);
         }
 

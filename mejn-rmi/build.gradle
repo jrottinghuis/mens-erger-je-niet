@@ -66,12 +66,30 @@ tasks.withType(JavaCompile).configureEach {
     ]
 }
 
+// ── RMI registry task ─────────────────────────────────────────────────────────
+// Starts rmiregistry with the full runtime classpath so that rmi-muxer classes
+// (TaskServer, TournamentBatch, etc.) are visible to the registry process.
+// The registry must be running before starting TournamentBatchServer.
+tasks.register('startRmiRegistry', Exec) {
+    group = 'application'
+    description = 'Starts rmiregistry on the default port with rmi-muxer classes on its classpath. ' +
+            'Must be running before startTournamentBatchServer.'
+    environment 'CLASSPATH', sourceSets.main.runtimeClasspath.asPath
+    commandLine 'rmiregistry', '1099'
+}
+
 // ── RMI server run task ───────────────────────────────────────────────────────
+// Pass -PserverName=<suffix> to change the registry bind name from the default
+// "TournamentBatchServer-0" to "TournamentBatchServer-<suffix>".
 tasks.register('runTournamentBatchServer', JavaExec) {
     group = 'application'
-    description = 'Starts TournamentBatchServer on an RMI registry. ' +
-            'Override defaults with -Drmi.registry.port=1099 -Drmi.maxPendingTasks=5 -Drmi.chunkSize=50'
+    description = 'Starts TournamentBatchServer and binds it in the running RMI registry. ' +
+            'Pass -PserverName=<suffix> to set the bind-name suffix (default: 0). ' +
+            'Override config with -Drmi.registry.port=1099 -Drmi.maxPendingTasks=5 -Drmi.chunkSize=50'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.rttnghs.mejn.rmi.TournamentBatchServer'
+    if (project.hasProperty('serverName')) {
+        args project.serverName
+    }
 }
 

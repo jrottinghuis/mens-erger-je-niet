@@ -281,22 +281,39 @@ The `mejn-rmi` subproject exposes tournament evaluation as an RMI service via `T
 
      /mens-erger-je-niet% gradle -PincludeRmi=true :mejn-rmi:build
 
-**Start a registry first.** The server connects to an existing RMI registry and will fail immediately if none is running. Start one with:
+### Starting the RMI registry
 
+The RMI registry must be started before any `TournamentBatchServer` can bind to it. It must be launched with the rmi-muxer classes on its classpath so it can marshal stubs for `TaskServer`, `TournamentBatch`, and related types. The `startRmiRegistry` Gradle task handles this automatically:
+
+     /mens-erger-je-niet% gradle startRmiRegistry
+
+This runs `rmiregistry 1099` with the full `runtimeClasspath` of `mejn-rmi` (which includes the rmi-muxer jar) exported as `CLASSPATH` to the registry process. The task runs in the foreground; start it in a separate terminal.
+
+If you prefer to start the registry manually, set `CLASSPATH` to include the rmi-muxer jar before calling `rmiregistry`:
+
+     export CLASSPATH=../rmi-muxer/rmi/build/libs/rmi-1.0-SNAPSHOT.jar
      rmiregistry 1099
 
-Then start the server:
+### Starting the server
 
-     /mens-erger-je-niet% gradle -PincludeRmi=true :mejn-rmi:runTournamentBatchServer
+With the registry running, start a `TournamentBatchServer` in a second terminal:
 
-Or via the root convenience task:
+     /mens-erger-je-niet% gradle runRmiServer
 
-     /mens-erger-je-niet% gradle -PincludeRmi=true runRmiServer
+This binds the server in the registry as `TournamentBatchServer-0`. To run multiple servers (each binding under a distinct name), pass a suffix via `-PserverName`:
 
-The server binds as `TournamentBatchServer` in the registry. Configuration is read from `rmi-default.properties` bundled in the `rmi-muxer` jar, with two override layers:
+     /mens-erger-je-niet% gradle runTournamentBatchServer -PserverName=1
+     /mens-erger-je-niet% gradle runTournamentBatchServer -PserverName=2
 
-- System properties take highest priority: `-Drmi.registry.port=1099 -Drmi.maxPendingTasks=5 -Drmi.chunkSize=50`
-- Drop an `rmi-override.properties` file beside the jar for persistent operator overrides
+Each server registers as `TournamentBatchServer-<suffix>` and can be discovered by the rmi-muxer coordinator.
+
+Configuration defaults (override with `-Dproperty=value` or via `rmi-override.properties` beside the jar):
+
+| Property | Default | Description |
+|---|---|---|
+| `rmi.registry.port` | `1099` | RMI registry port |
+| `rmi.maxPendingTasks` | `5` | Queue depth before rejecting work |
+| `rmi.chunkSize` | `50` | Repetitions per parallel chunk |
 
  ## Logging
 
