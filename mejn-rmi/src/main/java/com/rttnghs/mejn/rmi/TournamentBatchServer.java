@@ -17,10 +17,13 @@
 package com.rttnghs.mejn.rmi;
 
 import com.rttnghs.mejn.de.RankingStrategyTournament;
+import com.rttnghs.rmi.configuration.Config;
 import com.rttnghs.rmi.protocol.TournamentBatch;
 import com.rttnghs.rmi.protocol.impl.ChunkedServer;
 
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Logger;
@@ -41,6 +44,27 @@ import java.util.logging.Logger;
  * <h2>Scoring</h2>
  * <p>Uses {@code Score.get()} and {@code EventCounter.getNormalizedScores()}
  * with a configurable normalization scale (default 100).
+ *
+ * <h2>Running as a server</h2>
+ * <p>Launch via {@link #main} or the Gradle {@code runTournamentBatchServer} task.
+ * An RMI registry must already be running before this server starts - it will
+ * connect to the existing registry and fail immediately if none is found.
+ * Configuration is read from {@code rmi-default.properties} bundled in the
+ * {@code rmi-muxer} jar via {@link Config}, with three layers of override:
+ * <ol>
+ *   <li>System properties ({@code -Dproperty=value})</li>
+ *   <li>{@code rmi-override.properties} beside the jar (optional)</li>
+ *   <li>{@code rmi-default.properties} bundled in the jar (fallback)</li>
+ * </ol>
+ * Relevant keys (from {@code rmi-default.properties}):
+ * <ul>
+ *   <li>{@code rmi.registry.port} - RMI registry port (default 1099)</li>
+ *   <li>{@code rmi.maxPendingTasks} - queue depth before rejection (default 5)</li>
+ *   <li>{@code rmi.chunkSize} - repetitions per parallel chunk (default 50)</li>
+ * </ul>
+ * The bind name in the registry is {@code TournamentBatchServer}.
+ * The RMI stub hostname is controlled by the standard
+ * {@code -Djava.rmi.server.hostname=your.host} JVM argument.
  */
 public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayList<Integer>> {
 
@@ -178,5 +202,44 @@ public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayL
         ForkJoinPool pool = new ForkJoinPool(processors);
         logger.fine(() -> "Using ForkJoinPool with %d threads".formatted(processors));
         return pool;
+    }
+
+    /**
+     * Connects to an already-running RMI registry and binds this server into it.
+     * Blocks until the process is killed.
+     *
+     * <p>The registry <em>must</em> be started before invoking this method - for
+     * example with {@code rmiregistry <port>} or via the rmi-muxer coordinator.
+     * If no registry is found on the configured port the server exits immediately
+     * with a clear error message.
+     *
+     * <p>Configuration is read from {@link Config} (rmi-default.properties bundled in
+     * the rmi-muxer jar, overridable via system properties or rmi-override.properties).
+     */
+    public static void main(String[] args) throws Exception {
+        int port       = Config.RMI_REGISTRY_PORT;
+        int maxPending = Config.RMI_MAX_PENDING_TASKS;
+        int chunkSize  = Config.RMI_CHUNK_SIZE;
+        String bindName = System.getProperty("rmi.bindName", "TournamentBatchServer");
+
+        // Connect to the existing registry - fail fast if it is not running.
+        Registry registry = LocateRegistry.getRegistry(port);
+        try {
+            registry.list(); // forces a real connection; throws if no registry is up
+        } catch (RemoteException e) {
+            logger.severe(() ->
+                "No RMI registry found on port %d. Start one first (e.g. 'rmiregistry %d'). Error: %s"
+                    .formatted(port, port, e.getMessage()));
+            System.exit(1);
+        }
+
+        TournamentBatchServer server = new TournamentBatchServer(maxPending, chunkSize);
+        registry.rebind(bindName, server);
+
+        logger.info(() -> "TournamentBatchServer bound as '%s' on port %d (maxPending=%d, chunkSize=%d)"
+                .formatted(bindName, port, maxPending, chunkSize));
+
+        // Block forever - process is stopped by SIGTERM / Ctrl-C.
+        Thread.currentThread().join();
     }
 }

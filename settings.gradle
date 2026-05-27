@@ -20,9 +20,14 @@ rootProject.name = 'mens-erger-je-niet'
 include 'mejn'
 include 'javafx-mejn'
 
-// Include the optional RMI module and rmi-muxer composite build only when opted in.
-// To enable: set includeRmi=true in gradle.properties (requires ../rmi-muxer to be cloned).
-if (settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
+// Include the optional RMI module and rmi-muxer composite build when opted in,
+// OR when an RMI-specific task is requested directly (so 'gradle runRmiServer'
+// works without -PincludeRmi=true).
+def rmiTaskNames = ['runRmiServer', 'runTournamentBatchServer'] as Set
+def rmiTaskRequested = gradle.startParameter.taskNames.any { name ->
+    rmiTaskNames.any { name == it || name.endsWith(":${it}") }
+}
+if (rmiTaskRequested || settings.ext.properties.getOrDefault('includeRmi', 'false').toBoolean()) {
     includeBuild '../rmi-muxer'
     include 'mejn-rmi'
 }

@@ -221,7 +221,7 @@ The project is split into Gradle submodules:
 |---------------|-----------------------------|--------------------------------------------------------------------------------------------------|
 | `mejn`        | `mejn-{version}.jar`        | Core game logic, strategies, statistics, configuration. No JavaFX or RMI dependency.            |
 | `javafx-mejn` | `javafx-mejn-{version}.jar` | JavaFX graphical user interface. Depends on `mejn`.                                             |
-| `mejn-rmi`    | `mejn-rmi-{version}.jar`    | Optional RMI server that exposes tournament evaluation over the network. Depends on `mejn` and the [rmi-muxer](../rmi-muxer) sibling project. |
+| `mejn-rmi`    | `mejn-rmi-{version}.jar`    | Optional RMI server (`TournamentBatchServer`) that exposes tournament evaluation over the network. Depends on `mejn` and the [rmi-muxer](../rmi-muxer) sibling project. Requires an RMI registry to be running before starting. |
 
 The `javafx-mejn` module produces the runnable distribution with launch scripts named `mens-erger-je-niet`.
 
@@ -273,7 +273,7 @@ For IntelliJ fans use:
 
  ## RMI module
 
-The `mejn-rmi` subproject exposes tournament evaluation as an RMI service, intended for use with the [rmi-muxer](../rmi-muxer) project. It is excluded from the default build so that the project can be cloned and built standalone without needing `rmi-muxer`.
+The `mejn-rmi` subproject exposes tournament evaluation as an RMI service via `TournamentBatchServer`, intended for use with the [rmi-muxer](../rmi-muxer) project. It is excluded from the default build so that the project can be cloned and built standalone without needing `rmi-muxer`.
 
 **Prerequisites:** clone [rmi-muxer](../rmi-muxer) as a sibling directory (`../rmi-muxer`).
 
@@ -281,9 +281,22 @@ The `mejn-rmi` subproject exposes tournament evaluation as an RMI service, inten
 
      /mens-erger-je-niet% gradle -PincludeRmi=true :mejn-rmi:build
 
-To start the RMI server:
+**Start a registry first.** The server connects to an existing RMI registry and will fail immediately if none is running. Start one with:
+
+     rmiregistry 1099
+
+Then start the server:
+
+     /mens-erger-je-niet% gradle -PincludeRmi=true :mejn-rmi:runTournamentBatchServer
+
+Or via the root convenience task:
 
      /mens-erger-je-niet% gradle -PincludeRmi=true runRmiServer
+
+The server binds as `TournamentBatchServer` in the registry. Configuration is read from `rmi-default.properties` bundled in the `rmi-muxer` jar, with two override layers:
+
+- System properties take highest priority: `-Drmi.registry.port=1099 -Drmi.maxPendingTasks=5 -Drmi.chunkSize=50`
+- Drop an `rmi-override.properties` file beside the jar for persistent operator overrides
 
  ## Logging
 

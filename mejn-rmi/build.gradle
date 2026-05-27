@@ -67,10 +67,11 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // ── RMI server run task ───────────────────────────────────────────────────────
-tasks.register('runRemoteTournamentServer', JavaExec) {
+tasks.register('runTournamentBatchServer', JavaExec) {
     group = 'application'
-    description = 'Starts the RemoteTournamentServer RMI server.'
+    description = 'Starts TournamentBatchServer on an RMI registry. ' +
+            'Override defaults with -Drmi.registry.port=1099 -Drmi.maxPendingTasks=5 -Drmi.chunkSize=50'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'com.rttnghs.mejn.rmi.RemoteTournamentServer'
+    mainClass = 'com.rttnghs.mejn.rmi.TournamentBatchServer'
 }
 
