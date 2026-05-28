@@ -80,7 +80,7 @@ public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayL
      * @throws RemoteException if RMI export fails
      */
     public TournamentBatchServer(int maxPendingTasks) throws RemoteException {
-        this(maxPendingTasks, 50);
+        this(maxPendingTasks, 128);
     }
 
     /**
