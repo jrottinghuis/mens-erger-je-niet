@@ -18,7 +18,7 @@ package com.rttnghs.mejn.rmi;
 
 import com.rttnghs.rmi.protocol.TaskCallback;
 import com.rttnghs.rmi.protocol.TaskServer;
-import com.rttnghs.rmi.protocol.TournamentBatch;
+import com.rttnghs.rmi.protocol.dto.TournamentBatch;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

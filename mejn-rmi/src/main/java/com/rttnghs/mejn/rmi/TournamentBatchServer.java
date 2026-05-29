@@ -18,7 +18,7 @@ package com.rttnghs.mejn.rmi;
 
 import com.rttnghs.mejn.de.RankingStrategyTournament;
 import com.rttnghs.rmi.configuration.Config;
-import com.rttnghs.rmi.protocol.TournamentBatch;
+import com.rttnghs.rmi.protocol.dto.TournamentBatch;
 import com.rttnghs.rmi.protocol.impl.ChunkedServer;
 
 import java.rmi.RemoteException;
