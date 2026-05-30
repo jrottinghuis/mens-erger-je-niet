@@ -93,3 +93,17 @@ tasks.register('runTournamentBatchServer', JavaExec) {
     }
 }
 
+// ── RMI client smoke-test task ────────────────────────────────────────────────
+// Submits one random TournamentBatch to a running server and prints the scores.
+// Pass -PserverName=<suffix> to target TournamentBatchServer-<suffix> (default: 0).
+tasks.register('runTournamentBatchClient', JavaExec) {
+    group = 'application'
+    description = 'Submits a random TournamentBatch to a running TournamentBatchServer. ' +
+            'Pass -PserverName=<suffix> to target TournamentBatchServer-<suffix> (default: 0).'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.rttnghs.mejn.rmi.TournamentBatchClient'
+    if (project.hasProperty('serverName')) {
+        args project.serverName
+    }
+}
+

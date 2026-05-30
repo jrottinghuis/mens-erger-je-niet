@@ -23,7 +23,7 @@ include 'javafx-mejn'
 // Include the optional RMI module and rmi-muxer composite build when opted in,
 // OR when an RMI-specific task is requested directly (so 'gradle runRmiServer'
 // works without -PincludeRmi=true).
-def rmiTaskNames = ['runRmiServer', 'runTournamentBatchServer', 'startRmiRegistry'] as Set
+def rmiTaskNames = ['runRmiServer', 'runTournamentBatchServer', 'runTournamentBatchClient', 'startRmiRegistry'] as Set
 def rmiTaskRequested = gradle.startParameter.taskNames.any { name ->
     rmiTaskNames.any { name == it || name.endsWith(":${it}") }
 }

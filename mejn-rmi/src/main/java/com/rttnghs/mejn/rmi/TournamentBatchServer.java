@@ -188,6 +188,8 @@ public class TournamentBatchServer extends ChunkedServer<TournamentBatch, ArrayL
         for (Double score : doubleScores) {
             intScores.add(score.intValue());
         }
+        // TODO: temporarily write the scores to the system output for visibility during testing - remove or replace with proper logging later
+        System.out.println("Chunk result: " + intScores);
         return intScores;
     }
 
